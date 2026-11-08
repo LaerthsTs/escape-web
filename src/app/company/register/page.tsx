@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { Unlock, Building2, Mail, Lock, Eye, EyeOff, Phone, MapPin, FileText, ArrowRight } from 'lucide-react';
+import { Building2, Mail, Lock, Eye, EyeOff, Phone, MapPin, FileText, ArrowRight } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useCompanyPath } from '@/lib/companyAuth';
@@ -83,7 +84,7 @@ export default function CompanyRegisterPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="w-10 h-10 bg-brand-red rounded-lg flex items-center justify-center">
-              <Unlock className="w-6 h-6 text-white" />
+              <EyeKeyhole className="w-8 h-8" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
               UN<span className="text-brand-red-light">LOCKED</span>

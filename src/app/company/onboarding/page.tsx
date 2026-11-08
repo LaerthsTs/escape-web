@@ -7,7 +7,6 @@ import { api } from '../../../../convex/_generated/api';
 import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import {
-  Unlock,
   Building2,
   Check,
   Clock,
@@ -22,6 +21,7 @@ import {
   CreditCard,
   Tag,
 } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 
 const PLANS = [
   {
@@ -236,7 +236,7 @@ export default function CompanyOnboardingPage() {
     <div className="flex items-center justify-between px-6 pt-6 pb-2">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center">
-          <Unlock className="w-4 h-4 text-white" />
+          <EyeKeyhole className="w-6 h-6" />
         </div>
         <span className="text-lg font-display font-bold tracking-wider">
           UN<span className="text-brand-red-light">LOCKED</span>

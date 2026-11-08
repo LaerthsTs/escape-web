@@ -8,7 +8,7 @@ import { CookieConsent } from './CookieConsent';
 import { PhonePrompt } from './PhonePrompt';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Unlock } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useTranslation } from '@/lib/i18n';
 import { HorrorDefs } from '@/components/horror/HorrorDefs';
@@ -75,8 +75,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 md:h-20">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="w-9 h-9 bg-linear-to-b from-brand-red to-brand-blood rounded-md flex items-center justify-center shadow-[0_0_18px_rgba(200,16,27,0.6)]">
-                  <Unlock className="w-5 h-5 text-brand-bone" />
+                <div className="w-9 h-9 bg-linear-to-b from-[#e0141f] to-brand-red rounded-md flex items-center justify-center shadow-[0_0_18px_rgba(200,16,27,0.6)]">
+                  <EyeKeyhole className="w-7 h-7" blink />
                 </div>
                 <span className="font-blood text-lg tracking-wider text-brand-bone">
                   UN<span className="text-brand-red-light text-blood-glow">LOCKED</span>

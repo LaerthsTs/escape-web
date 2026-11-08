@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Unlock, LogOut, User, Bell, Ticket } from 'lucide-react';
+import { Menu, X, LogOut, User, Bell, Ticket } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -11,14 +12,14 @@ import { BloodDrips } from '@/components/horror/BloodDrips';
 
 export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
   const box = size === 'lg' ? 'w-11 h-11' : 'w-9 h-9';
-  const icon = size === 'lg' ? 'w-6 h-6' : 'w-5 h-5';
+  const icon = size === 'lg' ? 'w-8 h-8' : 'w-7 h-7';
   const text = size === 'lg' ? 'text-2xl' : 'text-base sm:text-lg';
   return (
     <span className="flex items-center gap-2.5 group">
       <span
-        className={`relative ${box} rounded-md flex items-center justify-center bg-linear-to-b from-brand-red to-brand-blood border border-brand-red-light/30 shadow-[0_0_18px_rgba(200,16,27,0.55)] group-hover:animate-shake`}
+        className={`relative ${box} rounded-md flex items-center justify-center bg-linear-to-b from-[#e0141f] to-brand-red border border-brand-red-light/40 shadow-[0_0_18px_rgba(200,16,27,0.55)] group-hover:animate-shake`}
       >
-        <Unlock className={`${icon} text-brand-bone`} />
+        <EyeKeyhole className={icon} blink />
       </span>
       <span className={`font-blood ${text} tracking-wider text-brand-bone`}>
         UN<span className="text-brand-red-light text-blood-glow animate-flicker">LOCKED</span>

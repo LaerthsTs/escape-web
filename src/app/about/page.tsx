@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Unlock,
   Users,
   Target,
   Heart,
@@ -15,6 +14,7 @@ import {
   QrCode,
   ArrowRight,
 } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem, Floating } from '@/components/animations/AnimateIn';
@@ -63,7 +63,7 @@ export default function AboutPage() {
           <AnimateIn animation="scaleIn">
             <Floating>
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-6">
-                <Unlock className="w-8 h-8 text-brand-red-light" />
+                <EyeKeyhole variant="onDark" className="w-10 h-10 text-brand-red-light" />
               </div>
             </Floating>
           </AnimateIn>

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Unlock, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 
@@ -100,7 +101,7 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
             <div className="w-10 h-10 bg-brand-red rounded-xl flex items-center justify-center">
-              <Unlock className="w-6 h-6 text-white" />
+              <EyeKeyhole className="w-8 h-8" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
               UN<span className="text-brand-red-light">LOCKED</span>

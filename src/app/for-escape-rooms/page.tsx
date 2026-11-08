@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Unlock,
   Calendar,
   Code,
   LayoutDashboard,
@@ -18,6 +17,7 @@ import {
   Zap,
   Shield,
 } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
 import { useState } from 'react';
@@ -110,7 +110,7 @@ export default function ForEscapeRoomsPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20">
-              <Unlock className="w-8 h-8 text-brand-red-light" />
+              <EyeKeyhole variant="onDark" className="w-10 h-10 text-brand-red-light" />
             </div>
           </div>
           <span className="inline-block text-brand-red-light text-sm font-semibold uppercase tracking-wider mb-4 bg-brand-red/10 px-4 py-1.5 rounded-full">

@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Unlock,
   LayoutDashboard,
   CalendarDays,
   DoorOpen,
@@ -17,6 +16,7 @@ import {
   BookOpen,
   Globe,
 } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
 import { CompanyAuthProvider, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { PlanBadge } from './PlanBadge';
@@ -94,7 +94,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="h-16 flex items-center gap-2 px-5 border-b border-white/5">
           <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center">
-            <Unlock className="w-4 h-4 text-white" />
+            <EyeKeyhole className="w-6 h-6" />
           </div>
           <span className="text-lg font-display font-bold tracking-wider">
             UN<span className="text-brand-red-light">LOCKED</span>
@@ -164,7 +164,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-brand-surface border-b border-white/5 h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-brand-red rounded-lg flex items-center justify-center">
-            <Unlock className="w-4 h-4 text-white" />
+            <EyeKeyhole className="w-6 h-6" />
           </div>
           <span className="text-sm font-display font-bold">
             UN<span className="text-brand-red-light">LOCKED</span>

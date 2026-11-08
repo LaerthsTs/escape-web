@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Unlock, Building2, Mail, Lock, Eye, EyeOff, ArrowRight, Shield, Calendar, QrCode, BarChart2, Code, Globe } from 'lucide-react';
+import { Building2, Mail, Lock, Eye, EyeOff, ArrowRight, Shield, Calendar, QrCode, BarChart2, Code, Globe } from 'lucide-react';
+import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -64,7 +65,7 @@ export default function CompanyLoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="w-10 h-10 bg-brand-red rounded-lg flex items-center justify-center">
-              <Unlock className="w-6 h-6 text-white" />
+              <EyeKeyhole className="w-8 h-8" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
               UN<span className="text-brand-red-light">LOCKED</span>
