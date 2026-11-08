@@ -103,7 +103,7 @@ export default function ForEscapeRoomsPage() {
     <>
       {/* Hero */}
       <section className="pt-32 pb-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-red/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-brand-gold/5 rounded-full blur-3xl" />
 
@@ -200,12 +200,12 @@ export default function ForEscapeRoomsPage() {
                 className={`card p-6 flex flex-col relative ${plan.popular ? `border-brand-red/40 ring-1 ring-brand-red/20` : ''}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-red to-red-600 text-white text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-linear-to-r from-brand-red to-red-600 text-white text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
                     <Star className="w-3 h-3" /> {t('fer.most_popular')}
                   </div>
                 )}
                 <div className="mb-5">
-                  <div className={`inline-block bg-gradient-to-r ${plan.color} text-white text-xs font-bold px-3 py-1 rounded-full mb-3`}>
+                  <div className={`inline-block bg-linear-to-r ${plan.color} text-white text-xs font-bold px-3 py-1 rounded-full mb-3`}>
                     {t(`fer.plan_${plan.id}`)}
                   </div>
                   <p className="text-sm text-brand-text-secondary mb-3">{t(`fer.plan_${plan.id}_desc`)}</p>
@@ -293,7 +293,7 @@ export default function ForEscapeRoomsPage() {
       <section className="py-20 border-t border-brand-border/30">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="card p-12 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-red/5 to-brand-gold/5" />
+            <div className="absolute inset-0 bg-linear-to-br from-brand-red/5 to-brand-gold/5" />
             <div className="relative z-10">
               <Shield className="w-12 h-12 text-brand-red mx-auto mb-6" />
               <h2 className="text-2xl md:text-3xl font-bold mb-3">

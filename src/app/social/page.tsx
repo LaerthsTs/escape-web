@@ -64,7 +64,7 @@ export default function SocialPage() {
     <>
       {/* Hero */}
       <section className="pt-28 pb-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="section-heading mb-2">
             {t('social.title')} <span className="text-gradient">{t('social.title_highlight')}</span>
@@ -134,7 +134,7 @@ export default function SocialPage() {
                           <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         )}
                         {post.authorType === 'company' && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-red/20 text-brand-red">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-brand-red/20 text-brand-red">
                             {t('social.business_badge')}
                           </span>
                         )}
@@ -310,7 +310,7 @@ function CommentsSection({ postId, userId }: { postId: string; userId?: string }
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            className="input-field !py-2 !text-sm flex-1"
+            className="input-field py-2! text-sm! flex-1"
           />
           <button
             disabled={sending || !text.trim()}

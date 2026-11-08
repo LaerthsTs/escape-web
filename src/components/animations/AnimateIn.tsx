@@ -81,7 +81,7 @@ interface AnimateInProps {
   className?: string;
   once?: boolean;
   amount?: number;
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
 }
 
 export function AnimateIn({
@@ -230,9 +230,9 @@ export function PulseGlow({ children, className = '' }: { children: React.ReactN
       className={className}
       animate={{
         boxShadow: [
-          '0 0 20px rgba(255, 30, 30, 0.1)',
-          '0 0 40px rgba(255, 30, 30, 0.3)',
-          '0 0 20px rgba(255, 30, 30, 0.1)',
+          '0 0 20px rgba(200, 16, 27, 0.1)',
+          '0 0 40px rgba(200, 16, 27, 0.3)',
+          '0 0 20px rgba(200, 16, 27, 0.1)',
         ],
       }}
       transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}

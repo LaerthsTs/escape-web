@@ -95,7 +95,7 @@ export default function RoomDetailsPage() {
     <>
       {/* Test Room Popup */}
       {showTestPopup && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
           <div className="bg-brand-card border border-yellow-500/30 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95">
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
@@ -140,17 +140,17 @@ export default function RoomDetailsPage() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-brand-surface to-brand-card flex items-center justify-center">
+          <div className="w-full h-full bg-linear-to-br from-brand-surface to-brand-card flex items-center justify-center">
             <DoorOpen className="w-24 h-24 text-brand-border/30" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-brand-bg via-brand-bg/40 to-transparent" />
 
         {/* Back button */}
         <div className="absolute top-24 left-4 z-20">
           <Link
             href="/discover"
-            className="flex items-center gap-2 bg-brand-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-brand-border/50 text-sm hover:border-brand-red/30 transition-all"
+            className="flex items-center gap-2 bg-brand-card/80 backdrop-blur-xs px-4 py-2 rounded-xl border border-brand-border/50 text-sm hover:border-brand-red/30 transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('room.back')}
@@ -161,7 +161,7 @@ export default function RoomDetailsPage() {
         {isAuthenticated && (
           <button
             onClick={handleWishlist}
-            className="absolute top-24 right-4 z-20 w-11 h-11 bg-brand-card/80 backdrop-blur-sm rounded-full flex items-center justify-center border border-brand-border/50 hover:border-brand-red/30 transition-all"
+            className="absolute top-24 right-4 z-20 w-11 h-11 bg-brand-card/80 backdrop-blur-xs rounded-full flex items-center justify-center border border-brand-border/50 hover:border-brand-red/30 transition-all"
           >
             <Heart
               className={`w-5 h-5 ${
@@ -174,7 +174,7 @@ export default function RoomDetailsPage() {
         {/* Badges */}
         <div className="absolute bottom-6 left-4 z-20 flex gap-2">
           {(room as any).isEarlyAccessPartner && (
-            <span className="bg-emerald-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+            <span className="bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
               <BadgeCheck className="w-3.5 h-3.5" /> {t('badge.early_access')}
             </span>
           )}
@@ -196,7 +196,7 @@ export default function RoomDetailsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Countdown Banner */}
           {releaseCountdown && (
-            <div className="mb-4 bg-gradient-to-r from-purple-900/50 to-indigo-900/50 rounded-2xl border border-purple-500/20 p-5 flex items-center gap-4">
+            <div className="mb-4 bg-linear-to-r from-purple-900/50 to-indigo-900/50 rounded-2xl border border-purple-500/20 p-5 flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center shrink-0">
                 <CalendarClock className="w-6 h-6 text-purple-400" />
               </div>
@@ -417,7 +417,7 @@ export default function RoomDetailsPage() {
                     onChange={(e) => setReviewText(e.target.value)}
                     placeholder={t('reviews.your_review')}
                     rows={3}
-                    className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-brand-text-muted focus:border-brand-red focus:outline-none resize-none"
+                    className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-brand-text-muted focus:border-brand-red focus:outline-hidden resize-none"
                   />
                 </div>
 

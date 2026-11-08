@@ -117,7 +117,7 @@ export default function TicketsPage() {
     <>
       {/* Hero */}
       <section className="pt-32 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -386,7 +386,7 @@ export default function TicketsPage() {
                   <div key={booking._id} className="card overflow-hidden">
                     {/* Header */}
                     <div
-                      className="p-5 flex items-center gap-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      className="p-5 flex items-center gap-4 cursor-pointer hover:bg-white/2 transition-colors"
                       onClick={() => setExpandedPhotos(isExpanded ? null : booking._id)}
                     >
                       {/* Thumbnail */}

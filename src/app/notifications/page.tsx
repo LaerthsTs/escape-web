@@ -118,7 +118,7 @@ export default function NotificationsPage() {
     <>
       {/* Hero */}
       <section className="pt-32 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>

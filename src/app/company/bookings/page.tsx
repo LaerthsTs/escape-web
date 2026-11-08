@@ -307,7 +307,7 @@ export default function CompanyBookingsPage() {
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
                                 rows={2}
-                                className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+                                className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
                                 placeholder={t('company.bookings.note_placeholder')}
                                 autoFocus
                               />
@@ -555,7 +555,7 @@ function CompleteBookingModal({
                 value={escapeTime}
                 onChange={(e) => setEscapeTime(e.target.value)}
                 placeholder={t('company.bookings.escape_time_placeholder')}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-brand-text-muted">min</span>
             </div>
@@ -575,7 +575,7 @@ function CompleteBookingModal({
             value={hintsUsed}
             onChange={(e) => setHintsUsed(e.target.value)}
             placeholder={t('company.bookings.hints_placeholder')}
-            className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+            className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
           />
         </div>
 
@@ -588,7 +588,7 @@ function CompleteBookingModal({
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full btn-primary !py-3 flex items-center justify-center gap-2"
+          className="w-full btn-primary py-3! flex items-center justify-center gap-2"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -719,7 +719,7 @@ function RescheduleBookingModal({
               value={newDate}
               min={today}
               onChange={(e) => { setNewDate(e.target.value); setNewTime(''); }}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none [color-scheme:dark]"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden scheme-dark"
               required
             />
           </div>
@@ -753,7 +753,7 @@ function RescheduleBookingModal({
                   type="time"
                   value={newTime}
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-brand-red focus:outline-hidden"
                 />
               </div>
             ) : (
@@ -762,7 +762,7 @@ function RescheduleBookingModal({
                   type="time"
                   value={newTime}
                   onChange={(e) => setNewTime(e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   required
                 />
                 {newDate && (
@@ -777,7 +777,7 @@ function RescheduleBookingModal({
           <button
             type="submit"
             disabled={loading || !newDate || !newTime}
-            className="w-full btn-primary !py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full btn-primary py-3! flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -875,7 +875,7 @@ function CreateBookingModal({
             <select
               value={form.roomId}
               onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               required
             >
               <option value="">{t('company.bookings.select_room')}</option>
@@ -891,7 +891,7 @@ function CreateBookingModal({
               type="time"
               value={form.time}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               required
             />
           </div>
@@ -904,7 +904,7 @@ function CreateBookingModal({
                 min="1"
                 value={form.players}
                 onChange={(e) => setForm({ ...form, players: parseInt(e.target.value) || 1 })}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 required
               />
             </div>
@@ -916,7 +916,7 @@ function CreateBookingModal({
                 step="0.01"
                 value={form.total}
                 onChange={(e) => setForm({ ...form, total: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 required
               />
             </div>
@@ -928,7 +928,7 @@ function CreateBookingModal({
               type="text"
               value={form.playerName}
               onChange={(e) => setForm({ ...form, playerName: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               placeholder={t('company.bookings.customer_name')}
               required
             />
@@ -940,7 +940,7 @@ function CreateBookingModal({
               type="email"
               value={form.playerContact}
               onChange={(e) => setForm({ ...form, playerContact: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               placeholder="player@email.com"
               required
             />
@@ -952,7 +952,7 @@ function CreateBookingModal({
               type="tel"
               value={form.playerPhone}
               onChange={(e) => setForm({ ...form, playerPhone: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               placeholder="+30 6XX XXX XXXX"
               required
             />
@@ -964,7 +964,7 @@ function CreateBookingModal({
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={2}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
               placeholder={t('company.bookings.any_notes')}
             />
           </div>
@@ -972,7 +972,7 @@ function CreateBookingModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary !py-3 flex items-center justify-center gap-2"
+            className="w-full btn-primary py-3! flex items-center justify-center gap-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1088,7 +1088,7 @@ function ExternalBlockModal({
             <select
               value={form.roomId}
               onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               required
             >
               <option value="">{t('company.bookings.select_room')}</option>
@@ -1124,7 +1124,7 @@ function ExternalBlockModal({
                   type="time"
                   value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-brand-red focus:outline-hidden"
                 />
               </div>
             ) : (
@@ -1133,7 +1133,7 @@ function ExternalBlockModal({
                   type="time"
                   value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   required
                 />
                 <p className="text-xs text-brand-text-secondary mt-1">
@@ -1148,7 +1148,7 @@ function ExternalBlockModal({
             <select
               value={form.externalSource}
               onChange={(e) => setForm({ ...form, externalSource: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
             >
               <option value="escapeall">{t('company.bookings.source_escapeall')}</option>
               <option value="phone">{t('company.bookings.source_phone')}</option>
@@ -1164,7 +1164,7 @@ function ExternalBlockModal({
               type="text"
               value={form.playerName}
               onChange={(e) => setForm({ ...form, playerName: e.target.value })}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               placeholder={t('company.bookings.customer_name')}
             />
           </div>
@@ -1175,7 +1175,7 @@ function ExternalBlockModal({
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={2}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
               placeholder={t('company.bookings.additional_details')}
             />
           </div>
@@ -1183,7 +1183,7 @@ function ExternalBlockModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full btn-primary !py-3 flex items-center justify-center gap-2"
+            className="w-full btn-primary py-3! flex items-center justify-center gap-2"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

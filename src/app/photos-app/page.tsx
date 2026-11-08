@@ -165,7 +165,7 @@ export default function PhotosRoomsDashboard() {
               className="group bg-brand-surface rounded-2xl border border-white/5 hover:border-brand-red/30 transition-all cursor-pointer overflow-hidden"
             >
               {/* Room image or placeholder */}
-              <div className="aspect-[16/9] bg-brand-bg relative flex items-center justify-center">
+              <div className="aspect-video bg-brand-bg relative flex items-center justify-center">
                 {room.image ? (
                   <img src={room.image} alt={room.title} className="w-full h-full object-cover" />
                 ) : (

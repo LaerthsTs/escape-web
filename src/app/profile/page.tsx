@@ -100,7 +100,7 @@ export default function ProfilePage() {
     <>
       {/* Profile Header */}
       <section className="pt-28 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-red/10 via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-red/10 via-brand-bg to-brand-dark" />
         <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                     onChange={(e) => setNewName(e.target.value)}
                     className="input-field flex-1"
                   />
-                  <button onClick={handleSaveName} className="btn-primary !py-3 !px-6">
+                  <button onClick={handleSaveName} className="btn-primary py-3! px-6!">
                     {t('profile.save')}
                   </button>
                 </div>
@@ -358,7 +358,7 @@ export default function ProfilePage() {
                     placeholder="+30 6XX XXX XXXX"
                     className="input-field flex-1"
                   />
-                  <button onClick={handleSavePhone} className="btn-primary !py-3 !px-6">
+                  <button onClick={handleSavePhone} className="btn-primary py-3! px-6!">
                     {t('profile.save')}
                   </button>
                 </div>

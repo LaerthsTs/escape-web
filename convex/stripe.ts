@@ -25,6 +25,11 @@ function getStripe() {
   return new Stripe(key, { apiVersion: "2025-02-24.acacia" as any });
 }
 
+// stripe-node 23's types target API 2026-09-30, which renamed this param to
+// allowed_payment_method_types. We're pinned to 2025-02-24.acacia above, where
+// Checkout still expects payment_method_types, so keep sending the old name.
+const CARD_ONLY = { payment_method_types: ["card"] } as {};
+
 /**
  * Create a Stripe Checkout Session for a company's plan subscription.
  * Returns the checkout URL to redirect the user to.
@@ -96,7 +101,7 @@ export const createCheckoutSession = action({
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
-      payment_method_types: ["card"],
+      ...CARD_ONLY,
       line_items: [
         {
           price_data: {
@@ -293,7 +298,7 @@ export const createBookingCheckout = action({
     // Create Stripe checkout session (one-time payment)
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      ...CARD_ONLY,
       customer_email: user.email,
       line_items: [
         {
@@ -383,7 +388,7 @@ export const retryBookingPayment = action({
     // Create a new Stripe checkout session for the same booking
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      ...CARD_ONLY,
       customer_email: user?.email,
       line_items: [
         {

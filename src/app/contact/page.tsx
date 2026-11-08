@@ -105,7 +105,7 @@ export default function ContactPage() {
     <>
       {/* Hero */}
       <section className="pt-32 pb-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -137,7 +137,7 @@ export default function ContactPage() {
               <StaggerItem key={i} animation="fadeUp">
                 <a
                   href={info.href}
-                  className="block bg-brand-card border border-brand-border rounded-2xl p-5 text-center transition-all duration-300 hover:border-brand-red/30 hover:shadow-[0_0_30px_rgba(255,30,30,0.1)] group"
+                  className="block bg-brand-card border border-brand-border rounded-2xl p-5 text-center transition-all duration-300 hover:border-brand-red/30 hover:shadow-[0_0_30px_rgba(200,16,27,0.1)] group"
                 >
                   <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand-red/10 mb-3 group-hover:bg-brand-red/20 transition-colors">
                     <info.icon className="w-5 h-5 text-brand-red" />

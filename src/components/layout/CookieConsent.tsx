@@ -32,11 +32,11 @@ export function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 md:p-6 animate-in slide-in-from-bottom duration-500">
+    <div className="fixed bottom-0 left-0 right-0 z-9999 p-4 md:p-6 animate-in slide-in-from-bottom duration-500">
       <div className="max-w-2xl mx-auto bg-brand-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/40 p-5 md:p-6">
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
             <Cookie className="w-5 h-5 text-brand-red" />
           </div>
           <div className="flex-1 min-w-0">
@@ -55,7 +55,7 @@ export function CookieConsent() {
           </div>
           <button
             onClick={decline}
-            className="text-brand-text-muted hover:text-white transition-colors flex-shrink-0 p-1"
+            className="text-brand-text-muted hover:text-white transition-colors shrink-0 p-1"
             aria-label="Close"
           >
             <X className="w-4 h-4" />

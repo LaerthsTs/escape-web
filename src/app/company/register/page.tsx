@@ -118,7 +118,7 @@ export default function CompanyRegisterPage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => updateField('name', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder={t('company.register.company_name_placeholder')}
                   required
                 />
@@ -134,7 +134,7 @@ export default function CompanyRegisterPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder={t('company.register.email_placeholder')}
                   required
                 />
@@ -150,7 +150,7 @@ export default function CompanyRegisterPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder={t('company.register.phone_placeholder')}
                   required
                 />
@@ -167,7 +167,7 @@ export default function CompanyRegisterPage() {
                     type="text"
                     value={form.address}
                     onChange={(e) => updateField('address', e.target.value)}
-                    className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                    className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                     placeholder={t('company.register.address_placeholder')}
                     required
                   />
@@ -179,7 +179,7 @@ export default function CompanyRegisterPage() {
                   type="text"
                   value={form.city}
                   onChange={(e) => updateField('city', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder={t('company.register.city_placeholder')}
                   required
                 />
@@ -195,7 +195,7 @@ export default function CompanyRegisterPage() {
                   type="text"
                   value={form.vatNumber}
                   onChange={(e) => updateField('vatNumber', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder={t('company.register.vat_placeholder')}
                 />
               </div>
@@ -208,7 +208,7 @@ export default function CompanyRegisterPage() {
                 value={form.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 rows={3}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors resize-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors resize-none"
                 placeholder={t('company.register.description_placeholder')}
                 required
               />
@@ -223,7 +223,7 @@ export default function CompanyRegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => updateField('password', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -247,7 +247,7 @@ export default function CompanyRegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={form.confirmPassword}
                   onChange={(e) => updateField('confirmPassword', e.target.value)}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -258,7 +258,7 @@ export default function CompanyRegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary !py-3 text-base flex items-center justify-center gap-2"
+              className="w-full btn-primary py-3! text-base flex items-center justify-center gap-2"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

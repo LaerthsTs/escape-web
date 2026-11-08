@@ -254,7 +254,7 @@ function CheckoutContent() {
                       name="paymentTerms"
                       checked={paymentTerms === 'full'}
                       onChange={() => setPaymentTerms('full')}
-                      className="accent-[#FF1E1E]"
+                      className="accent-brand-red"
                     />
                     <div className="flex-1">
                       <div className="font-medium">{t('checkout.pay_full')}</div>
@@ -276,7 +276,7 @@ function CheckoutContent() {
                       name="paymentTerms"
                       checked={paymentTerms === 'deposit_20'}
                       onChange={() => setPaymentTerms('deposit_20')}
-                      className="accent-[#FF1E1E]"
+                      className="accent-brand-red"
                     />
                     <div className="flex-1">
                       <div className="font-medium">{t('checkout.pay_deposit')}</div>
@@ -298,7 +298,7 @@ function CheckoutContent() {
                       name="paymentTerms"
                       checked={paymentTerms === 'pay_on_arrival'}
                       onChange={() => setPaymentTerms('pay_on_arrival')}
-                      className="accent-[#FF1E1E]"
+                      className="accent-brand-red"
                     />
                     <div className="flex-1">
                       <div className="font-medium">{t('checkout.pay_arrival')}</div>
@@ -324,7 +324,7 @@ function CheckoutContent() {
                   onChange={(e) => setPromoCode(e.target.value)}
                   className="input-field flex-1"
                 />
-                <button className="btn-outline !py-3 !px-6">{t('checkout.promo_apply')}</button>
+                <button className="btn-outline py-3! px-6!">{t('checkout.promo_apply')}</button>
               </div>
             </div>
           </div>

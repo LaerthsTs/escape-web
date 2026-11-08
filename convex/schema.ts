@@ -259,8 +259,15 @@ export default defineSchema({
     endDate: v.number(),
     isActive: v.boolean(),
     cancelledAt: v.optional(v.number()),
+    // ── In-App Purchase fields ──
+    platform: v.optional(v.union(v.literal("ios"), v.literal("android"), v.literal("web"))),
+    productId: v.optional(v.string()),         // App Store / Play Store product ID
+    transactionId: v.optional(v.string()),     // Store transaction ID
+    originalTransactionId: v.optional(v.string()), // For subscription renewals
+    purchaseToken: v.optional(v.string()),     // Android purchase token
   })
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_transactionId", ["transactionId"]),
 
   // ─── Social Posts ───
   posts: defineTable({

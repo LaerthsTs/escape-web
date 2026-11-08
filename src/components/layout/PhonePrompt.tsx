@@ -62,7 +62,7 @@ export function PhonePrompt() {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-brand-surface rounded-2xl border border-white/5 p-6 w-full max-w-sm animate-in fade-in zoom-in-95 duration-300">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export function PhonePrompt() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+30 6XX XXX XXXX"
-            className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+            className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
             autoFocus
           />
         </div>
@@ -104,7 +104,7 @@ export function PhonePrompt() {
           <button
             onClick={handleSave}
             disabled={!phone.trim() || saving}
-            className="flex-1 btn-primary !py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 btn-primary py-3! flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {saving ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

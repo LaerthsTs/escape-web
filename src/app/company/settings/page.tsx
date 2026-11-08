@@ -406,7 +406,7 @@ export default function CompanySettingsPage() {
                   type="text"
                   value={profile.name}
                   onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   required
                 />
               </div>
@@ -420,7 +420,7 @@ export default function CompanySettingsPage() {
                   type="tel"
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   required
                 />
               </div>
@@ -435,7 +435,7 @@ export default function CompanySettingsPage() {
                     type="text"
                     value={profile.address}
                     onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                    className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                    className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                     required
                   />
                 </div>
@@ -446,7 +446,7 @@ export default function CompanySettingsPage() {
                   type="text"
                   value={profile.city}
                   onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   required
                 />
               </div>
@@ -462,7 +462,7 @@ export default function CompanySettingsPage() {
                   type="text"
                   value={profile.vatNumber}
                   onChange={(e) => setProfile({ ...profile, vatNumber: e.target.value })}
-                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 />
               </div>
             </div>
@@ -473,7 +473,7 @@ export default function CompanySettingsPage() {
                 value={profile.description}
                 onChange={(e) => setProfile({ ...profile, description: e.target.value })}
                 rows={3}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none resize-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden resize-none"
                 required
               />
             </div>
@@ -502,8 +502,8 @@ export default function CompanySettingsPage() {
 
       {/* Early Access Tab */}
       {activeTab === 'early-access' && currentPlan === 'free' && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-white/5 via-brand-surface to-brand-surface rounded-2xl border border-white/10 p-8 md:p-12 text-center">
-          <div className="absolute inset-0 bg-brand-bg/60 backdrop-blur-sm" />
+        <div className="relative overflow-hidden bg-linear-to-br from-white/5 via-brand-surface to-brand-surface rounded-2xl border border-white/10 p-8 md:p-12 text-center">
+          <div className="absolute inset-0 bg-brand-bg/60 backdrop-blur-xs" />
           <div className="relative space-y-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center">
               <Lock className="w-8 h-8 text-brand-text-secondary" />
@@ -519,7 +519,7 @@ export default function CompanySettingsPage() {
       {activeTab === 'early-access' && currentPlan !== 'free' && (
         <div className="space-y-6">
           {/* Hero card */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-brand-red/20 via-brand-surface to-brand-surface rounded-2xl border border-brand-red/20 p-6 md:p-8">
+          <div className="relative overflow-hidden bg-linear-to-br from-brand-red/20 via-brand-surface to-brand-surface rounded-2xl border border-brand-red/20 p-6 md:p-8">
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 bg-brand-red/10 border border-brand-red/30 rounded-full px-3 py-1 mb-4">
@@ -676,7 +676,7 @@ export default function CompanySettingsPage() {
       {activeTab === 'translations' && (
         <div className="space-y-6">
           {/* Hero */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500/20 via-brand-surface to-brand-surface rounded-2xl border border-blue-500/20 p-6 md:p-8">
+          <div className="relative overflow-hidden bg-linear-to-br from-blue-500/20 via-brand-surface to-brand-surface rounded-2xl border border-blue-500/20 p-6 md:p-8">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-3 py-1 mb-4">
@@ -771,7 +771,7 @@ export default function CompanySettingsPage() {
       {activeTab === 'widget' && (
         <div className="space-y-6">
           {/* Hero */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-brand-red/20 via-brand-surface to-brand-surface rounded-2xl border border-brand-red/20 p-6 md:p-8">
+          <div className="relative overflow-hidden bg-linear-to-br from-brand-red/20 via-brand-surface to-brand-surface rounded-2xl border border-brand-red/20 p-6 md:p-8">
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 bg-brand-red/10 border border-brand-red/30 rounded-full px-3 py-1 mb-4">

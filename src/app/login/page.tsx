@@ -46,7 +46,7 @@ export default function LoginPage() {
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-bg via-brand-dark to-brand-bg" />
+      <div className="absolute inset-0 bg-linear-to-br from-brand-bg via-brand-dark to-brand-bg" />
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-brand-red/5 rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-20">
@@ -87,7 +87,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t('auth.email_placeholder')}
-                  className="input-field !pl-12"
+                  className="input-field pl-12!"
                   required
                 />
               </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('auth.password_placeholder')}
-                  className="input-field !pl-12 !pr-12"
+                  className="input-field pl-12! pr-12!"
                   required
                 />
                 <button
@@ -127,7 +127,7 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-brand-border bg-brand-surface text-brand-red focus:ring-brand-red/50"
+                  className="w-4 h-4 rounded-sm border-brand-border bg-brand-surface text-brand-red focus:ring-brand-red/50"
                 />
                 <span className="text-sm text-brand-text-secondary">
                   {t('auth.remember_me')}

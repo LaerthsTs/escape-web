@@ -26,6 +26,20 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'Notifications',
     'nav.tickets': 'My Tickets',
 
+    // ── Horror microcopy ──
+    'horror.enter': 'Enter if you dare',
+    'horror.descend': 'Descend',
+    'horror.case_file': 'Case file',
+    'horror.survivor': 'Survivor',
+    'horror.body_count': 'The count so far',
+    'horror.watching': 'They are watching',
+    'horror.ritual': 'Ritual',
+    'horror.no_escape': 'There is no way out… unless you find it.',
+    'horror.intro': 'Don’t let them lock you in.',
+    'horror.footer_tag': 'Nobody escapes forever.',
+    'horror.featured_tag': 'Doors that should have stayed shut',
+    'horror.clock': 'The clock is already running',
+
     // ── Hero ──
     'hero.badge': 'The #1 Escape Room Platform',
     'hero.title1': 'Find & Book the Best',
@@ -1880,6 +1894,20 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'Ειδοποιήσεις',
     'nav.tickets': 'Τα Εισιτήριά μου',
 
+    // ── Horror microcopy ──
+    'horror.enter': 'Μπες αν τολμάς',
+    'horror.descend': 'Κατέβα',
+    'horror.case_file': 'Φάκελος',
+    'horror.survivor': 'Επιζών',
+    'horror.body_count': 'Ο απολογισμός μέχρι τώρα',
+    'horror.watching': 'Σε παρακολουθούν',
+    'horror.ritual': 'Τελετουργία',
+    'horror.no_escape': 'Δεν υπάρχει διέξοδος… εκτός αν τη βρεις.',
+    'horror.intro': 'Μην τους αφήσεις να σε κλειδώσουν.',
+    'horror.footer_tag': 'Κανείς δεν δραπετεύει για πάντα.',
+    'horror.featured_tag': 'Πόρτες που έπρεπε να μείνουν κλειστές',
+    'horror.clock': 'Το ρολόι ήδη μετράει',
+
     // ── Hero ──
     'hero.badge': 'Η #1 Πλατφόρμα Escape Room',
     'hero.title1': 'Βρες & Κλείσε τα Καλύτερα',
@@ -3733,6 +3761,20 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.profile': 'Profiel',
     'nav.notifications': 'Meldingen',
     'nav.tickets': 'Mijn Tickets',
+
+    // ── Horror microcopy ──
+    'horror.enter': 'Kom binnen als je durft',
+    'horror.descend': 'Daal af',
+    'horror.case_file': 'Dossier',
+    'horror.survivor': 'Overlevende',
+    'horror.body_count': 'De telling tot nu toe',
+    'horror.watching': 'Ze kijken mee',
+    'horror.ritual': 'Ritueel',
+    'horror.no_escape': 'Er is geen uitweg… tenzij je hem vindt.',
+    'horror.intro': 'Laat ze je niet opsluiten.',
+    'horror.footer_tag': 'Niemand ontsnapt voor altijd.',
+    'horror.featured_tag': 'Deuren die dicht hadden moeten blijven',
+    'horror.clock': 'De klok tikt al',
 
     // ── Footer ──
     'footer.tagline': 'Het ultieme platform om escape rooms te ontdekken, te boeken en te beleven.',

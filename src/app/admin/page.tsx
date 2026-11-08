@@ -334,7 +334,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                       {topCompanies.map((c: any, i: number) => (
-                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
+                        <tr key={i} className="border-b border-white/5 hover:bg-white/2">
                           <td className="px-3 py-2.5 text-sm text-brand-text-secondary">{i + 1}</td>
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export default function AdminPage() {
                 value={companySearch}
                 onChange={(e) => setCompanySearch(e.target.value)}
                 placeholder={t('admin.search_companies')}
-                className="w-full bg-brand-surface border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+                className="w-full bg-brand-surface border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               />
             </div>
 
@@ -416,7 +416,7 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {filteredCompanies.map((company: any) => (
-                      <tr key={company._id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={company._id} className="border-b border-white/5 hover:bg-white/2">
                         <td className="px-4 py-3">
                           <p className="font-semibold text-sm">{company.name}</p>
                         </td>
@@ -469,9 +469,9 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {bookings.recent.map((b: any) => (
-                      <tr key={b._id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={b._id} className="border-b border-white/5 hover:bg-white/2">
                         <td className="px-4 py-3">
-                          <span className="text-xs font-mono bg-brand-bg px-2 py-1 rounded">{b.bookingCode}</span>
+                          <span className="text-xs font-mono bg-brand-bg px-2 py-1 rounded-sm">{b.bookingCode}</span>
                         </td>
                         <td className="px-4 py-3 text-sm font-medium">{b.roomTitle}</td>
                         <td className="px-4 py-3 text-sm text-brand-text-secondary">{b.companyName}</td>
@@ -636,7 +636,7 @@ function CompanyDetailCard({ company, expanded, onToggle, onApprove, onDecline, 
   return (
     <div className="bg-brand-surface rounded-2xl border border-white/5 overflow-hidden">
       <div
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/2 transition-colors"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
@@ -688,7 +688,7 @@ function CompanyDetailCard({ company, expanded, onToggle, onApprove, onDecline, 
                     onChange={(e) => setDeclineNotes(e.target.value)}
                     placeholder={t('admin.decline_reason')}
                     rows={2}
-                    className="w-full bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+                    className="w-full bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
                     autoFocus
                   />
                   <div className="flex gap-2">

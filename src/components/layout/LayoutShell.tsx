@@ -11,6 +11,10 @@ import Link from 'next/link';
 import { Unlock } from 'lucide-react';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useTranslation } from '@/lib/i18n';
+import { HorrorDefs } from '@/components/horror/HorrorDefs';
+import { HorrorFX } from '@/components/horror/HorrorFX';
+import { HorrorIntro } from '@/components/horror/HorrorIntro';
+import { BloodDrips } from '@/components/horror/BloodDrips';
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -54,6 +58,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     // Company portal / Photos app have their own layout — no main Navbar/Footer
     return (
       <>
+        <HorrorDefs />
         {children}
         <CookieConsent />
       </>
@@ -64,15 +69,18 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   if (isBusinessSubdomain && isPublicPage) {
     return (
       <>
-        <header className="fixed top-0 left-0 right-0 z-50 glass shadow-lg shadow-black/20">
+        <HorrorDefs />
+        <HorrorIntro />
+        <header className="fixed top-0 left-0 right-0 z-50 glass shadow-lg shadow-black/40">
+          <BloodDrips count={16} seed={5} maxLength={22} falling={false} className="top-full!" />
           <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 md:h-20">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="w-9 h-9 bg-brand-red rounded-lg flex items-center justify-center">
-                  <Unlock className="w-5 h-5 text-white" />
+                <div className="w-9 h-9 bg-linear-to-b from-brand-red to-brand-blood rounded-md flex items-center justify-center shadow-[0_0_18px_rgba(200,16,27,0.6)]">
+                  <Unlock className="w-5 h-5 text-brand-bone" />
                 </div>
-                <span className="text-xl font-display font-bold tracking-wider">
-                  UN<span className="text-brand-red">LOCKED</span>
+                <span className="font-blood text-lg tracking-wider text-brand-bone">
+                  UN<span className="text-brand-red text-blood-glow">LOCKED</span>
                 </span>
               </Link>
               <div className="flex items-center gap-3">
@@ -98,6 +106,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           </motion.div>
         </main>
         <Footer />
+        <HorrorFX />
         <CookieConsent />
       </>
     );
@@ -105,6 +114,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <HorrorDefs />
+      <HorrorIntro />
       <Navbar />
       <main className="flex-1">
         <motion.div
@@ -117,6 +128,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         </motion.div>
       </main>
       <Footer />
+      <HorrorFX />
       <CookieConsent />
       <PhonePrompt />
     </>

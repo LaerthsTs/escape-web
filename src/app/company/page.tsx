@@ -97,7 +97,7 @@ export default function CompanyDashboardPage() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* ── Hero Header ── */}
       <AnimateIn animation="fadeUp">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-surface via-brand-surface to-brand-red/5 border border-white/5 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-brand-surface via-brand-surface to-brand-red/5 border border-white/5 p-6 md:p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -114,7 +114,7 @@ export default function CompanyDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <Link href={p('/company/bookings')} className="btn-ghost text-sm flex items-center gap-2 !py-2.5 !px-4">
+            <Link href={p('/company/bookings')} className="btn-ghost text-sm flex items-center gap-2 py-2.5! px-4!">
               <CalendarDays className="w-4 h-4" /> {t('company.nav.bookings')}
             </Link>
             {atLimit ? (
@@ -275,7 +275,7 @@ export default function CompanyDashboardPage() {
                 {todayBookings.map((booking: any, idx: number) => (
                   <div
                     key={booking._id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-brand-bg/50 border border-white/[0.03] hover:border-white/10 transition-colors group"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-brand-bg/50 border border-white/3 hover:border-white/10 transition-colors group"
                   >
                     {/* Time column */}
                     <div className="relative flex flex-col items-center">
@@ -370,22 +370,22 @@ export default function CompanyDashboardPage() {
 
           {/* Row 2: Insights */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/[0.03]">
+            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/3">
               <Clock className="w-4 h-4 text-orange-400 mb-2" />
               <p className="text-lg font-bold">{fa.peakTime}</p>
               <p className="text-[10px] text-brand-text-secondary mt-0.5">{t('company.dashboard.peak_time')}</p>
             </div>
-            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/[0.03]">
+            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/3">
               <CalendarDays className="w-4 h-4 text-pink-400 mb-2" />
               <p className="text-lg font-bold">{fa.peakDay}</p>
               <p className="text-[10px] text-brand-text-secondary mt-0.5">{t('company.dashboard.peak_day')}</p>
             </div>
-            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/[0.03]">
+            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/3">
               <MessageSquare className="w-4 h-4 text-yellow-400 mb-2" />
               <p className="text-lg font-bold">{fa.totalReviews}</p>
               <p className="text-[10px] text-brand-text-secondary mt-0.5">{t('company.dashboard.total_reviews')}</p>
             </div>
-            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/[0.03]">
+            <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/3">
               <Code className="w-4 h-4 text-teal-400 mb-2" />
               <div className="flex items-baseline gap-1.5">
                 <p className="text-lg font-bold">{fa.platformBookings}</p>
@@ -398,7 +398,7 @@ export default function CompanyDashboardPage() {
 
           {/* Row 3: Subscribers + Revenue per Room */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-brand-bg/50 rounded-xl p-4 border border-white/[0.03]">
+            <div className="bg-brand-bg/50 rounded-xl p-4 border border-white/3">
               <p className="text-2xl font-bold">{fa.totalSubscribers}</p>
               <p className="text-xs text-brand-text-secondary mt-1">{t('company.dashboard.total_subscribers')}</p>
               <div className="flex items-center gap-3 mt-3">
@@ -411,7 +411,7 @@ export default function CompanyDashboardPage() {
               </div>
             </div>
             {fa.revenuePerRoom?.slice(0, 2).map((r: any) => (
-              <div key={r.roomId} className="bg-brand-bg/50 rounded-xl p-4 border border-white/[0.03]">
+              <div key={r.roomId} className="bg-brand-bg/50 rounded-xl p-4 border border-white/3">
                 <p className="text-lg font-bold text-emerald-400">€{r.revenue}</p>
                 <p className="text-xs text-brand-text-secondary mt-1 truncate">{r.title}</p>
                 <p className="text-[10px] text-brand-text-secondary mt-2">{t('company.dashboard.revenue_from_room')}</p>
@@ -424,7 +424,7 @@ export default function CompanyDashboardPage() {
 
       {/* ── Analytics Upsell (Starter) ── */}
       {plan === 'starter' && stats && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-surface to-brand-red/5 border border-white/5 p-6">
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-brand-surface to-brand-red/5 border border-white/5 p-6">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10 flex items-center gap-5">
             <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center shrink-0">
@@ -559,7 +559,7 @@ function MiniStat({ icon: Icon, label, value, color }: {
   icon: any; label: string; value: string | number; color: string;
 }) {
   return (
-    <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/[0.03]">
+    <div className="bg-brand-bg/50 rounded-xl p-3 border border-white/3">
       <Icon className={`w-4 h-4 ${color} mb-2`} />
       <p className="text-lg font-bold">{value}</p>
       <p className="text-[10px] text-brand-text-secondary mt-0.5">{label}</p>
@@ -618,7 +618,7 @@ function OnboardingBanner({
           </div>
           <button
             onClick={() => acceptTerms({ companyId: companyId as any })}
-            className="btn-primary !py-3 px-8"
+            className="btn-primary py-3! px-8"
           >
             {t('company.onboarding.accept_terms')}
           </button>
@@ -751,7 +751,7 @@ function OnboardingBanner({
           </p>
           <button
             onClick={() => resubmit({ companyId: companyId as any })}
-            className="btn-primary !py-3 px-8"
+            className="btn-primary py-3! px-8"
           >
             {t('company.onboarding.resubmit')}
           </button>

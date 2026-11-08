@@ -1,80 +1,77 @@
 'use client';
 
-import { Search, CalendarCheck, KeyRound, PartyPopper } from 'lucide-react';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Search, CalendarCheck, KeyRound, DoorOpen } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
-import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
+import { StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
+import { HorrorHeading } from '@/components/horror/HorrorHeading';
 
 export function HowItWorks() {
   const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 80%', 'end 60%'] });
+  const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   const steps = [
-    {
-      icon: Search,
-      title: t('how.step1.title'),
-      description: t('how.step1.desc'),
-      step: '01',
-    },
-    {
-      icon: CalendarCheck,
-      title: t('how.step2.title'),
-      description: t('how.step2.desc'),
-      step: '02',
-    },
-    {
-      icon: KeyRound,
-      title: t('how.step3.title'),
-      description: t('how.step3.desc'),
-      step: '03',
-    },
-    {
-      icon: PartyPopper,
-      title: t('how.step4.title'),
-      description: t('how.step4.desc'),
-      step: '04',
-    },
+    { icon: Search, title: t('how.step1.title'), description: t('how.step1.desc'), step: 'I' },
+    { icon: CalendarCheck, title: t('how.step2.title'), description: t('how.step2.desc'), step: 'II' },
+    { icon: KeyRound, title: t('how.step3.title'), description: t('how.step3.desc'), step: 'III' },
+    { icon: DoorOpen, title: t('how.step4.title'), description: t('how.step4.desc'), step: 'IV' },
   ];
 
   return (
-    <section id="how-it-works" className="py-20 md:py-28">
+    <section id="how-it-works" className="relative py-24 md:py-32 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AnimateIn animation="fadeUp" className="text-center mb-14">
-          <h2 className="section-heading mb-4">
-            {t('how.title')} <span className="text-gradient">{t('how.title_highlight')}</span>
-          </h2>
-          <p className="section-subheading mx-auto">
-            {t('how.subtitle')}
-          </p>
-        </AnimateIn>
+        <HorrorHeading
+          kicker={t('horror.no_escape')}
+          title={t('how.title')}
+          highlight={t('how.title_highlight')}
+          subtitle={t('how.subtitle')}
+        />
 
-        <StaggerContainer stagger={0.15} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {steps.map((step, i) => (
-            <StaggerItem key={i} animation="fadeUp">
-              <div className="relative group">
-                {/* Connector line */}
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-12 left-[calc(50%+48px)] w-[calc(100%-48px)] h-px bg-gradient-to-r from-brand-border to-transparent" />
-                )}
+        <div ref={ref} className="relative">
+          {/* A line of blood that runs between the steps as you scroll */}
+          <div aria-hidden className="hidden lg:block absolute top-[52px] left-[12%] right-[12%] h-[3px] bg-brand-border/40 rounded-full">
+            <motion.div
+              className="h-full origin-left rounded-full bg-linear-to-r from-brand-blood via-brand-red to-brand-red-light shadow-[0_0_12px_rgba(255,40,50,0.8)]"
+              style={{ scaleX: lineScale }}
+            />
+          </div>
 
-                <div className="text-center">
-                  {/* Step number */}
-                  <span className="text-6xl font-display font-bold text-brand-surface/50 group-hover:text-brand-red/20 transition-colors duration-500">
-                    {step.step}
-                  </span>
-
-                  {/* Icon */}
-                  <div className="relative -mt-6 mb-5 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20 group-hover:bg-brand-red/20 group-hover:border-brand-red/40 group-hover:scale-110 transition-all duration-300">
-                    <step.icon className="w-7 h-7 text-brand-red" />
+          <StaggerContainer stagger={0.18} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {steps.map((step, i) => (
+              <StaggerItem key={i} animation="fadeUp">
+                <div className="relative group text-center">
+                  {/* Candle-lit seal */}
+                  <div className="relative mx-auto mb-6 w-[104px] h-[104px]">
+                    <div
+                      className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,90,40,0.35),transparent_65%)] blur-md animate-flicker"
+                      style={{ animationDelay: `${i * 0.9}s` }}
+                    />
+                    <div className="absolute inset-[14px] rounded-full border border-brand-red/50 bg-black flex items-center justify-center shadow-[inset_0_0_20px_rgba(200,16,27,0.4),0_0_24px_rgba(200,16,27,0.35)] group-hover:animate-shake">
+                      <step.icon className="w-8 h-8 text-brand-red-light" />
+                    </div>
+                    {/* Rotating ritual ring */}
+                    <svg aria-hidden viewBox="0 0 104 104" className="absolute inset-0 w-full h-full animate-spin-slow [animation-duration:24s]">
+                      <circle cx="52" cy="52" r="49" fill="none" stroke="#c8101b" strokeOpacity="0.5" strokeWidth="1" strokeDasharray="2 7" />
+                    </svg>
                   </div>
 
-                  <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                  <p className="text-sm text-brand-text-secondary leading-relaxed">
+                  <div className="horror-label mb-2">
+                    {t('horror.ritual')} {step.step}
+                  </div>
+                  <h3 className="text-xl font-display font-bold mb-3 text-brand-bone group-hover:text-brand-red-light transition-colors">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-brand-text-secondary leading-relaxed max-w-xs mx-auto">
                     {step.description}
                   </p>
                 </div>
-              </div>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
       </div>
     </section>
   );

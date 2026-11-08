@@ -1,8 +1,456 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Fonts (Inter, Noto Serif Display, Nosifer, Special Elite) are linked in app/layout.tsx;
+   a remote @import here is dropped by the CSS pipeline. */
+@import 'tailwindcss';
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+/* ──────────────────────────────────────────────────────────────
+   UNLOCKED — horror design system
+   Every page reads these tokens, so the whole site goes dark at once.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-brand-bg: #080505;
+  --color-brand-dark: #040202;
+  --color-brand-card: #110909;
+  --color-brand-surface: #1b0f0e;
+  --color-brand-border: #36171a;
+  --color-brand-red: #c8101b;
+  --color-brand-red-hover: #8f0610;
+  --color-brand-red-light: #ff2a36;
+  --color-brand-red-glow: rgba(200, 16, 27, 0.35);
+  --color-brand-gold: #c99a2e;
+  --color-brand-text: #ece2d6;
+  --color-brand-text-secondary: #a3958c;
+  --color-brand-text-muted: #6a5450;
+  --color-brand-bone: #e8dcc8;
+  --color-brand-blood: #5c0008;
+  --color-brand-ash: #2a2220;
+
+  /* Sharper corners everywhere: nothing about this place is soft */
+  --radius-lg: 0.3rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.75rem;
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: 'Noto Serif Display', Georgia, 'Times New Roman', serif;
+  --font-blood: Nosifer, 'Noto Serif Display', Georgia, serif;
+  --font-type: 'Special Elite', 'Courier New', Courier, monospace;
+
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite alternate;
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.6s ease-out both;
+  --animate-slide-in-left: slide-in-left 0.5s ease-out forwards;
+  --animate-slide-in-right: slide-in-right 0.5s ease-out forwards;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-scale-in: scale-in 0.4s ease-out forwards;
+  --animate-shimmer: shimmer 2s infinite linear;
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  --animate-bounce-subtle: bounce-subtle 2s ease-in-out infinite;
+  --animate-gradient-x: gradient-x 3s ease infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-flicker: flicker 5s linear infinite;
+  --animate-flicker-fast: flicker 2.2s linear infinite;
+  --animate-heartbeat: heartbeat 1.4s ease-in-out infinite;
+  --animate-shake: shake 0.35s linear infinite;
+  --animate-sway: sway 5s ease-in-out infinite;
+  --animate-blink: caret-blink 1s steps(1) infinite;
+
+  @keyframes glow-pulse {
+    0% {
+      box-shadow: 0 0 18px rgba(200, 16, 27, 0.25);
+    }
+    100% {
+      box-shadow: 0 0 42px rgba(255, 30, 40, 0.6);
+    }
+  }
+  @keyframes fade-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+      filter: blur(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes slide-in-left {
+    0% {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes slide-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-1deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(1deg);
+    }
+  }
+  @keyframes scale-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+  @keyframes bounce-subtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  @keyframes gradient-x {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+  /* A dying fluorescent tube: mostly on, with sudden drops */
+  @keyframes flicker {
+    0%,
+    18%,
+    22%,
+    25%,
+    53%,
+    57%,
+    100% {
+      opacity: 1;
+    }
+    20%,
+    24%,
+    55% {
+      opacity: 0.25;
+    }
+    21% {
+      opacity: 0.8;
+    }
+    56% {
+      opacity: 0.55;
+    }
+  }
+  @keyframes heartbeat {
+    0%,
+    40%,
+    100% {
+      transform: scale(1);
+    }
+    10%,
+    30% {
+      transform: scale(1.06);
+    }
+    20% {
+      transform: scale(0.99);
+    }
+  }
+  @keyframes shake {
+    0% {
+      transform: translate(0, 0) rotate(0);
+    }
+    25% {
+      transform: translate(-1.5px, 1px) rotate(-1deg);
+    }
+    50% {
+      transform: translate(1.5px, -1px) rotate(1deg);
+    }
+    75% {
+      transform: translate(-1px, -1px) rotate(0);
+    }
+    100% {
+      transform: translate(0, 0) rotate(0);
+    }
+  }
+  @keyframes sway {
+    0%,
+    100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+  @keyframes caret-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
+@property --fx {
+  syntax: '<length-percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --fy {
+  syntax: '<length-percentage>';
+  inherits: true;
+  initial-value: 40%;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+@utility btn-primary {
+  @apply relative overflow-hidden bg-linear-to-b from-[#d4141f] via-brand-red to-brand-red-hover text-brand-bone font-semibold py-3 px-6 sm:px-8 rounded-md
+           border border-brand-red-light/40 tracking-wide
+           shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_24px_-8px_rgba(200,16,27,0.8)]
+           transition-all duration-300
+           hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_0_28px_rgba(255,30,40,0.65),0_0_70px_rgba(200,16,27,0.35)]
+           hover:text-white active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  &:hover:not(:disabled) {
+    animation: heartbeat 1.2s ease-in-out infinite;
+  }
+}
+
+@utility btn-outline {
+  @apply border border-brand-red/70 bg-black/30 text-brand-red-light hover:bg-brand-red/15 hover:text-white hover:border-brand-red-light
+           font-semibold py-3 px-6 sm:px-8 rounded-md transition-all duration-300 tracking-wide
+           hover:shadow-[0_0_24px_rgba(255,30,40,0.35),inset_0_0_18px_rgba(200,16,27,0.25)]
+           active:scale-95;
+}
+
+@utility btn-ghost {
+  @apply text-brand-text-secondary hover:text-brand-red-light hover:bg-brand-red/10
+           font-medium py-2 px-4 rounded-md transition-all duration-200;
+}
+
+/* ── Surfaces ────────────────────────────────────────────── */
+@utility card {
+  @apply bg-brand-card border border-brand-border rounded-lg overflow-hidden
+           transition-all duration-500 hover:border-brand-red/50
+           hover:shadow-[0_0_0_1px_rgba(200,16,27,0.25),0_20px_50px_-20px_rgba(200,16,27,0.55)];
+  background-image:
+    radial-gradient(120% 80% at 50% 0%, rgba(92, 0, 8, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(0, 0, 0, 0.35));
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+@utility card-hover {
+  @apply card hover:-translate-y-1.5;
+}
+
+@utility input-field {
+  @apply w-full bg-black/40 border border-brand-border rounded-md px-4 py-3
+           text-brand-text placeholder-brand-text-muted focus:outline-hidden focus:border-brand-red
+           focus:shadow-[0_0_0_1px_rgba(200,16,27,0.6),0_0_22px_rgba(200,16,27,0.35)] transition-all duration-200;
+}
+
+@utility section-heading {
+  @apply text-3xl md:text-5xl lg:text-6xl font-display font-extrabold tracking-tight text-brand-bone;
+  line-height: 1.05;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.8),
+    0 0 30px rgba(200, 16, 27, 0.18);
+}
+
+@utility section-subheading {
+  @apply text-lg md:text-xl text-brand-text-secondary max-w-2xl;
+}
+
+@utility glass {
+  @apply bg-[#0a0505]/80 backdrop-blur-xl border border-brand-border/60;
+}
+
+@utility glow-border {
+  @apply border border-brand-red/30 shadow-[0_0_18px_rgba(200,16,27,0.2)];
+}
+
+/* Blood-lit text: deep gradient, red glow, the odd flicker */
+@utility text-gradient {
+  @apply bg-clip-text text-transparent;
+  /* A parent's text-shadow would paint over the clipped gradient, so drop it here */
+  text-shadow: none;
+  background-image: linear-gradient(180deg, #ff7076 0%, #ff2a36 40%, #d0101c 75%, #8f0610 100%);
+  filter: drop-shadow(0 0 14px rgba(255, 20, 30, 0.45));
+  animation: flicker 7s linear infinite;
+}
+
+@utility text-gradient-animated {
+  @apply bg-clip-text text-transparent;
+  background-size: 200% auto;
+  background-image: linear-gradient(90deg, #5c0008, #e0101c, #ff4a52, #e0101c, #5c0008);
+  animation: gradient-x 4s ease infinite;
+}
+
+@utility text-blood-glow {
+  text-shadow:
+    0 0 6px rgba(255, 30, 40, 0.7),
+    0 0 24px rgba(200, 16, 27, 0.5),
+    0 0 60px rgba(200, 16, 27, 0.3);
+}
+
+@utility horror-rough {
+  filter: url(#horror-rough) drop-shadow(0 0 14px rgba(255, 20, 30, 0.35));
+}
+
+@utility horror-label {
+  @apply font-type text-xs tracking-[0.25em] text-brand-red-light/80;
+}
+
+/* Glitching text. Usage: <span class="glitch" data-text="Same text">Same text</span> */
+@utility glitch {
+  position: relative;
+  display: inline-block;
+  &::before,
+  &::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  &::before {
+    color: #ff1a2a;
+    transform: translate(-3px, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: glitch-a 4.2s steps(1) infinite;
+    mix-blend-mode: screen;
+  }
+  &::after {
+    color: #3de8ff;
+    opacity: 0.55;
+    transform: translate(3px, 0);
+    clip-path: inset(100% 0 0 0);
+    animation: glitch-b 4.2s steps(1) infinite;
+    mix-blend-mode: screen;
+  }
+}
+
+@utility leaflet-popup-content-wrapper {
+  @apply bg-brand-card border border-brand-border rounded-lg overflow-hidden p-0 shadow-xl;
+}
+
+@utility leaflet-popup-content {
+  @apply m-0! w-auto!;
+}
+
+@utility leaflet-popup-tip {
+  @apply bg-brand-card border border-brand-border;
+}
+
+@utility leaflet-container {
+  & a.leaflet-popup-close-button {
+    @apply text-white hover:text-brand-red z-10 top-2 right-2 bg-black/50 rounded-full w-6 h-6 flex items-center justify-center;
+  }
+}
+
+@utility leaflet-popup-close-button {
+  .leaflet-container &a {
+    @apply text-white hover:text-brand-red z-10 top-2 right-2 bg-black/50 rounded-full w-6 h-6 flex items-center justify-center;
+  }
+}
+
+@utility animate-delay-100 {
+  animation-delay: 100ms;
+}
+@utility animate-delay-200 {
+  animation-delay: 200ms;
+}
+@utility animate-delay-300 {
+  animation-delay: 300ms;
+}
+@utility animate-delay-400 {
+  animation-delay: 400ms;
+}
+@utility animate-delay-500 {
+  animation-delay: 500ms;
+}
+@utility animate-delay-600 {
+  animation-delay: 600ms;
+}
+@utility animate-delay-700 {
+  animation-delay: 700ms;
+}
+@utility animate-delay-800 {
+  animation-delay: 800ms;
+}
+
+@utility page-enter {
+  animation: page-fade-in 0.5s ease-out;
+}
+
+@utility hover-lift {
+  @apply transition-all duration-300;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 34px -10px rgba(200, 16, 27, 0.45);
+  }
+}
+
+@utility icon-hover {
+  @apply transition-all duration-300;
+  &:hover {
+    animation: shake 0.35s linear infinite;
+  }
+}
 
 @layer base {
   * {
@@ -12,18 +460,29 @@
   html {
     scroll-behavior: smooth;
     overflow-x: hidden;
+    background: var(--color-brand-dark);
   }
 
   body {
     @apply bg-brand-bg text-brand-text font-sans antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 50% -10%, rgba(92, 0, 8, 0.28), transparent 70%),
+      radial-gradient(900px 500px at 100% 100%, rgba(92, 0, 8, 0.12), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
   }
 
   ::selection {
-    @apply bg-brand-red/30 text-white;
+    @apply bg-brand-red text-white;
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
   }
 
   ::-webkit-scrollbar-track {
@@ -31,137 +490,13 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-brand-surface rounded-full;
+    background: linear-gradient(180deg, #5c0008, #c8101b 50%, #5c0008);
+    border-radius: 2px;
+    border: 2px solid var(--color-brand-dark);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-brand-border;
-  }
-}
-
-@layer components {
-  .btn-primary {
-    @apply bg-brand-red hover:bg-brand-red-hover text-white font-semibold py-3 px-6 sm:px-8 rounded-xl 
-           transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,30,30,0.4)] 
-           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-outline {
-    @apply border-2 border-brand-red text-brand-red hover:bg-brand-red hover:text-white 
-           font-semibold py-3 px-6 sm:px-8 rounded-xl transition-all duration-300 
-           active:scale-95;
-  }
-
-  .btn-ghost {
-    @apply text-brand-text-secondary hover:text-white hover:bg-brand-surface/50 
-           font-medium py-2 px-4 rounded-lg transition-all duration-200;
-  }
-
-  .card {
-    @apply bg-brand-card border border-brand-border rounded-2xl overflow-hidden 
-           transition-all duration-300 hover:border-brand-red/30 
-           hover:shadow-[0_0_30px_rgba(255,30,30,0.1)];
-  }
-
-  .card-hover {
-    @apply card hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(255,30,30,0.15)];
-  }
-
-  .input-field {
-    @apply w-full bg-brand-surface border border-brand-border rounded-xl px-4 py-3 
-           text-white placeholder-brand-text-muted focus:outline-none focus:border-brand-red 
-           focus:ring-1 focus:ring-brand-red/50 transition-all duration-200;
-  }
-
-  .section-heading {
-    @apply text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight;
-  }
-
-  .section-subheading {
-    @apply text-lg md:text-xl text-brand-text-secondary max-w-2xl;
-  }
-
-  .glass {
-    @apply bg-brand-card/80 backdrop-blur-xl border border-brand-border/50;
-  }
-
-  .glow-border {
-    @apply border border-brand-red/20 shadow-[0_0_15px_rgba(255,30,30,0.1)];
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-brand-red to-brand-red-light bg-clip-text text-transparent;
-  }
-
-  /* Leaflet Popup Overrides */
-  .leaflet-popup-content-wrapper {
-    @apply bg-brand-card border border-brand-border rounded-xl overflow-hidden p-0 shadow-xl;
-  }
-  .leaflet-popup-content {
-    @apply m-0 w-auto !important;
-  }
-  .leaflet-popup-tip {
-    @apply bg-brand-card border border-brand-border;
-  }
-  .leaflet-container a.leaflet-popup-close-button {
-    @apply text-white hover:text-brand-red z-10 top-2 right-2 bg-black/50 rounded-full w-6 h-6 flex items-center justify-center;
-  }
-}
-
-@layer utilities {
-  .animate-delay-100 {
-    animation-delay: 100ms;
-  }
-  .animate-delay-200 {
-    animation-delay: 200ms;
-  }
-  .animate-delay-300 {
-    animation-delay: 300ms;
-  }
-  .animate-delay-400 {
-    animation-delay: 400ms;
-  }
-  .animate-delay-500 {
-    animation-delay: 500ms;
-  }
-  .animate-delay-600 {
-    animation-delay: 600ms;
-  }
-  .animate-delay-700 {
-    animation-delay: 700ms;
-  }
-  .animate-delay-800 {
-    animation-delay: 800ms;
-  }
-
-  /* Page transition */
-  .page-enter {
-    animation: page-fade-in 0.4s ease-out;
-  }
-
-  /* Hover lift effect */
-  .hover-lift {
-    @apply transition-all duration-300;
-  }
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(255, 30, 30, 0.1);
-  }
-
-  /* Interactive icon bounce */
-  .icon-hover {
-    @apply transition-all duration-300;
-  }
-  .icon-hover:hover {
-    transform: scale(1.1) rotate(-3deg);
-  }
-
-  /* Gradient text animation */
-  .text-gradient-animated {
-    @apply bg-clip-text text-transparent;
-    background-size: 200% auto;
-    background-image: linear-gradient(90deg, #FF1E1E, #FF4D4D, #FFD700, #FF4D4D, #FF1E1E);
-    animation: gradient-x 3s ease infinite;
+    background: #ff2a36;
   }
 }
 
@@ -173,5 +508,301 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── Horror motion keyframes (used by components/horror) ─── */
+@keyframes glitch-a {
+  0%,
+  86%,
+  100% {
+    clip-path: inset(100% 0 0 0);
+    transform: translate(0);
+  }
+  87% {
+    clip-path: inset(12% 0 64% 0);
+    transform: translate(-6px, -1px);
+  }
+  89% {
+    clip-path: inset(58% 0 18% 0);
+    transform: translate(5px, 1px);
+  }
+  91% {
+    clip-path: inset(30% 0 45% 0);
+    transform: translate(-3px, 0);
+  }
+  93% {
+    clip-path: inset(80% 0 4% 0);
+    transform: translate(7px, 0);
+  }
+}
+@keyframes glitch-b {
+  0%,
+  86%,
+  100% {
+    clip-path: inset(100% 0 0 0);
+    transform: translate(0);
+  }
+  88% {
+    clip-path: inset(70% 0 10% 0);
+    transform: translate(6px, 1px);
+  }
+  90% {
+    clip-path: inset(5% 0 75% 0);
+    transform: translate(-5px, -1px);
+  }
+  92% {
+    clip-path: inset(40% 0 38% 0);
+    transform: translate(4px, 0);
+  }
+}
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-5%, -10%);
+  }
+  30% {
+    transform: translate(3%, -15%);
+  }
+  50% {
+    transform: translate(12%, 9%);
+  }
+  70% {
+    transform: translate(9%, 4%);
+  }
+  90% {
+    transform: translate(-1%, 7%);
+  }
+}
+@keyframes fog-drift {
+  0% {
+    transform: translate3d(-18%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes fog-drift-rev {
+  0% {
+    transform: translate3d(0, 0, 0) scaleX(-1);
+  }
+  100% {
+    transform: translate3d(-18%, 0, 0) scaleX(-1);
+  }
+}
+@keyframes drip-grow {
+  0% {
+    transform: scaleY(0);
+  }
+  55%,
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes drop-fall {
+  0%,
+  45% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(140px) scale(0.6, 1.3);
+    opacity: 0;
+  }
+}
+@keyframes power-flicker {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.85;
+  }
+  12% {
+    opacity: 0.1;
+  }
+  18% {
+    opacity: 0.9;
+  }
+  22% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes lightning {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.22;
+  }
+  7% {
+    opacity: 0.02;
+  }
+  10% {
+    opacity: 0.16;
+  }
+  16% {
+    opacity: 0;
+  }
+}
+@keyframes ghost-walk {
+  0% {
+    transform: translateX(-30vw) translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(45vw) translateY(-6px);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120vw) translateY(0);
+    opacity: 0;
+  }
+}
+@keyframes route-glitch {
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.25;
+  }
+  35% {
+    opacity: 0.85;
+  }
+  60% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes intro-out {
+  0%,
+  82% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes ekg-draw {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes wander {
+  0% {
+    --fx: 20%;
+    --fy: 30%;
+  }
+  25% {
+    --fx: 75%;
+    --fy: 25%;
+  }
+  50% {
+    --fx: 65%;
+    --fy: 70%;
+  }
+  75% {
+    --fx: 25%;
+    --fy: 65%;
+  }
+  100% {
+    --fx: 20%;
+    --fy: 30%;
+  }
+}
+@keyframes eye-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.05);
+  }
+}
+@keyframes scratch-in {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes light-leak {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  47% {
+    opacity: 0.9;
+  }
+  48% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  73% {
+    opacity: 0.75;
+  }
+  74% {
+    opacity: 0.2;
+  }
+  76% {
+    opacity: 0.9;
+  }
+}
+
+/* Touch screens have no cursor, so the hero flashlight searches on its own */
+@media (hover: none) {
+  .flashlight-wander {
+    animation: wander 14s ease-in-out infinite;
+  }
+}
+
+/* First-visit intro is skipped once seen this session (flag set in layout <head>) */
+html[data-intro-seen] .horror-intro {
+  display: none;
+}
+
+/* Respect people who ask for less motion: keep the look, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .horror-motion,
+  .horror-intro {
+    display: none !important;
   }
 }

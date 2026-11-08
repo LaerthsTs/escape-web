@@ -384,7 +384,7 @@ export default function CompanyPhotosPage() {
               <div key={booking._id} className="bg-brand-surface rounded-2xl border border-white/5 overflow-hidden">
                 {/* Booking Header */}
                 <div
-                  className="p-5 flex items-center gap-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="p-5 flex items-center gap-4 cursor-pointer hover:bg-white/2 transition-colors"
                   onClick={() => setExpandedBooking(isExpanded ? null : booking._id)}
                 >
                   <div className="flex-1 min-w-0">
@@ -422,7 +422,7 @@ export default function CompanyPhotosPage() {
                       fileInputRef.current?.click();
                     }}
                     disabled={uploading}
-                    className="btn-primary !py-2 !px-4 flex items-center gap-1.5 text-sm shrink-0"
+                    className="btn-primary py-2! px-4! flex items-center gap-1.5 text-sm shrink-0"
                   >
                     <Upload className="w-4 h-4" />
                     <span className="hidden sm:inline">{t('company.photos.upload')}</span>

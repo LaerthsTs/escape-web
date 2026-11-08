@@ -22,19 +22,19 @@ type Tab = 'players' | 'rooms' | 'teams';
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1)
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20">
+      <div className="w-10 h-10 rounded-full bg-linear-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20">
         <Crown className="w-5 h-5 text-yellow-900" />
       </div>
     );
   if (rank === 2)
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full bg-linear-to-br from-gray-300 to-gray-500 flex items-center justify-center">
         <Medal className="w-5 h-5 text-gray-800" />
       </div>
     );
   if (rank === 3)
     return (
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full bg-linear-to-br from-amber-600 to-amber-800 flex items-center justify-center">
         <Medal className="w-5 h-5 text-amber-200" />
       </div>
     );
@@ -92,7 +92,7 @@ export default function LeaderboardPage() {
     <>
       {/* Hero */}
       <section className="pt-32 pb-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/3 w-60 h-60 bg-brand-gold/5 rounded-full blur-3xl" />
 
@@ -212,10 +212,10 @@ export default function LeaderboardPage() {
                           <div
                             className={`w-14 h-14 md:w-16 md:h-16 rounded-full mx-auto flex items-center justify-center text-lg font-bold ${
                               order === 1
-                                ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-900 ring-4 ring-yellow-400/30'
+                                ? 'bg-linear-to-br from-yellow-400 to-yellow-600 text-yellow-900 ring-4 ring-yellow-400/30'
                                 : order === 2
-                                ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-gray-800 ring-4 ring-gray-400/20'
-                                : 'bg-gradient-to-br from-amber-600 to-amber-800 text-amber-200 ring-4 ring-amber-600/20'
+                                ? 'bg-linear-to-br from-gray-300 to-gray-500 text-gray-800 ring-4 ring-gray-400/20'
+                                : 'bg-linear-to-br from-amber-600 to-amber-800 text-amber-200 ring-4 ring-amber-600/20'
                             }`}
                           >
                             {player.initials}
@@ -229,7 +229,7 @@ export default function LeaderboardPage() {
                           </p>
                         </div>
                         <div
-                          className={`${heights} bg-gradient-to-t from-brand-surface to-brand-card rounded-t-xl flex items-end justify-center pb-3`}
+                          className={`${heights} bg-linear-to-t from-brand-surface to-brand-card rounded-t-xl flex items-end justify-center pb-3`}
                         >
                           <span className="text-2xl font-display font-bold text-brand-text-muted">
                             #{order}

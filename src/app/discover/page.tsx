@@ -125,7 +125,7 @@ export default function DiscoverPage() {
     <>
       {/* Hero */}
       <section className="pt-28 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-bg via-brand-bg to-brand-dark" />
+        <div className="absolute inset-0 bg-linear-to-b from-brand-bg via-brand-bg to-brand-dark" />
         <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-brand-red/5 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,7 +148,7 @@ export default function DiscoverPage() {
               placeholder={t('discover.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-field !pl-12 !pr-12"
+              className="input-field pl-12! pr-12!"
             />
             {searchQuery && (
               <button
@@ -237,7 +237,7 @@ export default function DiscoverPage() {
                     className="card-hover group cursor-pointer block"
                   >
                     {/* Image */}
-                    <div className="relative h-48 bg-gradient-to-br from-brand-surface to-brand-card overflow-hidden">
+                    <div className="relative h-48 bg-linear-to-br from-brand-surface to-brand-card overflow-hidden">
                       {room.image ? (
                         <img
                           src={room.image}
@@ -249,12 +249,12 @@ export default function DiscoverPage() {
                           <DoorOpen className="w-16 h-16 text-brand-border/30 group-hover:text-brand-red/20 transition-colors duration-500" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-brand-card/80 to-transparent z-10" />
+                      <div className="absolute inset-0 bg-linear-to-t from-brand-card/80 to-transparent z-10" />
 
                       {/* Badges */}
                       <div className="absolute top-3 left-3 z-20 flex gap-2">
                         {room.isEarlyAccessPartner && (
-                          <span className="bg-emerald-600/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span className="bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                             <BadgeCheck className="w-3 h-3" /> {t('badge.early_access')}
                           </span>
                         )}
@@ -272,7 +272,7 @@ export default function DiscoverPage() {
 
                       {/* Price */}
                       <div className="absolute top-3 right-3 z-20">
-                        <span className="bg-brand-card/90 backdrop-blur-sm text-white text-sm font-bold px-3 py-1.5 rounded-lg border border-brand-border/50">
+                        <span className="bg-brand-card/90 backdrop-blur-xs text-white text-sm font-bold px-3 py-1.5 rounded-lg border border-brand-border/50">
                           €{room.price}
                           <span className="text-brand-text-muted font-normal text-xs">{t('featured.per_person')}</span>
                         </span>

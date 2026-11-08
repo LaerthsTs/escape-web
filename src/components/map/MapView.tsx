@@ -148,7 +148,7 @@ export default function MapView() {
                   </div>
                   <Link
                     href={`/rooms/${room._id}`}
-                    className="block w-full text-center bg-brand-red text-white py-1.5 rounded text-xs font-medium hover:bg-brand-red-hover transition-colors"
+                    className="block w-full text-center bg-brand-red text-white py-1.5 rounded-sm text-xs font-medium hover:bg-brand-red-hover transition-colors"
                   >
                     {t('map.view_details')}
                   </Link>

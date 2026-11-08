@@ -287,7 +287,7 @@ export default function CompanyOnboardingPage() {
           </div>
 
           {/* Fixed footer */}
-          <div className="fixed bottom-0 left-0 right-0 bg-brand-bg/95 backdrop-blur border-t border-white/5 px-6 py-4">
+          <div className="fixed bottom-0 left-0 right-0 bg-brand-bg/95 backdrop-blur-sm border-t border-white/5 px-6 py-4">
             <div className="max-w-3xl mx-auto">
               {!scrolledToEnd && (
                 <p className="text-xs text-brand-text-secondary text-center mb-3 flex items-center justify-center gap-1">
@@ -411,7 +411,7 @@ export default function CompanyOnboardingPage() {
                       setDiscountResult(null);
                     }}
                     placeholder={t('company.onboarding.discount_placeholder')}
-                    className="w-full bg-brand-surface border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+                    className="w-full bg-brand-surface border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
                   />
                 </div>
                 <button
@@ -550,7 +550,7 @@ export default function CompanyOnboardingPage() {
                           className="flex items-center gap-2 text-sm text-brand-text-secondary"
                         >
                           <Check
-                            className="w-4 h-4 flex-shrink-0"
+                            className="w-4 h-4 shrink-0"
                             style={{ color: plan.color }}
                           />
                           {t(fKey)}
@@ -664,13 +664,13 @@ export default function CompanyOnboardingPage() {
 
               <div className="space-y-3 text-left max-w-xs mx-auto">
                 <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-400 shrink-0" />
                   <span className="text-sm text-brand-text-secondary">
                     {t('company.onboarding.check_terms')}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <Check className="w-5 h-5 text-green-400 shrink-0" />
                   <span className="text-sm text-brand-text-secondary">
                     {t('company.onboarding.check_plan').replace(
                       '{{plan}}',
@@ -682,14 +682,14 @@ export default function CompanyOnboardingPage() {
                 </div>
                 {companyData?.platformPlan !== 'free' && (
                   <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <Check className="w-5 h-5 text-green-400 shrink-0" />
                     <span className="text-sm text-brand-text-secondary">
                       {t('company.onboarding.check_payment')}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                  <Clock className="w-5 h-5 text-amber-400 shrink-0" />
                   <span className="text-sm text-brand-text-secondary">
                     {t('company.onboarding.check_review')}
                   </span>

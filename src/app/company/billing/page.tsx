@@ -190,7 +190,7 @@ export default function BillingPage() {
 
         {error && (
           <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
             <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
@@ -309,7 +309,7 @@ export default function BillingPage() {
                 <span className="text-brand-text-secondary text-sm">
                   {t('billing.subscription_id')}
                 </span>
-                <span className="text-xs font-mono text-brand-text-secondary bg-white/5 px-2 py-1 rounded">
+                <span className="text-xs font-mono text-brand-text-secondary bg-white/5 px-2 py-1 rounded-sm">
                   {subscription.id}
                 </span>
               </div>
@@ -332,7 +332,7 @@ export default function BillingPage() {
               {/* Cancellation Notice */}
               {subscription.cancelAtPeriodEnd && (
                 <div className="mt-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-amber-400">
                       {t('billing.cancel_notice_title')}

@@ -154,7 +154,7 @@ export default function LocationPicker({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full bg-brand-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors text-sm"
+            className="w-full bg-brand-bg border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors text-sm"
             placeholder={placeholder}
           />
         </div>
@@ -190,7 +190,7 @@ export default function LocationPicker({
       {/* Hint / resolved address */}
       {location ? (
         <div className="flex items-start gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-          <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
           <p className="text-sm text-emerald-300">{location}</p>
         </div>
       ) : (

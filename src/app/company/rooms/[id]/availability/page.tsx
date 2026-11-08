@@ -284,7 +284,7 @@ export default function RoomAvailabilityPage() {
                           onChange={(e) =>
                             updateSlot(idx, 'time', e.target.value)
                           }
-                          className="bg-transparent border border-white/10 rounded-lg px-3 py-2 text-white focus:border-brand-red focus:outline-none"
+                          className="bg-transparent border border-white/10 rounded-lg px-3 py-2 text-white focus:border-brand-red focus:outline-hidden"
                         />
                         <div className="flex items-center gap-1">
                           <span className="text-brand-text-secondary text-sm">€</span>
@@ -298,7 +298,7 @@ export default function RoomAvailabilityPage() {
                                 parseFloat(e.target.value) || 0
                               )
                             }
-                            className="w-20 bg-transparent border border-white/10 rounded-lg px-3 py-2 text-white focus:border-brand-red focus:outline-none"
+                            className="w-20 bg-transparent border border-white/10 rounded-lg px-3 py-2 text-white focus:border-brand-red focus:outline-hidden"
                             min={0}
                             step={0.5}
                           />

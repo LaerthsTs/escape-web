@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { LayoutShell } from '@/components/layout/LayoutShell';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
@@ -9,6 +10,10 @@ import { SafeConvex } from '@/components/SafeConvex';
 // Force all pages to be dynamically rendered (SSR on-demand)
 // This prevents Convex hooks from failing during build-time pre-rendering
 export const dynamic = 'force-dynamic';
+
+export const viewport: Viewport = {
+  themeColor: '#080505',
+};
 
 export const metadata: Metadata = {
   title: 'Discover & Book Escape Rooms in Greece | UNLOCKED',
@@ -27,7 +32,6 @@ export const metadata: Metadata = {
     'player reviews',
   ],
   manifest: '/manifest.json',
-  themeColor: '#FF1E1E',
   robots: {
     index: true,
     follow: true,
@@ -59,7 +63,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -97,9 +101,18 @@ export default function RootLayout({
     },
   };
 
+  const introSeen = (await cookies()).has('unl-intro');
+
   return (
-    <html lang="en" className="dark">
+    // The horror intro plays once per browser session; HorrorIntro sets this session cookie
+    <html lang="en" className="dark" data-intro-seen={introSeen ? '' : undefined}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Serif+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Nosifer&family=Special+Elite&display=swap"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

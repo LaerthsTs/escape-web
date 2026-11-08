@@ -423,7 +423,7 @@ export default function BookingPage() {
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(e.target.value)}
                         placeholder="+30 6XX XXX XXXX"
-                        className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none"
+                        className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
                       />
                       <button
                         disabled={!phoneInput.trim() || savingPhone}
@@ -435,7 +435,7 @@ export default function BookingPage() {
                           } catch { /* ignore */ }
                           setSavingPhone(false);
                         }}
-                        className="btn-primary !py-3 !px-5 flex items-center justify-center gap-1.5 disabled:opacity-50 text-sm"
+                        className="btn-primary py-3! px-5! flex items-center justify-center gap-1.5 disabled:opacity-50 text-sm"
                       >
                         {savingPhone ? (
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

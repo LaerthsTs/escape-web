@@ -101,7 +101,7 @@ function PaymentSuccessContent() {
 
         <button
           onClick={() => router.replace(p('/company/onboarding'))}
-          className="w-full btn-primary !py-3 flex items-center justify-center gap-2"
+          className="w-full btn-primary py-3! flex items-center justify-center gap-2"
         >
           {t('stripe.continue')} <ArrowRight className="w-4 h-4" />
         </button>

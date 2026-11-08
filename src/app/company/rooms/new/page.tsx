@@ -414,7 +414,7 @@ export default function NewRoomPage() {
               <select
                 value={form.theme}
                 onChange={(e) => updateField('theme', e.target.value)}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               >
                 {THEMES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -636,7 +636,7 @@ export default function NewRoomPage() {
               value={form.story}
               onChange={(e) => updateField('story', e.target.value)}
               rows={3}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
               placeholder={t('company.rooms.new.story_placeholder')}
               required
             />
@@ -647,7 +647,7 @@ export default function NewRoomPage() {
               value={form.description}
               onChange={(e) => updateField('description', e.target.value)}
               rows={3}
-              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none"
+              className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
               placeholder={t('company.rooms.new.description_placeholder')}
               required
             />
@@ -692,7 +692,7 @@ export default function NewRoomPage() {
                           value={storyTranslations[lang.code] || ''}
                           onChange={(e) => setStoryTranslations((prev) => ({ ...prev, [lang.code]: e.target.value }))}
                           rows={2}
-                          className="w-full bg-brand-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-red focus:outline-none resize-none"
+                          className="w-full bg-brand-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-red focus:outline-hidden resize-none"
                           placeholder={`${t('company.rooms.new.story_label')} (${lang.label})`}
                         />
                       </div>
@@ -702,7 +702,7 @@ export default function NewRoomPage() {
                           value={descTranslations[lang.code] || ''}
                           onChange={(e) => setDescTranslations((prev) => ({ ...prev, [lang.code]: e.target.value }))}
                           rows={2}
-                          className="w-full bg-brand-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-red focus:outline-none resize-none"
+                          className="w-full bg-brand-surface border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-red focus:outline-hidden resize-none"
                           placeholder={`${t('company.rooms.new.description_label')} (${lang.label})`}
                         />
                       </div>
@@ -765,7 +765,7 @@ export default function NewRoomPage() {
                 type="time"
                 value={slot.time}
                 onChange={(e) => updateTimeSlot(idx, 'time', e.target.value)}
-                className="bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none"
+                className="bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 required
               />
               <div className="flex items-center gap-1">
@@ -774,7 +774,7 @@ export default function NewRoomPage() {
                   type="number"
                   value={slot.price}
                   onChange={(e) => updateTimeSlot(idx, 'price', e.target.value)}
-                  className="w-24 bg-brand-bg border border-white/10 rounded-xl px-3 py-3 text-white focus:border-brand-red focus:outline-none"
+                  className="w-24 bg-brand-bg border border-white/10 rounded-xl px-3 py-3 text-white focus:border-brand-red focus:outline-hidden"
                   min={0}
                   step={0.5}
                 />
@@ -814,7 +814,7 @@ export default function NewRoomPage() {
                 value={form.releaseDate}
                 onChange={(e) => updateField('releaseDate', e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none transition-colors [color-scheme:dark]"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden transition-colors scheme-dark"
               />
             </div>
             {form.releaseDate && (
@@ -938,13 +938,13 @@ export default function NewRoomPage() {
                     </label>
                     <input type="range" min="0" max="100" value={presetForm.watermarkOpacity * 100}
                       onChange={(e) => setPresetForm({ ...presetForm, watermarkOpacity: parseInt(e.target.value) / 100 })}
-                      className="w-full accent-[#FF1E1E]"
+                      className="w-full accent-brand-red"
                     />
                   </div>
                   {overlayUrl && (
                     <div>
                       <label className="block text-sm text-brand-text-secondary mb-2"><Eye className="w-4 h-4 inline mr-1" />{t('company.settings.photos_preview')}</label>
-                      <div className="relative w-full max-w-md aspect-video bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl overflow-hidden border border-white/10">
+                      <div className="relative w-full max-w-md aspect-video bg-linear-to-br from-gray-700 to-gray-900 rounded-xl overflow-hidden border border-white/10">
                         <div className="absolute inset-0 flex items-center justify-center text-white/20"><Image className="w-16 h-16" /></div>
                         <img src={overlayPreview || overlayUrl} alt="Overlay preview" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: presetForm.watermarkOpacity }} />
                       </div>
@@ -1013,7 +1013,7 @@ export default function NewRoomPage() {
                       <input type="color" value={presetForm.brandColor} onChange={(e) => setPresetForm({ ...presetForm, brandColor: e.target.value })}
                         className="w-10 h-10 rounded-lg border border-white/10 cursor-pointer bg-transparent" />
                       <input type="text" value={presetForm.brandColor} onChange={(e) => setPresetForm({ ...presetForm, brandColor: e.target.value })}
-                        className="w-28 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-brand-red focus:outline-none" placeholder="#FF1E1E" />
+                        className="w-28 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-sm text-white font-mono focus:border-brand-red focus:outline-hidden" placeholder="#FF1E1E" />
                     </div>
                   </div>
 
@@ -1024,7 +1024,7 @@ export default function NewRoomPage() {
                     </label>
                     <input type="range" min="0" max="100" value={presetForm.watermarkOpacity * 100}
                       onChange={(e) => setPresetForm({ ...presetForm, watermarkOpacity: parseInt(e.target.value) / 100 })}
-                      className="w-full accent-[#FF1E1E]" />
+                      className="w-full accent-brand-red" />
                   </div>
 
                   {/* Text Template */}
@@ -1033,7 +1033,7 @@ export default function NewRoomPage() {
                     <input type="text" value={presetForm.textTemplate}
                       onChange={(e) => setPresetForm({ ...presetForm, textTemplate: e.target.value })}
                       placeholder={t('company.settings.photos_text_placeholder')}
-                      className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-none" />
+                      className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden" />
                     <p className="text-xs text-brand-text-secondary mt-1">{t('company.settings.photos_text_hint')}</p>
                   </div>
 
@@ -1041,7 +1041,7 @@ export default function NewRoomPage() {
                   {(presetLogoUrl || presetForm.textTemplate) && (
                     <div>
                       <label className="block text-sm text-brand-text-secondary mb-2"><Eye className="w-4 h-4 inline mr-1" />{t('company.settings.photos_preview')}</label>
-                      <div className="relative w-full max-w-md h-48 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl overflow-hidden border border-white/10">
+                      <div className="relative w-full max-w-md h-48 bg-linear-to-br from-gray-700 to-gray-900 rounded-xl overflow-hidden border border-white/10">
                         <div className="absolute inset-0 flex items-center justify-center text-white/20"><Image className="w-16 h-16" /></div>
                         {presetLogoUrl && (
                           <img src={presetLogoPreview || presetLogoUrl} alt="Logo"
@@ -1055,7 +1055,7 @@ export default function NewRoomPage() {
                         )}
                         {presetForm.textTemplate && (
                           <>
-                            <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-linear-to-t from-black/75 via-black/30 to-transparent" />
                             <div className="absolute left-1/2 -translate-x-1/2 bottom-10 w-10 h-0.5 rounded-full" style={{ backgroundColor: presetForm.brandColor }} />
                             <div className="absolute bottom-3 left-0 right-0 text-center text-xs font-semibold uppercase tracking-[0.15em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
                               style={{ textShadow: `0 0 12px ${presetForm.brandColor}40` }}>
@@ -1152,7 +1152,7 @@ export default function NewRoomPage() {
                 value={form.termsOfUse}
                 onChange={(e) => updateField('termsOfUse', e.target.value)}
                 rows={6}
-                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none resize-none leading-relaxed"
+                className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none leading-relaxed"
                 placeholder={t('company.rooms.new.terms_placeholder')}
               />
               {form.termsOfUse.trim() && (
@@ -1239,7 +1239,7 @@ function Input({
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-none transition-colors"
+      className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
       placeholder={placeholder}
       required={required}
       min={min}

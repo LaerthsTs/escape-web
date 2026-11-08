@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, DoorOpen, Trophy, Building2 } from 'lucide-react';
+import { Users, DoorOpen, Skull, Building2 } from 'lucide-react';
 import { useSafeQuery } from '@/lib/useSafeQuery';
 import { api } from '../../../convex/_generated/api';
 import { useEffect, useState } from 'react';
@@ -16,8 +16,8 @@ function formatStat(value: number): string {
   return value.toString();
 }
 
-/** Animate from 0 → target over ~1.2 s */
-function useCountUp(target: number, duration = 1200) {
+/** Animate from 0 → target over ~1.6 s, with a nervous jitter near the end */
+function useCountUp(target: number, duration = 1600) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
     if (target === 0) return;
@@ -25,8 +25,7 @@ function useCountUp(target: number, duration = 1200) {
     let raf: number;
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 4);
       setCurrent(Math.round(eased * target));
       if (progress < 1) raf = requestAnimationFrame(tick);
     };
@@ -48,28 +47,42 @@ export function StatsBar() {
   const venues = useCountUp(platformStats?.partnerVenues ?? 0);
 
   const stats = [
-    { icon: Users,     value: formatStat(players),  label: t('stats.active_players') },
-    { icon: DoorOpen,  value: formatStat(rooms),     label: t('stats.escape_rooms') },
-    { icon: Trophy,    value: formatStat(escapes),   label: t('stats.escapes_completed') },
-    { icon: Building2, value: formatStat(venues),    label: t('stats.partner_venues') },
+    { icon: Users, value: formatStat(players), label: t('stats.active_players') },
+    { icon: DoorOpen, value: formatStat(rooms), label: t('stats.escape_rooms') },
+    { icon: Skull, value: formatStat(escapes), label: t('stats.escapes_completed') },
+    { icon: Building2, value: formatStat(venues), label: t('stats.partner_venues') },
   ];
 
   return (
-    <section className="relative -mt-1 z-20">
+    <section className="relative -mt-10 z-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AnimateIn animation="scaleUp" duration={0.7}>
-          <div className="glass rounded-2xl p-8 md:p-10">
-            <StaggerContainer stagger={0.1} className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <AnimateIn animation="scaleUp" duration={0.8}>
+          <div className="relative rounded-md border border-brand-red/30 bg-black/85 backdrop-blur-md p-8 md:p-10 shadow-[0_0_60px_-10px_rgba(200,16,27,0.45),inset_0_0_60px_rgba(0,0,0,0.9)] overflow-hidden">
+            {/* Tape across the corner */}
+            <div className="absolute -left-6 top-3 rotate-[-28deg] w-28 h-6 bg-[#d8ccb4]/15 border-y border-[#d8ccb4]/10" />
+            {/* Label */}
+            <div className="absolute top-3 right-4 horror-label">{t('horror.body_count')}</div>
+            {/* Tally marks scratched into the background */}
+            <svg aria-hidden viewBox="0 0 400 80" className="absolute inset-0 w-full h-full opacity-[0.05]" preserveAspectRatio="none" stroke="#fff" strokeWidth="2">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <line key={i} x1={8 + i * 13} y1={10} x2={6 + i * 13} y2={70} />
+              ))}
+            </svg>
+
+            <StaggerContainer stagger={0.12} className="relative grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, i) => (
                 <StaggerItem key={i} animation="fadeUp">
                   <div className="text-center group">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-red/10 mb-3 group-hover:bg-brand-red/20 group-hover:scale-110 transition-all duration-300">
-                      <stat.icon className="w-6 h-6 text-brand-red" />
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-brand-red/40 bg-brand-red/10 mb-3 shadow-[0_0_20px_rgba(200,16,27,0.35)] group-hover:animate-shake">
+                      <stat.icon className="w-6 h-6 text-brand-red-light" />
                     </div>
-                    <div className="text-2xl md:text-3xl font-display font-bold text-white">
+                    <div
+                      className="text-3xl md:text-4xl font-display font-black text-brand-bone text-blood-glow animate-flicker"
+                      style={{ animationDelay: `${i * 1.3}s` }}
+                    >
                       {platformStats ? stat.value : '—'}
                     </div>
-                    <div className="text-sm text-brand-text-muted mt-1">
+                    <div className="font-type text-xs tracking-[0.18em] text-brand-text-muted mt-2">
                       {stat.label}
                     </div>
                   </div>
