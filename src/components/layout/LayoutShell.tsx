@@ -70,7 +70,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return (
       <>
         <HorrorDefs />
-        <HorrorIntro />
         <header className="fixed top-0 left-0 right-0 z-50 glass shadow-lg shadow-black/40">
           <BloodDrips count={16} seed={5} maxLength={22} falling={false} className="top-full!" />
           <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,7 +79,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                   <Unlock className="w-5 h-5 text-brand-bone" />
                 </div>
                 <span className="font-blood text-lg tracking-wider text-brand-bone">
-                  UN<span className="text-brand-red text-blood-glow">LOCKED</span>
+                  UN<span className="text-brand-red-light text-blood-glow">LOCKED</span>
                 </span>
               </Link>
               <div className="flex items-center gap-3">
@@ -115,7 +114,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <HorrorDefs />
-      <HorrorIntro />
+      {/* The cold open plays on the homepage only, never on a shared booking link */}
+      {pathname === '/' && <HorrorIntro />}
       <Navbar />
       <main className="flex-1">
         <motion.div

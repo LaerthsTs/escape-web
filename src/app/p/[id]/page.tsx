@@ -96,7 +96,7 @@ export default function HostedPhotoPage() {
         <div className="bg-brand-surface rounded-2xl border border-white/5 p-5">
           {photo.teamName && (
             <div className="flex items-center gap-2 mb-3">
-              <Users className="w-5 h-5 text-brand-red" />
+              <Users className="w-5 h-5 text-brand-red-light" />
               <h1 className="text-xl font-bold">{photo.teamName}</h1>
             </div>
           )}
@@ -151,10 +151,10 @@ export default function HostedPhotoPage() {
         <div className="text-center pt-4 border-t border-white/5">
           <a
             href="https://unlocked.gr"
-            className="inline-flex items-center gap-2 text-brand-text-muted hover:text-brand-red transition-colors text-sm"
+            className="inline-flex items-center gap-2 text-brand-text-muted hover:text-brand-red-light transition-colors text-sm"
           >
             <Camera className="w-4 h-4" />
-            Powered by <span className="font-bold text-brand-red">UNLOCKED</span>
+            Powered by <span className="font-bold text-brand-red-light">UNLOCKED</span>
           </a>
           <p className="text-xs text-brand-text-muted mt-1">
             {photo.company?.name && `Photo by ${photo.company.name}`}

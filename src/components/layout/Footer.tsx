@@ -155,15 +155,15 @@ export function Footer() {
             </h4>
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-brand-text-secondary text-sm">
-                <Mail className="w-4 h-4 text-brand-red" />
+                <Mail className="w-4 h-4 text-brand-red-light" />
                 hello@unlocked.gr
               </li>
               <li className="flex items-center gap-2 text-brand-text-secondary text-sm">
-                <Phone className="w-4 h-4 text-brand-red" />
+                <Phone className="w-4 h-4 text-brand-red-light" />
                 +30 698 379 5767
               </li>
               <li className="flex items-center gap-2 text-brand-text-secondary text-sm">
-                <MapPin className="w-4 h-4 text-brand-red" />
+                <MapPin className="w-4 h-4 text-brand-red-light" />
                 Athens, Greece
               </li>
             </ul>

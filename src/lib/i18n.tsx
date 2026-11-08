@@ -41,7 +41,7 @@ const translations: Record<Language, Record<string, string>> = {
     'horror.clock': 'The clock is already running',
 
     // ── Hero ──
-    'hero.badge': 'The #1 Escape Room Platform',
+    'hero.badge': 'Book your next escape room',
     'hero.title1': 'Find & Book the Best',
     'hero.title2': 'Escape Rooms Near You',
     'hero.subtitle': 'Discover top-rated escape rooms, book instantly, and challenge your team. The all-in-one escape room platform for players and businesses.',
@@ -1909,7 +1909,7 @@ const translations: Record<Language, Record<string, string>> = {
     'horror.clock': 'Το ρολόι ήδη μετράει',
 
     // ── Hero ──
-    'hero.badge': 'Η #1 Πλατφόρμα Escape Room',
+    'hero.badge': 'Κλείσε το επόμενο escape room σου',
     'hero.title1': 'Βρες & Κλείσε τα Καλύτερα',
     'hero.title2': 'Escape Rooms Κοντά Σου',
     'hero.subtitle': 'Ανακάλυψε κορυφαία escape rooms, κλείσε αμέσως και προκάλεσε την ομάδα σου. Η all-in-one πλατφόρμα escape room για παίκτες και επιχειρήσεις.',
@@ -3941,7 +3941,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cookie.learn_more': 'Meer informatie',
 
     // ── Hero ──
-    'hero.badge': 'Hét #1 Escape Room Platform',
+    'hero.badge': 'Boek je volgende escape room',
     'hero.title1': 'Vind & Boek de Beste',
     'hero.title2': 'Escape Rooms bij Jou in de Buurt',
     'hero.subtitle': 'Ontdek topbeoordeelde escape rooms, boek direct en daag je team uit. Het alles-in-één escape room platform voor spelers en bedrijven.',

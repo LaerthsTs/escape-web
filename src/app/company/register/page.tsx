@@ -86,7 +86,7 @@ export default function CompanyRegisterPage() {
               <Unlock className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
-              UN<span className="text-brand-red">LOCKED</span>
+              UN<span className="text-brand-red-light">LOCKED</span>
             </span>
           </div>
           <div className="flex items-center justify-center gap-2 text-brand-text-secondary">
@@ -272,7 +272,7 @@ export default function CompanyRegisterPage() {
 
           <p className="text-center text-sm text-brand-text-secondary mt-6">
             {t('company.register.has_account')}{' '}
-            <Link href={p('/company/login')} className="text-brand-red hover:underline">
+            <Link href={p('/company/login')} className="text-brand-red-light hover:underline">
               {t('company.register.sign_in')}
             </Link>
           </p>

@@ -67,7 +67,7 @@ export function PhonePrompt() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-brand-red/10 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-brand-red" />
+              <Phone className="w-5 h-5 text-brand-red-light" />
             </div>
             <h2 className="text-lg font-bold">{t('phone_prompt.title')}</h2>
           </div>

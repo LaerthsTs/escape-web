@@ -165,7 +165,7 @@ export default function RoomDetailsPage() {
           >
             <Heart
               className={`w-5 h-5 ${
-                isWishlisted ? 'fill-brand-red text-brand-red' : 'text-white'
+                isWishlisted ? 'fill-brand-red text-brand-red-light' : 'text-white'
               }`}
             />
           </button>
@@ -255,7 +255,7 @@ export default function RoomDetailsPage() {
                 <div className="text-xs text-brand-text-muted">{t('room.players')}</div>
               </div>
               <div className="bg-brand-surface rounded-xl p-4 text-center">
-                <Shield className="w-5 h-5 text-brand-red mx-auto mb-1" />
+                <Shield className="w-5 h-5 text-brand-red-light mx-auto mb-1" />
                 <div className="text-lg font-bold">{room.difficulty}/{room.maxDifficulty}</div>
                 <div className="text-xs text-brand-text-muted">{t('featured.difficulty')}</div>
               </div>
@@ -282,7 +282,7 @@ export default function RoomDetailsPage() {
                 {room.tags.map((tag: string, i: number) => (
                   <span
                     key={i}
-                    className="text-xs font-medium px-3 py-1.5 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20"
+                    className="text-xs font-medium px-3 py-1.5 rounded-full bg-brand-red/10 text-brand-red-light border border-brand-red/20"
                   >
                     {tag}
                   </span>
@@ -294,7 +294,7 @@ export default function RoomDetailsPage() {
             {room.story && (
               <div className="mb-6">
                 <h3 className="flex items-center gap-2 text-lg font-semibold mb-3">
-                  <BookOpen className="w-5 h-5 text-brand-red" />
+                  <BookOpen className="w-5 h-5 text-brand-red-light" />
                   {t('room.the_story')}
                 </h3>
                 <p className="text-brand-text-secondary leading-relaxed italic">
@@ -361,7 +361,7 @@ export default function RoomDetailsPage() {
           <div className="card p-6 md:p-8 mt-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <MessageSquare className="w-5 h-5 text-brand-red" />
+                <MessageSquare className="w-5 h-5 text-brand-red-light" />
                 {t('reviews.title')}
                 {reviews && reviews.length > 0 && (
                   <span className="text-sm font-normal text-brand-text-muted">
@@ -500,7 +500,7 @@ export default function RoomDetailsPage() {
                               className="w-9 h-9 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center text-sm font-bold text-brand-red">
+                            <div className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center text-sm font-bold text-brand-red-light">
                               {review.user.name?.charAt(0) || '?'}
                             </div>
                           )}

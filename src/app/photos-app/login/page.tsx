@@ -48,7 +48,7 @@ export default function PhotosLoginPage() {
               <Camera className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
-              UN<span className="text-brand-red">LOCKED</span>
+              UN<span className="text-brand-red-light">LOCKED</span>
               <span className="text-brand-text-muted text-sm ml-1.5 font-normal">Photos</span>
             </span>
           </div>
@@ -129,13 +129,13 @@ export default function PhotosLoginPage() {
 
         <p className="text-center text-sm text-brand-text-secondary mt-6">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-brand-red hover:underline font-medium">
+          <Link href="/register" className="text-brand-red-light hover:underline font-medium">
             Create Account
           </Link>
         </p>
 
         <p className="text-center text-xs text-brand-text-muted mt-4">
-          Powered by <span className="text-brand-red font-bold">UNLOCKED</span>
+          Powered by <span className="text-brand-red-light font-bold">UNLOCKED</span>
         </p>
       </div>
     </div>

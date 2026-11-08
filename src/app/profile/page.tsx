@@ -115,7 +115,7 @@ export default function ProfilePage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-3xl font-bold text-brand-red">
+                <span className="text-3xl font-bold text-brand-red-light">
                   {profile.name?.charAt(0)?.toUpperCase() || '?'}
                 </span>
               )}
@@ -134,7 +134,7 @@ export default function ProfilePage() {
           )}
           <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
             {profile.title && (
-              <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-brand-red/10 text-brand-red border border-brand-red/20">
+              <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-brand-red/10 text-brand-red-light border border-brand-red/20">
                 {t(`profile.${profile.title}`)}
               </span>
             )}
@@ -161,7 +161,7 @@ export default function ProfilePage() {
             <StaggerContainer stagger={0.1} className="grid grid-cols-3 gap-3 sm:gap-6">
               <StaggerItem animation="fadeUp">
               <div className="text-center">
-                <DoorOpen className="w-5 h-5 text-brand-red mx-auto mb-1" />
+                <DoorOpen className="w-5 h-5 text-brand-red-light mx-auto mb-1" />
                 <div className="text-2xl font-display font-bold">{profile.played ?? 0}</div>
                 <div className="text-xs text-brand-text-muted">{t('profile.rooms_played')}</div>
               </div>
@@ -256,7 +256,7 @@ export default function ProfilePage() {
       <section className="pb-6">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Heart className="w-5 h-5 text-brand-red" />
+            <Heart className="w-5 h-5 text-brand-red-light" />
             {t('profile.wishlist')}
           </h2>
           {wishlistRooms.length > 0 ? (
@@ -281,7 +281,7 @@ export default function ProfilePage() {
                       {room.rating} · {room.theme}
                     </div>
                   </div>
-                  <Heart className="w-5 h-5 fill-brand-red text-brand-red shrink-0" />
+                  <Heart className="w-5 h-5 fill-brand-red text-brand-red-light shrink-0" />
                 </Link>
               ))}
             </div>
@@ -342,7 +342,7 @@ export default function ProfilePage() {
               {(convexUser as any)?.phone ? (
                 <span className="text-sm text-brand-text-secondary mr-2">{(convexUser as any).phone}</span>
               ) : (
-                <span className="text-sm text-brand-red mr-2">{t('profile.no_phone')}</span>
+                <span className="text-sm text-brand-red-light mr-2">{t('profile.no_phone')}</span>
               )}
               <ChevronRight className="w-4 h-4 text-brand-text-muted" />
             </button>

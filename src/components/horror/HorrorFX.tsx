@@ -11,6 +11,25 @@ const FOG_LAYER =
   'radial-gradient(35% 50% at 55% 70%, rgba(110,90,90,0.30), transparent 70%),' +
   'radial-gradient(45% 55% at 85% 55%, rgba(120,100,100,0.32), transparent 70%)';
 
+/**
+ * Pages where people book, pay, sign in or manage their account. They keep the
+ * calm atmosphere (grain, vignette, scanlines, fog) but get no embers, power cuts,
+ * lightning or passing figure: nobody should get a fright while paying.
+ */
+const CALM_ROUTES = [
+  /^\/rooms\/[^/]+\/book(\/|$)/,
+  /^\/checkout(\/|$)/,
+  /^\/tickets(\/|$)/,
+  /^\/profile(\/|$)/,
+  /^\/notifications(\/|$)/,
+  /^\/login(\/|$)/,
+  /^\/signup(\/|$)/,
+];
+
+export function isCalmRoute(pathname: string) {
+  return CALM_ROUTES.some((r) => r.test(pathname));
+}
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -133,10 +152,12 @@ export function HorrorFX() {
   const [ghostKey, setGhostKey] = useState(0);
   const [routeKey, setRouteKey] = useState(0);
   const prevPath = useRef(pathname);
+  // Calm pages and reduced-motion users get no scares
+  const quiet = reduced || isCalmRoute(pathname);
 
   // Random power cuts
   useEffect(() => {
-    if (reduced) return;
+    if (quiet) return;
     let to: ReturnType<typeof setTimeout>;
     const schedule = () => {
       to = setTimeout(() => {
@@ -146,11 +167,11 @@ export function HorrorFX() {
     };
     schedule();
     return () => clearTimeout(to);
-  }, [reduced]);
+  }, [quiet]);
 
   // Lightning, a little more often
   useEffect(() => {
-    if (reduced) return;
+    if (quiet) return;
     let to: ReturnType<typeof setTimeout>;
     const schedule = () => {
       to = setTimeout(() => {
@@ -160,11 +181,11 @@ export function HorrorFX() {
     };
     schedule();
     return () => clearTimeout(to);
-  }, [reduced]);
+  }, [quiet]);
 
   // The figure
   useEffect(() => {
-    if (reduced) return;
+    if (quiet) return;
     let to: ReturnType<typeof setTimeout>;
     const schedule = (first = false) => {
       to = setTimeout(() => {
@@ -174,7 +195,7 @@ export function HorrorFX() {
     };
     schedule(true);
     return () => clearTimeout(to);
-  }, [reduced]);
+  }, [quiet]);
 
   // Glitch cut between pages
   useEffect(() => {
@@ -186,7 +207,7 @@ export function HorrorFX() {
   return (
     <div aria-hidden className="pointer-events-none">
       {/* Embers sit behind the fog but above the page */}
-      {!reduced && (
+      {!quiet && (
         <div className="horror-motion fixed inset-0 z-[41] opacity-70">
           <Embers />
         </div>
@@ -205,7 +226,7 @@ export function HorrorFX() {
       </div>
 
       {/* The figure */}
-      {ghostKey > 0 && !reduced && (
+      {ghostKey > 0 && !quiet && (
         <div
           key={`g${ghostKey}`}
           className="horror-motion fixed bottom-0 left-0 z-[43] h-[58vh] opacity-0 blur-[1.5px] mix-blend-multiply"
@@ -246,7 +267,7 @@ export function HorrorFX() {
       </div>
 
       {/* Lightning */}
-      {lightningKey > 0 && (
+      {lightningKey > 0 && !quiet && (
         <div
           key={`l${lightningKey}`}
           className="horror-motion fixed inset-0 z-[46] bg-[#dfe6ff] opacity-0 mix-blend-overlay"
@@ -255,7 +276,7 @@ export function HorrorFX() {
       )}
 
       {/* Power cut */}
-      {flickerKey > 0 && (
+      {flickerKey > 0 && !quiet && (
         <div
           key={`f${flickerKey}`}
           className="horror-motion fixed inset-0 z-[46] bg-black opacity-0"

@@ -228,7 +228,7 @@ export default function BookingPage() {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="flex items-center gap-2 font-semibold">
-                    <Calendar className="w-5 h-5 text-brand-red" />
+                    <Calendar className="w-5 h-5 text-brand-red-light" />
                     {t('book.select_date')}
                   </h3>
                   <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function BookingPage() {
                             : isSelected
                             ? 'bg-brand-red text-white'
                             : isToday
-                            ? 'bg-brand-red/20 text-brand-red hover:bg-brand-red hover:text-white'
+                            ? 'bg-brand-red/20 text-brand-red-light hover:bg-brand-red hover:text-white'
                             : 'hover:bg-brand-surface text-brand-text-secondary hover:text-white'
                         }`}
                       >
@@ -286,7 +286,7 @@ export default function BookingPage() {
               {selectedDate && (
                 <div className="card p-6">
                   <h3 className="flex items-center gap-2 font-semibold mb-4">
-                    <Clock className="w-5 h-5 text-brand-red" />
+                    <Clock className="w-5 h-5 text-brand-red-light" />
                     {t('book.select_time')}
                   </h3>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -335,7 +335,7 @@ export default function BookingPage() {
               {selectedTime && (
                 <div className="card p-6">
                   <h3 className="flex items-center gap-2 font-semibold mb-4">
-                    <Users className="w-5 h-5 text-brand-red" />
+                    <Users className="w-5 h-5 text-brand-red-light" />
                     {t('book.num_players')}
                   </h3>
                   <div className="flex items-center gap-4">
@@ -414,7 +414,7 @@ export default function BookingPage() {
                 ) : !userHasPhone && selectedDate && selectedTime ? (
                   <div className="mt-6 space-y-3">
                     <div className="flex items-center gap-2 text-sm text-brand-text-secondary">
-                      <Phone className="w-4 h-4 text-brand-red" />
+                      <Phone className="w-4 h-4 text-brand-red-light" />
                       <span>{t('book.phone_required')}</span>
                     </div>
                     <div className="flex gap-2">

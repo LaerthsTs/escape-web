@@ -37,7 +37,7 @@ export function CookieConsent() {
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
-            <Cookie className="w-5 h-5 text-brand-red" />
+            <Cookie className="w-5 h-5 text-brand-red-light" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-white font-semibold text-sm md:text-base">
@@ -47,7 +47,7 @@ export function CookieConsent() {
               {t('cookies.description')}{' '}
               <Link
                 href="/cookies"
-                className="text-brand-red hover:text-brand-red/80 underline underline-offset-2 transition-colors"
+                className="text-brand-red-light hover:text-brand-red/80 underline underline-offset-2 transition-colors"
               >
                 {t('cookies.learn_more')}
               </Link>

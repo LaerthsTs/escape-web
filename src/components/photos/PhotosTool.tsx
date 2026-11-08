@@ -1183,7 +1183,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
           </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-              <Camera className="w-7 h-7 text-brand-red" />
+              <Camera className="w-7 h-7 text-brand-red-light" />
               {roomTitle || 'Photos'}
             </h1>
             <p className="text-brand-text-secondary text-sm mt-1">
@@ -1220,7 +1220,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       {step === 'gallery' && stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           {[
-            { icon: Camera, label: 'Photos', value: stats.totalPhotos, accent: 'text-brand-red' },
+            { icon: Camera, label: 'Photos', value: stats.totalPhotos, accent: 'text-brand-red-light' },
             { icon: Camera, label: 'Today', value: stats.todayPhotos, accent: 'text-blue-400' },
             { icon: Mail, label: 'Emails Sent', value: stats.totalEmails, accent: 'text-green-400' },
             { icon: Eye, label: 'Page Views', value: stats.totalViews, accent: 'text-purple-400' },
@@ -1240,7 +1240,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
         <>
           {!photos ? (
             <div className="text-center py-20">
-              <Loader2 className="w-8 h-8 text-brand-red animate-spin mx-auto mb-4" />
+              <Loader2 className="w-8 h-8 text-brand-red-light animate-spin mx-auto mb-4" />
             </div>
           ) : photos.length === 0 ? (
             <div className="text-center py-20 bg-brand-surface rounded-2xl border border-white/5">
@@ -1323,7 +1323,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-contain bg-black" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-brand-bg">
-                    <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+                    <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
                   </div>
                 )}
               </div>
@@ -1497,7 +1497,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 {/* Hosted link */}
                 <div className="bg-brand-surface rounded-xl p-4 mb-4">
                   <div className="text-xs text-brand-text-muted mb-1.5">Hosted Photo Page</div>
-                  <div className="text-sm font-medium break-all text-brand-red">
+                  <div className="text-sm font-medium break-all text-brand-red-light">
                     {window.location.origin}/p/{currentPhotoId}
                   </div>
                 </div>
@@ -1641,7 +1641,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 onClick={() => setSettingsUseOverlay(false)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${
                   !settingsUseOverlay
-                    ? 'bg-brand-red/20 border-brand-red/50 text-brand-red'
+                    ? 'bg-brand-red/20 border-brand-red/50 text-brand-red-light'
                     : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                 }`}
               >
@@ -1651,7 +1651,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 onClick={() => setSettingsUseOverlay(true)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors flex items-center justify-center gap-1.5 ${
                   settingsUseOverlay
-                    ? 'bg-brand-red/20 border-brand-red/50 text-brand-red'
+                    ? 'bg-brand-red/20 border-brand-red/50 text-brand-red-light'
                     : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                 }`}
               >
@@ -1724,7 +1724,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                         onClick={() => setSettingsLogoPosition(pos.value)}
                         className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${
                           settingsLogoPosition === pos.value
-                            ? 'bg-brand-red/20 border-brand-red/50 text-brand-red'
+                            ? 'bg-brand-red/20 border-brand-red/50 text-brand-red-light'
                             : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                         }`}
                       >

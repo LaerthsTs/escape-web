@@ -92,10 +92,10 @@ export default function WebsiteServicePage() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20">
-              <Globe className="w-8 h-8 text-brand-red" />
+              <Globe className="w-8 h-8 text-brand-red-light" />
             </div>
           </div>
-          <span className="block text-brand-red text-sm font-semibold uppercase tracking-wider mb-4">
+          <span className="block text-brand-red-light text-sm font-semibold uppercase tracking-wider mb-4">
             {t('ws.label')}
           </span>
           <h1 className="section-heading mb-6">
@@ -131,7 +131,7 @@ export default function WebsiteServicePage() {
           <div className="grid md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="card p-6 text-center">
-                <div className="text-3xl font-bold text-brand-red mb-2">{t(`ws.why_stat${i}_value`)}</div>
+                <div className="text-3xl font-bold text-brand-red-light mb-2">{t(`ws.why_stat${i}_value`)}</div>
                 <div className="text-sm text-brand-text-secondary">{t(`ws.why_stat${i}_label`)}</div>
               </div>
             ))}
@@ -155,7 +155,7 @@ export default function WebsiteServicePage() {
             {included.map((item) => (
               <div key={item.key} className="card p-6 group hover:border-brand-red/30 transition-colors">
                 <div className="w-12 h-12 rounded-xl bg-brand-red/10 flex items-center justify-center mb-4 group-hover:bg-brand-red/20 transition-colors">
-                  <item.icon className="w-6 h-6 text-brand-red" />
+                  <item.icon className="w-6 h-6 text-brand-red-light" />
                 </div>
                 <h3 className="font-semibold mb-2">{t(`ws.inc_${item.key}_title`)}</h3>
                 <p className="text-sm text-brand-text-secondary">{t(`ws.inc_${item.key}_desc`)}</p>
@@ -191,7 +191,7 @@ export default function WebsiteServicePage() {
               <ul className="space-y-3 mb-8 flex-1">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-brand-red mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand-red-light mt-0.5 shrink-0" />
                     <span>{t(`ws.plan1_feat${i}`)}</span>
                   </li>
                 ))}
@@ -212,14 +212,14 @@ export default function WebsiteServicePage() {
                 <h3 className="text-lg font-semibold mb-2">{t('ws.plan2_name')}</h3>
                 <p className="text-sm text-brand-text-secondary mb-4">{t('ws.plan2_desc')}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-brand-red">{t('ws.plan2_price')}</span>
+                  <span className="text-4xl font-bold text-brand-red-light">{t('ws.plan2_price')}</span>
                 </div>
                 <p className="text-xs text-brand-text-muted mt-1">{t('ws.plan2_price_note')}</p>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-brand-red mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand-red-light mt-0.5 shrink-0" />
                     <span>{t(`ws.plan2_feat${i}`)}</span>
                   </li>
                 ))}
@@ -242,7 +242,7 @@ export default function WebsiteServicePage() {
               <ul className="space-y-3 mb-8 flex-1">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-brand-red mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand-red-light mt-0.5 shrink-0" />
                     <span>{t(`ws.plan3_feat${i}`)}</span>
                   </li>
                 ))}
@@ -285,12 +285,12 @@ export default function WebsiteServicePage() {
                 )}
                 {/* Step circle */}
                 <div className="shrink-0 w-10 h-10 rounded-full bg-brand-red/10 border-2 border-brand-red/30 flex items-center justify-center z-10">
-                  <span className="text-sm font-bold text-brand-red">{p.step}</span>
+                  <span className="text-sm font-bold text-brand-red-light">{p.step}</span>
                 </div>
                 {/* Content */}
                 <div className="pt-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p.icon className="w-4 h-4 text-brand-red" />
+                    <p.icon className="w-4 h-4 text-brand-red-light" />
                     <h3 className="font-semibold">{t(`ws.step_${p.key}_title`)}</h3>
                   </div>
                   <p className="text-sm text-brand-text-secondary leading-relaxed">
@@ -306,7 +306,7 @@ export default function WebsiteServicePage() {
 
           <div className="mt-10 card p-6 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-brand-red" />
+              <Clock className="w-5 h-5 text-brand-red-light" />
               <h4 className="font-semibold">{t('ws.total_time_title')}</h4>
             </div>
             <p className="text-sm text-brand-text-secondary">{t('ws.total_time_desc')}</p>
@@ -330,7 +330,7 @@ export default function WebsiteServicePage() {
             {requirements.map((req) => (
               <div key={req.key} className="card p-6">
                 <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center mb-4">
-                  <req.icon className="w-5 h-5 text-brand-red" />
+                  <req.icon className="w-5 h-5 text-brand-red-light" />
                 </div>
                 <h3 className="font-semibold mb-2">{t(`ws.need_${req.key}_title`)}</h3>
                 <p className="text-sm text-brand-text-secondary">{t(`ws.need_${req.key}_desc`)}</p>

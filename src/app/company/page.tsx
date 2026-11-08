@@ -103,7 +103,7 @@ export default function CompanyDashboardPage() {
           <div>
             <p className="text-sm text-brand-text-secondary mb-1">{formatDate()}</p>
             <h1 className="text-2xl md:text-3xl font-bold">
-              {getGreeting(t)}, <span className="text-brand-red">{company?.name}</span>
+              {getGreeting(t)}, <span className="text-brand-red-light">{company?.name}</span>
             </h1>
             <p className="text-brand-text-secondary mt-1.5 text-sm">
               {todayBookings
@@ -171,7 +171,7 @@ export default function CompanyDashboardPage() {
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-5">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-brand-red" /> {t('company.dashboard.overview')}
+                <TrendingUp className="w-4 h-4 text-brand-red-light" /> {t('company.dashboard.overview')}
               </h2>
               <span className="text-xs text-brand-text-secondary">{t('company.dashboard.all_time')}</span>
             </div>
@@ -225,7 +225,7 @@ export default function CompanyDashboardPage() {
                       cx="18" cy="18" r="15.9" fill="none" strokeWidth="3"
                       strokeDasharray={`${(roomCount / roomLimit) * 100} ${100 - (roomCount / roomLimit) * 100}`}
                       strokeLinecap="round"
-                      className={atLimit ? 'text-yellow-500' : 'text-brand-red'}
+                      className={atLimit ? 'text-yellow-500' : 'text-brand-red-light'}
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -238,7 +238,7 @@ export default function CompanyDashboardPage() {
                     {atLimit ? t('company.dashboard.upgrade_to_add') : `${roomLimit - roomCount} ${roomLimit - roomCount !== 1 ? t('company.dashboard.rooms_available') : t('company.dashboard.room_available')}`}
                   </p>
                   {atLimit && (
-                    <Link href={p('/company/settings')} className="text-xs text-brand-red hover:underline mt-1 inline-block">
+                    <Link href={p('/company/settings')} className="text-xs text-brand-red-light hover:underline mt-1 inline-block">
                       {t('company.dashboard.upgrade_plan')} →
                     </Link>
                   )}
@@ -253,9 +253,9 @@ export default function CompanyDashboardPage() {
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-5 h-full">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold flex items-center gap-2">
-                <Clock className="w-4 h-4 text-brand-red" /> {t('company.dashboard.todays_schedule')}
+                <Clock className="w-4 h-4 text-brand-red-light" /> {t('company.dashboard.todays_schedule')}
               </h2>
-              <Link href={p('/company/bookings')} className="text-xs text-brand-red hover:underline flex items-center gap-1">
+              <Link href={p('/company/bookings')} className="text-xs text-brand-red-light hover:underline flex items-center gap-1">
                 {t('company.dashboard.view_all')} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -266,7 +266,7 @@ export default function CompanyDashboardPage() {
               <div className="text-center py-12">
                 <CalendarDays className="w-10 h-10 mx-auto mb-3 text-brand-text-secondary/20" />
                 <p className="text-brand-text-secondary text-sm">{t('company.dashboard.no_bookings_for_today')}</p>
-                <Link href={p('/company/bookings')} className="text-xs text-brand-red hover:underline mt-2 inline-block">
+                <Link href={p('/company/bookings')} className="text-xs text-brand-red-light hover:underline mt-2 inline-block">
                   {t('company.dashboard.go_to_bookings')} →
                 </Link>
               </div>
@@ -284,7 +284,7 @@ export default function CompanyDashboardPage() {
                           ? 'bg-green-500/10 text-green-400'
                           : booking.status === 'cancelled'
                           ? 'bg-red-500/10 text-red-400'
-                          : 'bg-brand-red/10 text-brand-red'
+                          : 'bg-brand-red/10 text-brand-red-light'
                       }`}>
                         {booking.time}
                       </div>
@@ -315,7 +315,7 @@ export default function CompanyDashboardPage() {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         booking.source === 'external'
                           ? 'bg-orange-500/10 text-orange-400'
-                          : 'bg-brand-red/10 text-brand-red'
+                          : 'bg-brand-red/10 text-brand-red-light'
                       }`}>
                         {booking.source === 'external' ? t('company.dashboard.external') : 'UNLOCKED'}
                       </span>
@@ -333,9 +333,9 @@ export default function CompanyDashboardPage() {
         <AnimateIn animation="fadeUp">
         <div className="bg-brand-surface rounded-2xl border border-white/5 p-5">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="w-5 h-5 text-brand-red" />
+            <BarChart3 className="w-5 h-5 text-brand-red-light" />
             <h2 className="font-bold">{t('company.dashboard.advanced_analytics')}</h2>
-            <span className="text-[10px] bg-brand-red/10 text-brand-red px-2 py-0.5 rounded-full font-semibold tracking-wide uppercase">{t('company.plan.pro')}</span>
+            <span className="text-[10px] bg-brand-red/10 text-brand-red-light px-2 py-0.5 rounded-full font-semibold tracking-wide uppercase">{t('company.plan.pro')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <MiniStat icon={CheckCircle} label={t('company.dashboard.completed')} value={(stats as any).advanced.completedBookings} color="text-green-400" />
@@ -428,7 +428,7 @@ export default function CompanyDashboardPage() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10 flex items-center gap-5">
             <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center shrink-0">
-              <Sparkles className="w-6 h-6 text-brand-red" />
+              <Sparkles className="w-6 h-6 text-brand-red-light" />
             </div>
             <div className="flex-1">
               <h3 className="font-bold">{t('company.dashboard.unlock_analytics')}</h3>
@@ -446,7 +446,7 @@ export default function CompanyDashboardPage() {
       {/* ── Quick Actions ── */}
       <div>
         <h2 className="font-bold mb-3 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-brand-red" /> {t('company.dashboard.quick_actions')}
+          <Zap className="w-4 h-4 text-brand-red-light" /> {t('company.dashboard.quick_actions')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <QuickAction
@@ -454,7 +454,7 @@ export default function CompanyDashboardPage() {
             icon={Plus}
             label={t('company.dashboard.add_room')}
             desc={t('company.dashboard.new_escape_room')}
-            color="text-brand-red"
+            color="text-brand-red-light"
             disabled={atLimit}
           />
           <QuickAction
@@ -506,7 +506,7 @@ function MetricCard({ icon: Icon, label, value, accent, detail }: {
     blue:   { bg: 'bg-blue-500/10',    text: 'text-blue-400',    glow: 'shadow-blue-500/5' },
     green:  { bg: 'bg-emerald-500/10', text: 'text-emerald-400', glow: 'shadow-emerald-500/5' },
     yellow: { bg: 'bg-yellow-500/10',  text: 'text-yellow-400',  glow: 'shadow-yellow-500/5' },
-    red:    { bg: 'bg-brand-red/10',   text: 'text-brand-red',   glow: 'shadow-red-500/5' },
+    red:    { bg: 'bg-brand-red/10',   text: 'text-brand-red-light',   glow: 'shadow-red-500/5' },
   };
   const c = colors[accent] || colors.blue;
 
@@ -584,7 +584,7 @@ function QuickAction({ href, icon: Icon, label, desc, color, disabled }: {
   return (
     <Link href={href} className="p-4 rounded-2xl bg-brand-surface border border-white/5 hover:border-brand-red/30 transition-all group">
       <Icon className={`w-5 h-5 ${color} mb-2 group-hover:scale-110 transition-transform`} />
-      <p className="text-sm font-medium group-hover:text-brand-red transition-colors">{label}</p>
+      <p className="text-sm font-medium group-hover:text-brand-red-light transition-colors">{label}</p>
       <p className="text-[10px] text-brand-text-secondary mt-0.5">{desc}</p>
     </Link>
   );
@@ -687,7 +687,7 @@ function OnboardingBanner({
                 </span>
               )}
               <h3 className="text-xl font-bold mt-3">{plan.name}</h3>
-              <p className="text-2xl font-bold text-brand-red mt-2">
+              <p className="text-2xl font-bold text-brand-red-light mt-2">
                 {plan.price}
               </p>
               <ul className="mt-4 space-y-2">

@@ -196,7 +196,7 @@ export default function DiscoverPage() {
                   onClick={() => setSortBy(s.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     sortBy === s.value
-                      ? 'bg-brand-red/20 text-brand-red border border-brand-red/30'
+                      ? 'bg-brand-red/20 text-brand-red-light border border-brand-red/30'
                       : 'bg-brand-surface text-brand-text-muted hover:text-white'
                   }`}
                 >
@@ -285,7 +285,7 @@ export default function DiscoverPage() {
                         {room.theme}
                       </span>
 
-                      <h3 className="text-lg font-semibold mb-1 group-hover:text-brand-red transition-colors">
+                      <h3 className="text-lg font-semibold mb-1 group-hover:text-brand-red-light transition-colors">
                         {room.title}
                       </h3>
 

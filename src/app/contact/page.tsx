@@ -112,7 +112,7 @@ export default function ContactPage() {
           <AnimateIn animation="scaleIn">
             <Floating>
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-6">
-                <MessageSquare className="w-8 h-8 text-brand-red" />
+                <MessageSquare className="w-8 h-8 text-brand-red-light" />
               </div>
             </Floating>
           </AnimateIn>
@@ -140,7 +140,7 @@ export default function ContactPage() {
                   className="block bg-brand-card border border-brand-border rounded-2xl p-5 text-center transition-all duration-300 hover:border-brand-red/30 hover:shadow-[0_0_30px_rgba(200,16,27,0.1)] group"
                 >
                   <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-brand-red/10 mb-3 group-hover:bg-brand-red/20 transition-colors">
-                    <info.icon className="w-5 h-5 text-brand-red" />
+                    <info.icon className="w-5 h-5 text-brand-red-light" />
                   </div>
                   <div className="text-xs text-brand-text-muted mb-1">
                     {info.label}
@@ -295,7 +295,7 @@ export default function ContactPage() {
               <div className="card overflow-hidden">
                 <div className="h-48 bg-brand-surface flex items-center justify-center">
                   <div className="text-center">
-                    <MapPin className="w-8 h-8 text-brand-red mx-auto mb-2" />
+                    <MapPin className="w-8 h-8 text-brand-red-light mx-auto mb-2" />
                     <p className="text-sm text-brand-text-muted">
                       Athens, Greece
                     </p>
@@ -312,7 +312,7 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateIn animation="fadeUp" className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-red/10 mb-4">
-              <HelpCircle className="w-6 h-6 text-brand-red" />
+              <HelpCircle className="w-6 h-6 text-brand-red-light" />
             </div>
             <h2 className="section-heading mb-4">
               {t('contact.faq_title')}

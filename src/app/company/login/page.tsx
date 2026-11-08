@@ -67,7 +67,7 @@ export default function CompanyLoginPage() {
               <Unlock className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
-              UN<span className="text-brand-red">LOCKED</span>
+              UN<span className="text-brand-red-light">LOCKED</span>
             </span>
           </div>
           <div className="flex items-center justify-center gap-2 text-brand-text-secondary">
@@ -144,7 +144,7 @@ export default function CompanyLoginPage() {
 
           <p className="text-center text-sm text-brand-text-secondary mt-6">
             {t('company.auth.no_account')}{' '}
-            <Link href={p('/company/register')} className="text-brand-red hover:underline">
+            <Link href={p('/company/register')} className="text-brand-red-light hover:underline">
               {t('company.auth.register_link')}
             </Link>
           </p>
@@ -173,11 +173,11 @@ export default function CompanyLoginPage() {
             { icon: Shield, title: t('company.auth.feature_free_title'), desc: t('company.auth.feature_free_desc') },
           ].map((f, i) => (
             <div key={i} className="bg-brand-surface rounded-xl border border-white/5 p-5 hover:border-white/10 transition-colors">
-              <f.icon className="w-6 h-6 text-brand-red mb-3" />
+              <f.icon className="w-6 h-6 text-brand-red-light mb-3" />
               <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
               <p className="text-xs text-brand-text-secondary leading-relaxed">{f.desc}</p>
               {(f as any).href && (
-                <Link href={(f as any).href} className="text-xs text-brand-red hover:underline mt-2 inline-block">
+                <Link href={(f as any).href} className="text-xs text-brand-red-light hover:underline mt-2 inline-block">
                   {t('company.auth.learn_more')} →
                 </Link>
               )}

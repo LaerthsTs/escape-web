@@ -9,13 +9,25 @@ import { useTranslation } from '@/lib/i18n';
  * cookie that the root layout reads, so later page loads hide it from the server
  * HTML (html[data-intro-seen]). Click to skip.
  */
+// Set (client side only) once the intro has mounted, so returning to the homepage
+// through client-side navigation in the same page session never replays it.
+let startedThisPageSession = false;
+
 export function HorrorIntro() {
   const { t } = useTranslation();
-  const [gone, setGone] = useState(false);
+  const [gone, setGone] = useState(() => startedThisPageSession);
 
   useEffect(() => {
+    startedThisPageSession = true;
     document.cookie = 'unl-intro=1; path=/; SameSite=Lax';
   }, []);
+
+  // Once it has played, hide it for the rest of the page session too, so coming
+  // back to the homepage via client-side navigation doesn't replay it.
+  const finish = () => {
+    document.documentElement.setAttribute('data-intro-seen', '');
+    setGone(true);
+  };
 
   if (gone) return null;
 
@@ -23,16 +35,16 @@ export function HorrorIntro() {
     <div
       className="horror-intro fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-black cursor-pointer select-none"
       style={{ animation: 'intro-out 3s ease-in forwards' }}
-      onClick={() => setGone(true)}
+      onClick={finish}
       onAnimationEnd={(e) => {
-        if (e.target === e.currentTarget) setGone(true);
+        if (e.target === e.currentTarget) finish();
       }}
     >
       <div
         className="absolute inset-0"
         style={{ background: 'radial-gradient(40% 35% at 50% 50%, rgba(140,0,10,0.35), transparent 70%)' }}
       />
-      <div className="relative font-blood text-4xl sm:text-6xl md:text-7xl tracking-wider text-brand-red text-blood-glow animate-flicker-fast">
+      <div className="relative font-blood text-4xl sm:text-6xl md:text-7xl tracking-wider text-brand-red-light text-blood-glow animate-flicker-fast">
         UNLOCKED
       </div>
       <svg viewBox="0 0 400 60" className="relative mt-8 w-[min(80vw,420px)] h-14" fill="none">

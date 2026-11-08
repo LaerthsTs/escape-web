@@ -46,7 +46,7 @@ export function ForBusinesses() {
           {/* Left content */}
           <AnimateIn animation="fadeRight" duration={0.7}>
             <div>
-              <span className="inline-block text-brand-red text-sm font-semibold uppercase tracking-wider mb-3">
+              <span className="inline-block text-brand-red-light text-sm font-semibold uppercase tracking-wider mb-3">
                 {t('business.label')}
               </span>
             <h2 className="section-heading mb-6">
@@ -62,7 +62,7 @@ export function ForBusinesses() {
                 const inner = (
                   <div className="flex gap-4">
                     <div className="shrink-0 w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center">
-                      <f.icon className="w-5 h-5 text-brand-red" />
+                      <f.icon className="w-5 h-5 text-brand-red-light" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-sm mb-1">{f.title}</h4>
@@ -70,7 +70,7 @@ export function ForBusinesses() {
                         {f.desc}
                       </p>
                       {'link' in f && f.link && (
-                        <span className="inline-flex items-center gap-1 text-xs text-brand-red font-medium mt-1.5 group-hover/feat:gap-2 transition-all">
+                        <span className="inline-flex items-center gap-1 text-xs text-brand-red-light font-medium mt-1.5 group-hover/feat:gap-2 transition-all">
                           {t('business.learn_more')} <ArrowRight className="w-3 h-3" />
                         </span>
                       )}
@@ -125,7 +125,7 @@ export function ForBusinesses() {
                       key={i}
                       className="bg-brand-surface rounded-xl p-3 text-center"
                     >
-                      <div className="text-lg font-bold text-brand-red">
+                      <div className="text-lg font-bold text-brand-red-light">
                         {s.value}
                       </div>
                       <div className="text-xs text-brand-text-muted">
@@ -168,7 +168,7 @@ export function ForBusinesses() {
                       className="flex items-center justify-between bg-brand-surface/50 rounded-lg px-3 py-2"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-mono text-brand-red">
+                        <span className="text-xs font-mono text-brand-red-light">
                           {b.time}
                         </span>
                         <span className="text-sm">{b.room}</span>

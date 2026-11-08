@@ -143,7 +143,7 @@ function ConfirmationContent() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-brand-surface rounded-xl p-4">
-                <Calendar className="w-4 h-4 text-brand-red mb-1" />
+                <Calendar className="w-4 h-4 text-brand-red-light mb-1" />
                 <div className="text-xs text-brand-text-muted">{t('confirmation.date')}</div>
                 <div className="text-sm font-medium">
                   {finalDate ? new Date(finalDate + 'T00:00:00').toLocaleDateString('en-GB', {
@@ -155,7 +155,7 @@ function ConfirmationContent() {
                 </div>
               </div>
               <div className="bg-brand-surface rounded-xl p-4">
-                <Clock className="w-4 h-4 text-brand-red mb-1" />
+                <Clock className="w-4 h-4 text-brand-red-light mb-1" />
                 <div className="text-xs text-brand-text-muted">{t('confirmation.time')}</div>
                 <div className="text-sm font-medium">{finalTime}</div>
               </div>
@@ -200,7 +200,7 @@ function ConfirmationContent() {
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-brand-surface rounded-xl p-4">
-              <Calendar className="w-4 h-4 text-brand-red mb-1" />
+              <Calendar className="w-4 h-4 text-brand-red-light mb-1" />
               <div className="text-xs text-brand-text-muted">{t('confirmation.date')}</div>
               <div className="text-sm font-medium">
                 {finalDate ? new Date(finalDate + 'T00:00:00').toLocaleDateString('en-GB', {
@@ -212,17 +212,17 @@ function ConfirmationContent() {
               </div>
             </div>
             <div className="bg-brand-surface rounded-xl p-4">
-              <Clock className="w-4 h-4 text-brand-red mb-1" />
+              <Clock className="w-4 h-4 text-brand-red-light mb-1" />
               <div className="text-xs text-brand-text-muted">{t('confirmation.time')}</div>
               <div className="text-sm font-medium">{finalTime}</div>
             </div>
             <div className="bg-brand-surface rounded-xl p-4">
-              <Users className="w-4 h-4 text-brand-red mb-1" />
+              <Users className="w-4 h-4 text-brand-red-light mb-1" />
               <div className="text-xs text-brand-text-muted">{t('confirmation.players')}</div>
               <div className="text-sm font-medium">{finalPlayers} players</div>
             </div>
             <div className="bg-brand-surface rounded-xl p-4">
-              <CreditCard className="w-4 h-4 text-brand-red mb-1" />
+              <CreditCard className="w-4 h-4 text-brand-red-light mb-1" />
               <div className="text-xs text-brand-text-muted">{t('confirmation.total')}</div>
               <div className="text-sm font-medium">€{finalTotal}</div>
             </div>
@@ -248,7 +248,7 @@ function ConfirmationContent() {
               />
             </div>
             <div className="text-xs text-brand-text-muted mb-1">{t('confirmation.booking_code')}</div>
-            <div className="text-2xl font-mono font-bold tracking-wider text-brand-red">
+            <div className="text-2xl font-mono font-bold tracking-wider text-brand-red-light">
               {finalBookingCode}
             </div>
             <p className="text-xs text-brand-text-muted mt-2">
@@ -261,7 +261,7 @@ function ConfirmationContent() {
         {friends && friends.length > 0 && bookingIdForInvite && (
           <div className="card p-6 mb-8 text-left">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-brand-red" />
+              <UserPlus className="w-5 h-5 text-brand-red-light" />
               {t('friends.invite_to_booking')}
             </h3>
             <p className="text-sm text-brand-text-muted mb-4">
@@ -277,7 +277,7 @@ function ConfirmationContent() {
                     {friend.avatar ? (
                       <img src={friend.avatar} alt={friend.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-sm font-bold text-brand-red">
+                      <span className="text-sm font-bold text-brand-red-light">
                         {friend.name?.charAt(0)?.toUpperCase()}
                       </span>
                     )}
@@ -292,7 +292,7 @@ function ConfirmationContent() {
                     <button
                       onClick={() => handleInviteFriend(friend._id)}
                       disabled={inviteLoading === friend._id}
-                      className="flex items-center gap-1 text-xs bg-brand-red/10 text-brand-red hover:bg-brand-red/20 px-3 py-1.5 rounded-full transition-colors"
+                      className="flex items-center gap-1 text-xs bg-brand-red/10 text-brand-red-light hover:bg-brand-red/20 px-3 py-1.5 rounded-full transition-colors"
                     >
                       {inviteLoading === friend._id ? (
                         <div className="w-3.5 h-3.5 border-2 border-brand-red/30 border-t-brand-red rounded-full animate-spin" />

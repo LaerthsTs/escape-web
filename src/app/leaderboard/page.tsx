@@ -124,7 +124,7 @@ export default function LeaderboardPage() {
           <div className="glass rounded-2xl p-6 md:p-8">
             <StaggerContainer stagger={0.1} className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: DoorOpen, label: t('leaderboard.total_escapes'), value: globalStats ? globalStats.totalEscapes.toLocaleString() : '—', color: 'text-brand-red' },
+                { icon: DoorOpen, label: t('leaderboard.total_escapes'), value: globalStats ? globalStats.totalEscapes.toLocaleString() : '—', color: 'text-brand-red-light' },
                 { icon: Clock, label: t('leaderboard.avg_escape_time'), value: globalStats ? `${globalStats.totalPlayed.toLocaleString()} ${t('leaderboard.played')}` : '—', color: 'text-cyan-400' },
                 { icon: TrendingUp, label: t('leaderboard.success_rate'), value: globalStats ? `${globalStats.successRate}%` : '—', color: 'text-green-400' },
                 { icon: Award, label: t('leaderboard.badges_earned'), value: globalStats ? globalStats.totalBadges.toLocaleString() : '—', color: 'text-brand-gold' },
@@ -177,7 +177,7 @@ export default function LeaderboardPage() {
             <div className="space-y-3">
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
-                  <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+                  <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
                 </div>
               ) : topPlayers.length === 0 ? (
                 <div className="card p-12 text-center">
@@ -266,7 +266,7 @@ export default function LeaderboardPage() {
                       {player.avatar ? (
                         <img src={player.avatar} alt={player.name} className="w-9 h-9 rounded-full object-cover" />
                       ) : (
-                      <div className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red text-sm font-bold">
+                      <div className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red-light text-sm font-bold">
                         {player.initials}
                       </div>
                       )}

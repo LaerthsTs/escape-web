@@ -178,7 +178,7 @@ function CheckoutContent() {
             {/* Booking details */}
             <div className="card p-6">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <DoorOpen className="w-5 h-5 text-brand-red" />
+                <DoorOpen className="w-5 h-5 text-brand-red-light" />
                 {t('checkout.booking_details')}
               </h3>
               <div className="grid sm:grid-cols-2 gap-4 text-sm">
@@ -237,7 +237,7 @@ function CheckoutContent() {
             {/* Payment Terms */}
             <div className="card p-6">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-brand-red" />
+                <CreditCard className="w-5 h-5 text-brand-red-light" />
                 {t('checkout.payment_option')}
               </h3>
               <div className="space-y-3">
@@ -313,7 +313,7 @@ function CheckoutContent() {
             {/* Promo Code */}
             <div className="card p-6">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5 text-brand-red" />
+                <Tag className="w-5 h-5 text-brand-red-light" />
                 {t('checkout.promo_code')}
               </h3>
               <div className="flex gap-3">

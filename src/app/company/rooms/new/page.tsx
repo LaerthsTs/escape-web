@@ -39,7 +39,7 @@ const LocationPicker = dynamic(
   () => import('@/components/map/LocationPicker'),
   { ssr: false, loading: () => (
     <div className="h-[300px] bg-brand-bg border border-white/10 rounded-xl flex items-center justify-center">
-      <Loader2 className="w-6 h-6 text-brand-red animate-spin" />
+      <Loader2 className="w-6 h-6 text-brand-red-light animate-spin" />
     </div>
   )}
 );
@@ -375,7 +375,7 @@ export default function NewRoomPage() {
             <p className="text-sm text-brand-text-secondary mt-1">
               {t('company.rooms.new.limit_plan_info', { plan, limit: roomLimit === Infinity ? 'unlimited' : String(roomLimit), count: String(roomCount) })}
               {plan !== 'enterprise' && (
-                <> {t('company.rooms.new.upgrade_in_settings')} <Link href={p('/company/settings')} className="text-brand-red hover:underline">{t('company.rooms.new.settings_link')}</Link> {t('company.rooms.new.to_add_more')}</>
+                <> {t('company.rooms.new.upgrade_in_settings')} <Link href={p('/company/settings')} className="text-brand-red-light hover:underline">{t('company.rooms.new.settings_link')}</Link> {t('company.rooms.new.to_add_more')}</>
               )}
             </p>
           </div>
@@ -484,7 +484,7 @@ export default function NewRoomPage() {
             >
               {imageUploading ? (
                 <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+                  <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
                   <p className="text-sm text-brand-text-secondary">{t('company.rooms.new.image_uploading')}</p>
                 </div>
               ) : (imagePreview || form.image) ? (
@@ -494,13 +494,13 @@ export default function NewRoomPage() {
                     alt="Room preview"
                     className="w-full max-w-xs h-40 object-cover rounded-lg"
                   />
-                  <p className="text-xs text-brand-text-secondary group-hover:text-brand-red transition-colors">
+                  <p className="text-xs text-brand-text-secondary group-hover:text-brand-red-light transition-colors">
                     {t('company.rooms.new.image_change')}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <Upload className="w-8 h-8 text-brand-text-secondary group-hover:text-brand-red transition-colors" />
+                  <Upload className="w-8 h-8 text-brand-text-secondary group-hover:text-brand-red-light transition-colors" />
                   <p className="text-sm text-brand-text-secondary group-hover:text-white transition-colors">
                     {t('company.rooms.new.image_upload_prompt')}
                   </p>
@@ -573,7 +573,7 @@ export default function NewRoomPage() {
               <button
                 type="button"
                 onClick={addGroupPrice}
-                className="text-sm text-brand-red hover:underline flex items-center gap-1"
+                className="text-sm text-brand-red-light hover:underline flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" /> {t('company.rooms.new.add_group_price')}
               </button>
@@ -618,7 +618,7 @@ export default function NewRoomPage() {
                 onClick={() => toggleTag(tag)}
                 className={`text-sm px-3 py-1.5 rounded-full border transition-all ${
                   form.tags.includes(tag)
-                    ? 'bg-brand-red/10 border-brand-red/30 text-brand-red'
+                    ? 'bg-brand-red/10 border-brand-red/30 text-brand-red-light'
                     : 'border-white/10 text-brand-text-secondary hover:border-white/20'
                 }`}
               >
@@ -724,7 +724,7 @@ export default function NewRoomPage() {
                 onClick={() => togglePaymentTerm(opt.value)}
                 className={`text-sm px-4 py-2 rounded-xl border transition-all ${
                   form.paymentTerms.includes(opt.value)
-                    ? 'bg-brand-red/10 border-brand-red/30 text-brand-red'
+                    ? 'bg-brand-red/10 border-brand-red/30 text-brand-red-light'
                     : 'border-white/10 text-brand-text-secondary hover:border-white/20'
                 }`}
               >
@@ -789,7 +789,7 @@ export default function NewRoomPage() {
           <button
             type="button"
             onClick={addTimeSlot}
-            className="text-sm text-brand-red hover:underline flex items-center gap-1 mt-2"
+            className="text-sm text-brand-red-light hover:underline flex items-center gap-1 mt-2"
           >
             <Plus className="w-3 h-3" /> {t('company.rooms.new.add_time_slot')}
           </button>
@@ -849,7 +849,7 @@ export default function NewRoomPage() {
             className="w-full flex items-center justify-between p-6"
           >
             <div className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-brand-red" />
+              <Camera className="w-5 h-5 text-brand-red-light" />
               <h2 className="text-lg font-bold">{t('company.settings.photos_title')}</h2>
             </div>
             {photoBrandingOpen ? <ChevronUp className="w-5 h-5 text-brand-text-secondary" /> : <ChevronDown className="w-5 h-5 text-brand-text-secondary" />}
@@ -875,7 +875,7 @@ export default function NewRoomPage() {
                   <button type="button" onClick={() => setUseOverlay(false)}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${!useOverlay ? 'border-brand-red bg-brand-red/10' : 'border-white/10 hover:border-white/20'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <Upload className="w-4 h-4 text-brand-red" />
+                      <Upload className="w-4 h-4 text-brand-red-light" />
                       <span className="font-semibold text-sm">{t('company.settings.photos_mode_logo')}</span>
                     </div>
                     <p className="text-xs text-brand-text-muted">{t('company.settings.photos_mode_logo_desc')}</p>
@@ -883,7 +883,7 @@ export default function NewRoomPage() {
                   <button type="button" onClick={() => setUseOverlay(true)}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${useOverlay ? 'border-brand-red bg-brand-red/10' : 'border-white/10 hover:border-white/20'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <Layers className="w-4 h-4 text-brand-red" />
+                      <Layers className="w-4 h-4 text-brand-red-light" />
                       <span className="font-semibold text-sm">{t('company.settings.photos_mode_overlay')}</span>
                     </div>
                     <p className="text-xs text-brand-text-muted">{t('company.settings.photos_mode_overlay_desc')}</p>
@@ -916,7 +916,7 @@ export default function NewRoomPage() {
                     <div onClick={() => overlayRef.current?.click()}
                       className="cursor-pointer border-2 border-dashed border-white/10 hover:border-brand-red/40 rounded-xl p-6 text-center transition-all group">
                       {overlayUploading ? (
-                        <Loader2 className="w-10 h-10 text-brand-red animate-spin mx-auto" />
+                        <Loader2 className="w-10 h-10 text-brand-red-light animate-spin mx-auto" />
                       ) : (overlayPreview || overlayUrl) ? (
                         <div className="relative w-full max-w-sm mx-auto">
                           <div className="bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23333%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23333%22%2F%3E%3Crect%20x%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23555%22%2F%3E%3Crect%20y%3D%2210%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E')] rounded-xl overflow-hidden aspect-video">
@@ -926,7 +926,7 @@ export default function NewRoomPage() {
                         </div>
                       ) : (
                         <div>
-                          <Layers className="w-10 h-10 text-brand-text-secondary group-hover:text-brand-red transition-colors mx-auto mb-2" />
+                          <Layers className="w-10 h-10 text-brand-text-secondary group-hover:text-brand-red-light transition-colors mx-auto mb-2" />
                           <p className="text-sm text-brand-text-secondary group-hover:text-white transition-colors">{t('company.settings.photos_upload_overlay')}</p>
                         </div>
                       )}
@@ -979,12 +979,12 @@ export default function NewRoomPage() {
                     <div onClick={() => presetLogoRef.current?.click()}
                       className="cursor-pointer border-2 border-dashed border-white/10 hover:border-brand-red/40 rounded-xl p-4 text-center transition-all group inline-flex items-center gap-4">
                       {presetLogoUploading ? (
-                        <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+                        <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
                       ) : (presetLogoPreview || presetLogoUrl) ? (
                         <img src={presetLogoPreview || presetLogoUrl} alt="Logo" className="w-16 h-16 object-contain rounded-lg bg-white/5 p-1" />
                       ) : (
                         <div className="w-16 h-16 bg-brand-bg rounded-lg flex items-center justify-center">
-                          <Upload className="w-6 h-6 text-brand-text-secondary group-hover:text-brand-red transition-colors" />
+                          <Upload className="w-6 h-6 text-brand-text-secondary group-hover:text-brand-red-light transition-colors" />
                         </div>
                       )}
                       <span className="text-sm text-brand-text-secondary group-hover:text-white transition-colors">
@@ -999,7 +999,7 @@ export default function NewRoomPage() {
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                       {(['top-left', 'top-right', 'bottom-left', 'bottom-right', 'bottom-center'] as const).map((pos) => (
                         <button key={pos} type="button" onClick={() => setPresetForm({ ...presetForm, logoPosition: pos })}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${presetForm.logoPosition === pos ? 'border-brand-red bg-brand-red/10 text-brand-red' : 'border-white/10 text-brand-text-secondary hover:border-brand-red/30'}`}>
+                          className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${presetForm.logoPosition === pos ? 'border-brand-red bg-brand-red/10 text-brand-red-light' : 'border-white/10 text-brand-text-secondary hover:border-brand-red/30'}`}>
                           {t(`company.settings.photos_pos_${pos.replace('-', '_')}`)}
                         </button>
                       ))}
@@ -1117,7 +1117,7 @@ export default function NewRoomPage() {
                 className="text-2xl"
               >
                 {form.isSubscriptionOnly ? (
-                  <ToggleRight className="w-8 h-8 text-brand-red" />
+                  <ToggleRight className="w-8 h-8 text-brand-red-light" />
                 ) : (
                   <ToggleLeft className="w-8 h-8 text-brand-text-secondary" />
                 )}
@@ -1141,7 +1141,7 @@ export default function NewRoomPage() {
                         updateField('termsOfUse', tpl.body);
                       }
                     }}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-brand-text-secondary hover:border-brand-red/40 hover:text-brand-red transition-all"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-brand-text-secondary hover:border-brand-red/40 hover:text-brand-red-light transition-all"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     {t(`company.rooms.new.terms_${tpl.key}`)}

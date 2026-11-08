@@ -196,7 +196,7 @@ export default function RoomAvailabilityPage() {
                     isSelected
                       ? 'bg-brand-red text-white'
                       : isToday
-                      ? 'bg-brand-red/20 text-brand-red'
+                      ? 'bg-brand-red/20 text-brand-red-light'
                       : 'hover:bg-white/5 text-brand-text-secondary'
                   }`}
                 >
@@ -260,7 +260,7 @@ export default function RoomAvailabilityPage() {
                 <p>{t('company.availability.no_slots')}</p>
                 <button
                   onClick={handleStartEdit}
-                  className="mt-4 text-sm text-brand-red hover:underline"
+                  className="mt-4 text-sm text-brand-red-light hover:underline"
                 >
                   {t('company.availability.setup_slots')}
                 </button>

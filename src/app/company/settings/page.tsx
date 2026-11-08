@@ -287,7 +287,7 @@ export default function CompanySettingsPage() {
       label: t('company.plan.pro'),
       price: '€98/mo',
       yearlyPrice: '€980/yr',
-      color: 'text-brand-red',
+      color: 'text-brand-red-light',
       bg: 'bg-brand-red/10',
       border: 'border-brand-red/20',
       Icon: Diamond,
@@ -523,8 +523,8 @@ export default function CompanySettingsPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 bg-brand-red/10 border border-brand-red/30 rounded-full px-3 py-1 mb-4">
-                <Zap className="w-3.5 h-3.5 text-brand-red" />
-                <span className="text-xs font-semibold text-brand-red uppercase tracking-wide">
+                <Zap className="w-3.5 h-3.5 text-brand-red-light" />
+                <span className="text-xs font-semibold text-brand-red-light uppercase tracking-wide">
                   {t('company.settings.partner_program')}
                 </span>
               </div>
@@ -546,7 +546,7 @@ export default function CompanySettingsPage() {
                   { icon: Clock, step: '3', text: t('company.settings.ea_step3') },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3 p-3 bg-brand-bg/50 rounded-xl border border-white/5">
-                    <div className="w-7 h-7 shrink-0 rounded-full bg-brand-red/20 flex items-center justify-center text-xs font-bold text-brand-red">
+                    <div className="w-7 h-7 shrink-0 rounded-full bg-brand-red/20 flex items-center justify-center text-xs font-bold text-brand-red-light">
                       {item.step}
                     </div>
                     <p className="text-sm text-brand-text-secondary leading-snug">{item.text}</p>
@@ -570,7 +570,7 @@ export default function CompanySettingsPage() {
               <div className="flex items-center justify-between p-4 bg-brand-bg rounded-xl border border-white/5">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${earlyAccessEnabled ? 'bg-brand-red/20' : 'bg-white/5'}`}>
-                    <Shield className={`w-5 h-5 ${earlyAccessEnabled ? 'text-brand-red' : 'text-brand-text-secondary'}`} />
+                    <Shield className={`w-5 h-5 ${earlyAccessEnabled ? 'text-brand-red-light' : 'text-brand-text-secondary'}`} />
                   </div>
                   <div>
                     <p className="font-semibold">
@@ -593,7 +593,7 @@ export default function CompanySettingsPage() {
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     </div>
                   ) : earlyAccessEnabled ? (
-                    <ToggleRightIcon className="w-10 h-10 text-brand-red" />
+                    <ToggleRightIcon className="w-10 h-10 text-brand-red-light" />
                   ) : (
                     <ToggleLeftIcon className="w-10 h-10 text-brand-text-secondary" />
                   )}
@@ -605,7 +605,7 @@ export default function CompanySettingsPage() {
           {/* Benefits for your company */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <div className="flex items-center gap-2 mb-1">
-              <Gift className="w-5 h-5 text-brand-red" />
+              <Gift className="w-5 h-5 text-brand-red-light" />
               <h3 className="text-lg font-bold">{t('company.settings.benefits_title')}</h3>
             </div>
             <p className="text-sm text-brand-text-secondary mb-6">
@@ -625,7 +625,7 @@ export default function CompanySettingsPage() {
                   <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center ${
                     earlyAccessEnabled ? 'bg-brand-red/15' : 'bg-white/5'
                   }`}>
-                    <benefit.icon className={`w-5 h-5 ${earlyAccessEnabled ? 'text-brand-red' : 'text-brand-text-secondary'}`} />
+                    <benefit.icon className={`w-5 h-5 ${earlyAccessEnabled ? 'text-brand-red-light' : 'text-brand-text-secondary'}`} />
                   </div>
                   <div>
                     <p className="font-medium text-sm mb-0.5">{benefit.title}</p>
@@ -647,7 +647,7 @@ export default function CompanySettingsPage() {
           {/* For players info  */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-5 h-5 text-brand-red" />
+              <Users className="w-5 h-5 text-brand-red-light" />
               <h3 className="text-lg font-bold">{t('company.settings.premium_title')}</h3>
             </div>
             <p className="text-sm text-brand-text-secondary mb-4">
@@ -662,7 +662,7 @@ export default function CompanySettingsPage() {
               ].map((perk, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
                   <div className="w-5 h-5 rounded-full bg-brand-red/15 flex items-center justify-center shrink-0">
-                    <ChevronRight className="w-3 h-3 text-brand-red" />
+                    <ChevronRight className="w-3 h-3 text-brand-red-light" />
                   </div>
                   <span className="text-brand-text-secondary">{perk}</span>
                 </div>
@@ -775,8 +775,8 @@ export default function CompanySettingsPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
               <div className="inline-flex items-center gap-2 bg-brand-red/10 border border-brand-red/30 rounded-full px-3 py-1 mb-4">
-                <Code className="w-3.5 h-3.5 text-brand-red" />
-                <span className="text-xs font-semibold text-brand-red uppercase tracking-wide">
+                <Code className="w-3.5 h-3.5 text-brand-red-light" />
+                <span className="text-xs font-semibold text-brand-red-light uppercase tracking-wide">
                   {t('company.settings.tab_widget')}
                 </span>
               </div>
@@ -792,7 +792,7 @@ export default function CompanySettingsPage() {
           {/* How It Works */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-brand-red" />
+              <Info className="w-5 h-5 text-brand-red-light" />
               {t('company.widget.how_it_works')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -802,7 +802,7 @@ export default function CompanySettingsPage() {
                 { step: '3', text: t('company.widget.step3'), icon: Globe },
               ].map((item) => (
                 <div key={item.step} className="flex items-start gap-3 p-4 bg-brand-bg/50 rounded-xl border border-white/5">
-                  <div className="w-8 h-8 shrink-0 rounded-full bg-brand-red/20 flex items-center justify-center text-sm font-bold text-brand-red">
+                  <div className="w-8 h-8 shrink-0 rounded-full bg-brand-red/20 flex items-center justify-center text-sm font-bold text-brand-red-light">
                     {item.step}
                   </div>
                   <p className="text-sm text-brand-text-secondary leading-snug">{item.text}</p>
@@ -815,7 +815,7 @@ export default function CompanySettingsPage() {
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2">
-                <Code className="w-5 h-5 text-brand-red" />
+                <Code className="w-5 h-5 text-brand-red-light" />
                 {t('company.widget.embed_code')}
               </h3>
               <button
@@ -828,7 +828,7 @@ export default function CompanySettingsPage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   widgetCopied
                     ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                    : 'bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20'
+                    : 'bg-brand-red/10 text-brand-red-light border border-brand-red/20 hover:bg-brand-red/20'
                 }`}
               >
                 {widgetCopied ? (
@@ -854,7 +854,7 @@ export default function CompanySettingsPage() {
           {/* Widget Features */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <div className="flex items-center gap-2 mb-1">
-              <Star className="w-5 h-5 text-brand-red" />
+              <Star className="w-5 h-5 text-brand-red-light" />
               <h3 className="text-lg font-bold">{t('company.widget.features_title')}</h3>
             </div>
             <p className="text-sm text-brand-text-secondary mb-6">
@@ -872,7 +872,7 @@ export default function CompanySettingsPage() {
               ].map((feat, i) => (
                 <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-brand-bg border border-white/5">
                   <div className="w-10 h-10 shrink-0 rounded-xl bg-brand-red/15 flex items-center justify-center">
-                    <feat.icon className="w-5 h-5 text-brand-red" />
+                    <feat.icon className="w-5 h-5 text-brand-red-light" />
                   </div>
                   <div>
                     <p className="font-medium text-sm mb-0.5">{feat.title}</p>
@@ -886,7 +886,7 @@ export default function CompanySettingsPage() {
           {/* Customization note */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-5 h-5 text-brand-red" />
+              <Shield className="w-5 h-5 text-brand-red-light" />
               <h3 className="text-lg font-bold">{t('company.widget.customization')}</h3>
             </div>
             <p className="text-sm text-brand-text-secondary leading-relaxed">
@@ -895,7 +895,7 @@ export default function CompanySettingsPage() {
             <div className="mt-4 p-3 bg-brand-bg/50 rounded-xl border border-white/5">
               <p className="text-xs text-brand-text-secondary">
                 {t('company.widget.need_help')}{' '}
-                <a href="mailto:hello@unlocked.gr" className="text-brand-red hover:underline">
+                <a href="mailto:hello@unlocked.gr" className="text-brand-red-light hover:underline">
                   hello@unlocked.gr
                 </a>
               </p>

@@ -85,7 +85,7 @@ export default function SocialPage() {
               className="card p-4 flex items-center gap-3 mb-6 hover:border-brand-red/30"
             >
               <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center">
-                <Plus className="w-5 h-5 text-brand-red" />
+                <Plus className="w-5 h-5 text-brand-red-light" />
               </div>
               <span className="text-brand-text-muted text-sm">
                 {t('social.share_prompt')}
@@ -134,7 +134,7 @@ export default function SocialPage() {
                           <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                         )}
                         {post.authorType === 'company' && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-brand-red/20 text-brand-red">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm bg-brand-red/20 text-brand-red-light">
                             {t('social.business_badge')}
                           </span>
                         )}
@@ -148,8 +148,8 @@ export default function SocialPage() {
                   {/* Room tag */}
                   {post.roomTitle && (
                     <div className="flex items-center gap-1.5 mb-2">
-                      <DoorOpen className="w-3.5 h-3.5 text-brand-red" />
-                      <span className="text-xs font-medium text-brand-red">
+                      <DoorOpen className="w-3.5 h-3.5 text-brand-red-light" />
+                      <span className="text-xs font-medium text-brand-red-light">
                         {post.roomTitle}
                       </span>
                     </div>
@@ -211,16 +211,16 @@ export default function SocialPage() {
                   <div className="flex items-center gap-6 pt-2 border-t border-brand-border/30">
                     <button
                       onClick={() => handleLike(post._id)}
-                      className="flex items-center gap-1.5 text-sm transition-colors hover:text-brand-red"
+                      className="flex items-center gap-1.5 text-sm transition-colors hover:text-brand-red-light"
                     >
                       <Heart
                         className={`w-4 h-4 ${
                           likedPostIds.has(post._id)
-                            ? 'fill-brand-red text-brand-red'
+                            ? 'fill-brand-red text-brand-red-light'
                             : 'text-brand-text-muted'
                         }`}
                       />
-                      <span className={likedPostIds.has(post._id) ? 'text-brand-red' : 'text-brand-text-muted'}>
+                      <span className={likedPostIds.has(post._id) ? 'text-brand-red-light' : 'text-brand-text-muted'}>
                         {post.likes}
                       </span>
                     </button>

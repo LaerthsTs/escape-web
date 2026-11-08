@@ -338,7 +338,7 @@ export function HeroSection() {
           </div>
           <div className="hidden sm:block w-px h-5 bg-brand-red/40" />
           <span className="hidden sm:flex items-center gap-1.5">
-            <Skull className="w-4 h-4 text-brand-red" /> {ratingLabel}
+            <Skull className="w-4 h-4 text-brand-red-light" /> {ratingLabel}
           </span>
           <div className="hidden sm:block w-px h-5 bg-brand-red/40" />
           <span className="hidden sm:block">{roomsLabel}</span>

@@ -110,10 +110,10 @@ export default function ForEscapeRoomsPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20">
-              <Unlock className="w-8 h-8 text-brand-red" />
+              <Unlock className="w-8 h-8 text-brand-red-light" />
             </div>
           </div>
-          <span className="inline-block text-brand-red text-sm font-semibold uppercase tracking-wider mb-4 bg-brand-red/10 px-4 py-1.5 rounded-full">
+          <span className="inline-block text-brand-red-light text-sm font-semibold uppercase tracking-wider mb-4 bg-brand-red/10 px-4 py-1.5 rounded-full">
             {t('fer.hero_badge')}
           </span>
           <h1 className="section-heading mb-6">
@@ -149,7 +149,7 @@ export default function ForEscapeRoomsPage() {
               { value: platformStats ? `${platformStats.averageRating.toFixed(1)}/5` : '—', label: t('fer.stat3_label') },
             ].map((stat, i) => (
               <div key={i} className="card p-8 text-center">
-                <div className="text-4xl font-bold text-brand-red mb-2">{stat.value}</div>
+                <div className="text-4xl font-bold text-brand-red-light mb-2">{stat.value}</div>
                 <div className="text-sm text-brand-text-secondary">{stat.label}</div>
               </div>
             ))}
@@ -172,7 +172,7 @@ export default function ForEscapeRoomsPage() {
             {features.map((feat) => (
               <div key={feat.key} className="card p-6 group hover:border-brand-red/30 transition-colors">
                 <div className="w-12 h-12 rounded-xl bg-brand-red/10 flex items-center justify-center mb-4 group-hover:bg-brand-red/20 transition-colors">
-                  <feat.icon className="w-6 h-6 text-brand-red" />
+                  <feat.icon className="w-6 h-6 text-brand-red-light" />
                 </div>
                 <h3 className="font-semibold mb-2">{t(`fer.feat_${feat.key}_title`)}</h3>
                 <p className="text-sm text-brand-text-secondary leading-relaxed">{t(`fer.feat_${feat.key}_desc`)}</p>
@@ -226,7 +226,7 @@ export default function ForEscapeRoomsPage() {
                 <ul className="space-y-2.5 mb-6 flex-1">
                   {Array.from({ length: plan.features }, (_, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-brand-red mt-0.5 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-brand-red-light mt-0.5 shrink-0" />
                       <span>{t(`fer.plan_${plan.id}_f${i + 1}`)}</span>
                     </li>
                   ))}
@@ -262,9 +262,9 @@ export default function ForEscapeRoomsPage() {
             {steps.map((step) => (
               <div key={step.num} className="card p-6 text-center relative">
                 <div className="w-12 h-12 rounded-full bg-brand-red/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-brand-red font-bold text-lg">{step.num}</span>
+                  <span className="text-brand-red-light font-bold text-lg">{step.num}</span>
                 </div>
-                <step.icon className="w-8 h-8 text-brand-red mx-auto mb-3" />
+                <step.icon className="w-8 h-8 text-brand-red-light mx-auto mb-3" />
                 <h3 className="font-semibold mb-2">{t(`fer.how_step${step.num}_title`)}</h3>
                 <p className="text-sm text-brand-text-secondary leading-relaxed">{t(`fer.how_step${step.num}_desc`)}</p>
               </div>
@@ -295,7 +295,7 @@ export default function ForEscapeRoomsPage() {
           <div className="card p-12 relative overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-br from-brand-red/5 to-brand-gold/5" />
             <div className="relative z-10">
-              <Shield className="w-12 h-12 text-brand-red mx-auto mb-6" />
+              <Shield className="w-12 h-12 text-brand-red-light mx-auto mb-6" />
               <h2 className="text-2xl md:text-3xl font-bold mb-3">
                 {t('fer.cta_title')} <span className="text-gradient">{t('fer.cta_highlight')}</span>
               </h2>
@@ -309,7 +309,7 @@ export default function ForEscapeRoomsPage() {
                 </Link>
               </div>
               <p className="text-sm text-brand-text-muted mt-4">
-                <Link href="/contact" className="hover:text-brand-red transition-colors">
+                <Link href="/contact" className="hover:text-brand-red-light transition-colors">
                   {t('fer.cta_contact')} →
                 </Link>
               </p>

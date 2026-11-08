@@ -21,7 +21,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-brand-bg pt-24 pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-2">
-          <Shield className="w-8 h-8 text-brand-red" />
+          <Shield className="w-8 h-8 text-brand-red-light" />
           <h1 className="text-3xl font-bold">{t('legal.privacy.title')}</h1>
         </div>
         <p className="text-sm text-brand-text-muted mb-8">{t('legal.privacy.last_updated')}</p>

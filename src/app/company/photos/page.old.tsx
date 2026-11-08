@@ -353,7 +353,7 @@ export default function CompanyPhotosPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Camera className="w-7 h-7 text-brand-red" />
+            <Camera className="w-7 h-7 text-brand-red-light" />
             {t('company.photos.title')}
           </h1>
           <p className="text-brand-text-secondary text-sm mt-1">
@@ -365,7 +365,7 @@ export default function CompanyPhotosPage() {
       {/* Completed Bookings List */}
       {!completedBookings ? (
         <div className="text-center py-20">
-          <Loader2 className="w-8 h-8 text-brand-red animate-spin mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 text-brand-red-light animate-spin mx-auto mb-4" />
           <p className="text-brand-text-muted">{t('common.loading')}</p>
         </div>
       ) : completedBookings.length === 0 ? (
@@ -391,7 +391,7 @@ export default function CompanyPhotosPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold truncate">{booking.room?.title || 'Room'}</h3>
                       {booking.photoCount > 0 && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-red/20 text-brand-red">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-red/20 text-brand-red-light">
                           {t('company.photos.photos_count', { count: String(booking.photoCount) })}
                         </span>
                       )}
@@ -532,7 +532,7 @@ export default function CompanyPhotosPage() {
       {uploading && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div className="bg-brand-surface rounded-2xl p-8 text-center border border-white/10 max-w-sm w-full mx-4">
-            <Loader2 className="w-10 h-10 text-brand-red animate-spin mx-auto mb-4" />
+            <Loader2 className="w-10 h-10 text-brand-red-light animate-spin mx-auto mb-4" />
             <p className="text-lg font-semibold mb-1">
               {t('company.photos.uploading', { current: String(uploadProgress), total: String(uploadTotal) })}
             </p>

@@ -41,7 +41,7 @@ export function DownloadCTA() {
         <AnimateIn animation="fadeUp" delay={0.2}>
           <h2 className="section-heading mb-6 text-4xl! md:text-6xl! lg:text-7xl!">
             {t('download.title')}{' '}
-            <span className="font-blood text-brand-red text-blood-glow animate-flicker text-[0.8em]">{t('download.title_highlight')}</span>{' '}
+            <span className="font-blood text-brand-red-light text-blood-glow animate-flicker text-[0.8em]">{t('download.title_highlight')}</span>{' '}
             {t('download.title_end')}
           </h2>
           <p className="section-subheading mx-auto mb-12">{t('download.subtitle')}</p>

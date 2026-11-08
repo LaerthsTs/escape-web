@@ -228,7 +228,7 @@ export default function FriendsPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-lg font-bold text-brand-red">
+                          <span className="text-lg font-bold text-brand-red-light">
                             {friend.name?.charAt(0)?.toUpperCase()}
                           </span>
                         )}
@@ -286,7 +286,7 @@ export default function FriendsPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-lg font-bold text-brand-red">
+                          <span className="text-lg font-bold text-brand-red-light">
                             {req.name?.charAt(0)?.toUpperCase()}
                           </span>
                         )}
@@ -374,7 +374,7 @@ export default function FriendsPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-lg font-bold text-brand-red">
+                          <span className="text-lg font-bold text-brand-red-light">
                             {u.name?.charAt(0)?.toUpperCase()}
                           </span>
                         )}
@@ -405,7 +405,7 @@ export default function FriendsPage() {
                         <button
                           onClick={() => handleSendRequest(u._id)}
                           disabled={actionLoading === u._id}
-                          className="flex items-center gap-1.5 text-xs bg-brand-red/10 text-brand-red hover:bg-brand-red/20 px-3 py-1.5 rounded-full transition-colors"
+                          className="flex items-center gap-1.5 text-xs bg-brand-red/10 text-brand-red-light hover:bg-brand-red/20 px-3 py-1.5 rounded-full transition-colors"
                         >
                           {actionLoading === u._id ? (
                             <div className="w-3.5 h-3.5 border-2 border-brand-red/30 border-t-brand-red rounded-full animate-spin" />

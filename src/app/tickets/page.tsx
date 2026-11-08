@@ -124,7 +124,7 @@ export default function TicketsPage() {
           <AnimateIn animation="scaleIn">
             <Floating>
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-6">
-                <Ticket className="w-8 h-8 text-brand-red" />
+                <Ticket className="w-8 h-8 text-brand-red-light" />
               </div>
             </Floating>
           </AnimateIn>
@@ -349,7 +349,7 @@ export default function TicketsPage() {
                         </div>
                         <div className="mt-3">
                           <div className="text-xs text-brand-text-muted">{t('tickets.booking_code')}</div>
-                          <div className="text-lg font-mono font-bold tracking-wider text-brand-red">
+                          <div className="text-lg font-mono font-bold tracking-wider text-brand-red-light">
                             {booking.bookingCode}
                           </div>
                         </div>
@@ -371,7 +371,7 @@ export default function TicketsPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center">
-                <Camera className="w-5 h-5 text-brand-red" />
+                <Camera className="w-5 h-5 text-brand-red-light" />
               </div>
               <div>
                 <h2 className="text-xl font-bold">{t('tickets.escape_moments')}</h2>

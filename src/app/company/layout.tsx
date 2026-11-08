@@ -97,14 +97,14 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
             <Unlock className="w-4 h-4 text-white" />
           </div>
           <span className="text-lg font-display font-bold tracking-wider">
-            UN<span className="text-brand-red">LOCKED</span>
+            UN<span className="text-brand-red-light">LOCKED</span>
           </span>
         </div>
 
         {/* Company info */}
         <div className="px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red font-bold">
+            <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red-light font-bold">
               {company?.name?.charAt(0)?.toUpperCase() || <Building2 className="w-5 h-5" />}
             </div>
             <div className="flex-1 min-w-0">
@@ -130,7 +130,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
                 href={link.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-brand-red/10 text-brand-red'
+                    ? 'bg-brand-red/10 text-brand-red-light'
                     : 'text-brand-text-secondary hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -167,7 +167,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
             <Unlock className="w-4 h-4 text-white" />
           </div>
           <span className="text-sm font-display font-bold">
-            UN<span className="text-brand-red">LOCKED</span>
+            UN<span className="text-brand-red-light">LOCKED</span>
           </span>
         </div>
         <button
@@ -190,7 +190,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
               key={link.href}
               href={link.href}
               className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                isActive ? 'text-brand-red' : 'text-brand-text-secondary'
+                isActive ? 'text-brand-red-light' : 'text-brand-text-secondary'
               }`}
             >
               <link.icon className="w-5 h-5" />

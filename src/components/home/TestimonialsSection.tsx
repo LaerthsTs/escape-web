@@ -49,14 +49,14 @@ export function TestimonialsSection() {
                     {t('horror.case_file')} #{String(13 + i * 7).padStart(4, '0')}
                   </span>
                   {/* Stamp */}
-                  <span className="font-type text-[11px] tracking-[0.2em] text-brand-red border-2 border-brand-red/70 px-2 py-0.5 rotate-[-8deg] opacity-80 group-hover:opacity-100 transition-opacity">
+                  <span className="font-type text-[11px] tracking-[0.2em] text-brand-red-light border-2 border-brand-red/70 px-2 py-0.5 rotate-[-8deg] opacity-80 group-hover:opacity-100 transition-opacity">
                     {t('horror.survivor')}
                   </span>
                 </div>
 
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: item.rating }).map((_, j) => (
-                    <Skull key={j} className="w-4 h-4 text-brand-red" />
+                    <Skull key={j} className="w-4 h-4 text-brand-red-light" />
                   ))}
                 </div>
 

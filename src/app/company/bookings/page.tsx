@@ -167,7 +167,7 @@ export default function CompanyBookingsPage() {
                     isSelected
                       ? 'bg-brand-red text-white'
                       : isToday
-                      ? 'bg-brand-red/20 text-brand-red'
+                      ? 'bg-brand-red/20 text-brand-red-light'
                       : 'hover:bg-white/5 text-brand-text-secondary'
                   }`}
                 >
@@ -226,7 +226,7 @@ export default function CompanyBookingsPage() {
                     )}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-brand-red">
+                        <span className="text-lg font-bold text-brand-red-light">
                           {booking.time}
                         </span>
                         <span className="font-semibold">{booking.roomTitle}</span>
@@ -236,7 +236,7 @@ export default function CompanyBookingsPage() {
                           className={`text-xs px-2 py-1 rounded-full font-medium ${
                             booking.source === 'external'
                               ? 'bg-orange-500/10 text-orange-400'
-                              : 'bg-brand-red/10 text-brand-red'
+                              : 'bg-brand-red/10 text-brand-red-light'
                           }`}
                         >
                           {booking.source === 'external' ? t('company.bookings.external') : t('company.bookings.unlocked_source')}
@@ -492,7 +492,7 @@ function CompleteBookingModal({
         {/* Booking summary */}
         <div className="bg-brand-bg rounded-xl p-3 mb-5 text-sm">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-brand-red">{booking.time}</span>
+            <span className="font-bold text-brand-red-light">{booking.time}</span>
             <span className="font-medium">{booking.roomTitle}</span>
           </div>
           <div className="text-brand-text-muted flex items-center gap-3">
@@ -693,7 +693,7 @@ function RescheduleBookingModal({
         {/* Current booking summary */}
         <div className="bg-brand-bg rounded-xl p-3 mb-5 text-sm">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-brand-red">{booking.time}</span>
+            <span className="font-bold text-brand-red-light">{booking.time}</span>
             <span className="font-medium">{booking.roomTitle}</span>
           </div>
           <div className="text-brand-text-muted flex items-center gap-3">

@@ -56,7 +56,7 @@ export function SEOContent() {
         <ul className="space-y-3 text-brand-text-secondary mb-12">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <li key={i} className="flex items-start gap-3">
-              <span className="text-brand-red mt-1">✓</span>
+              <span className="text-brand-red-light mt-1">✓</span>
               <span>{t(`seo.why_point${i}`)}</span>
             </li>
           ))}

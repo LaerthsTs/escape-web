@@ -31,7 +31,7 @@ export function PlanBadge({
     },
     pro: {
       label: t('company.plan.pro'),
-      color: 'text-brand-red',
+      color: 'text-brand-red-light',
       bg: 'bg-brand-red/10',
       border: 'border-brand-red/20',
       Icon: Diamond,

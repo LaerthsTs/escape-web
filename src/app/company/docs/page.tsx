@@ -45,7 +45,7 @@ function Section({
         className="w-full flex items-center gap-3 px-6 py-4 hover:bg-white/5 transition-colors text-left"
       >
         <div className="w-10 h-10 rounded-xl bg-brand-red/10 flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-brand-red" />
+          <Icon className="w-5 h-5 text-brand-red-light" />
         </div>
         <span className="text-lg font-semibold flex-1">{title}</span>
         {open ? (
@@ -74,7 +74,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function Badge({ children, color = 'red' }: { children: React.ReactNode; color?: string }) {
   const colors: Record<string, string> = {
-    red: 'bg-brand-red/10 text-brand-red',
+    red: 'bg-brand-red/10 text-brand-red-light',
     green: 'bg-emerald-500/10 text-emerald-400',
     amber: 'bg-amber-500/10 text-amber-400',
     blue: 'bg-blue-500/10 text-blue-400',
@@ -97,7 +97,7 @@ export default function DocsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-brand-red" />
+            <BookOpen className="w-6 h-6 text-brand-red-light" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold">
@@ -391,7 +391,7 @@ export default function DocsPage() {
 
           <div className="bg-white/5 rounded-xl p-4 space-y-3">
             <div className="flex gap-3 items-start">
-              <QrCode className="w-5 h-5 text-brand-red shrink-0 mt-0.5" />
+              <QrCode className="w-5 h-5 text-brand-red-light shrink-0 mt-0.5" />
               <div>
                 <p className="text-white font-medium">
                   {isGreek ? 'Πώς λειτουργεί' : 'How it works'}
@@ -562,7 +562,7 @@ export default function DocsPage() {
                 { type: 'system', label: isGreek ? 'Σύστημα' : 'System' },
               ].map(({ type, label }) => (
                 <div key={type} className="flex items-center gap-2 text-xs">
-                  <span className="text-brand-red font-mono">{type}</span>
+                  <span className="text-brand-red-light font-mono">{type}</span>
                   <span className="text-brand-text-secondary/40">—</span>
                   <span>{label}</span>
                 </div>
@@ -632,21 +632,21 @@ export default function DocsPage() {
         <Section icon={Layers} title={isGreek ? 'Διαδικασία Ένταξης' : 'Onboarding Process'}>
           <div className="bg-white/5 rounded-xl p-4 space-y-4">
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red font-bold text-sm shrink-0">1</div>
+              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">1</div>
               <div>
                 <p className="text-white font-medium">{isGreek ? 'Αποδοχή Όρων' : 'Accept Terms'}</p>
                 <p className="text-xs mt-1">{isGreek ? 'Αποδοχή των όρων χρήσης και της πολιτικής απορρήτου' : 'Accept terms of service and privacy policy'}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red font-bold text-sm shrink-0">2</div>
+              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">2</div>
               <div>
                 <p className="text-white font-medium">{isGreek ? 'Επιλογή Πλάνου' : 'Choose Plan'}</p>
                 <p className="text-xs mt-1">{isGreek ? 'Επιλέξτε πλάνο και ολοκληρώστε την πληρωμή μέσω Stripe Checkout' : 'Select a plan and complete payment via Stripe Checkout'}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red font-bold text-sm shrink-0">3</div>
+              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">3</div>
               <div>
                 <p className="text-white font-medium">{isGreek ? 'Αξιολόγηση Διαχειριστή' : 'Admin Review'}</p>
                 <p className="text-xs mt-1">{isGreek ? 'Η αίτησή σας αξιολογείται εντός 48 ωρών' : 'Your application is reviewed within 48 hours'}</p>
@@ -665,7 +665,7 @@ export default function DocsPage() {
 
           <div className="bg-white/5 rounded-xl p-4 space-y-2">
             <div className="flex gap-3 items-center">
-              <Users className="w-4 h-4 text-brand-red" />
+              <Users className="w-4 h-4 text-brand-red-light" />
               <span>{isGreek ? 'Σύστημα αιτημάτων φιλίας (αποστολή/αποδοχή/απόρριψη)' : 'Friend request system (send/accept/reject)'}</span>
             </div>
             <div className="flex gap-3 items-center">
@@ -685,7 +685,7 @@ export default function DocsPage() {
             {isGreek
               ? 'Χρειάζεστε βοήθεια; Επικοινωνήστε μαζί μας στο'
               : 'Need help? Contact us at'}{' '}
-            <a href="mailto:hello@unlocked.gr" className="text-brand-red hover:underline">
+            <a href="mailto:hello@unlocked.gr" className="text-brand-red-light hover:underline">
               hello@unlocked.gr
             </a>
           </p>

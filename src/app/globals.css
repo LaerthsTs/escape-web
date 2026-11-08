@@ -19,7 +19,8 @@
   --color-brand-gold: #c99a2e;
   --color-brand-text: #ece2d6;
   --color-brand-text-secondary: #a3958c;
-  --color-brand-text-muted: #6a5450;
+  /* ≥4.5:1 on bg/card (was #6a5450 at ~2.9:1) */
+  --color-brand-text-muted: #8f7b75;
   --color-brand-bone: #e8dcc8;
   --color-brand-blood: #5c0008;
   --color-brand-ash: #2a2220;

@@ -119,7 +119,7 @@ export default function PaymentSuccessPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-brand-bg flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+          <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
         </div>
       }
     >

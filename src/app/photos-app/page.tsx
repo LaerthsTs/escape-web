@@ -69,7 +69,7 @@ export default function PhotosRoomsDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Camera className="w-7 h-7 text-brand-red" />
+            <Camera className="w-7 h-7 text-brand-red-light" />
             Your Rooms
           </h1>
           <p className="text-brand-text-secondary text-sm mt-1">
@@ -89,7 +89,7 @@ export default function PhotosRoomsDashboard() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           {[
-            { icon: Camera, label: 'Photos', value: stats.totalPhotos, accent: 'text-brand-red' },
+            { icon: Camera, label: 'Photos', value: stats.totalPhotos, accent: 'text-brand-red-light' },
             { icon: Camera, label: 'Today', value: stats.todayPhotos, accent: 'text-blue-400' },
             { icon: Mail, label: 'Emails Sent', value: stats.totalEmails, accent: 'text-green-400' },
             { icon: Eye, label: 'Page Views', value: stats.totalViews, accent: 'text-purple-400' },
@@ -139,7 +139,7 @@ export default function PhotosRoomsDashboard() {
       {/* Rooms list */}
       {!rooms ? (
         <div className="text-center py-20">
-          <Loader2 className="w-8 h-8 text-brand-red animate-spin mx-auto" />
+          <Loader2 className="w-8 h-8 text-brand-red-light animate-spin mx-auto" />
         </div>
       ) : rooms.length === 0 ? (
         <div className="text-center py-20 bg-brand-surface rounded-2xl border border-white/5">
@@ -187,7 +187,7 @@ export default function PhotosRoomsDashboard() {
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg truncate">{room.title}</h3>
-                  <ChevronRight className="w-5 h-5 text-brand-text-muted group-hover:text-brand-red transition-colors shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-brand-text-muted group-hover:text-brand-red-light transition-colors shrink-0" />
                 </div>
               </div>
             </div>

@@ -201,7 +201,7 @@ export default function CompanyOnboardingPage() {
                 i < stepIndex
                   ? 'bg-brand-red border-brand-red text-white'
                   : i === stepIndex
-                    ? 'border-brand-red text-brand-red'
+                    ? 'border-brand-red text-brand-red-light'
                     : 'border-white/20 text-brand-text-secondary'
               }`}
             >
@@ -239,7 +239,7 @@ export default function CompanyOnboardingPage() {
           <Unlock className="w-4 h-4 text-white" />
         </div>
         <span className="text-lg font-display font-bold tracking-wider">
-          UN<span className="text-brand-red">LOCKED</span>
+          UN<span className="text-brand-red-light">LOCKED</span>
         </span>
       </div>
       <h1 className="text-lg font-bold">{title}</h1>
@@ -275,7 +275,7 @@ export default function CompanyOnboardingPage() {
 
               {[1, 2, 3, 4, 5].map((n) => (
                 <div key={n} className="mb-6">
-                  <h3 className="text-brand-red font-bold mb-2">
+                  <h3 className="text-brand-red-light font-bold mb-2">
                     {t(`company.onboarding.terms${n}_title`)}
                   </h3>
                   <p className="text-brand-text-secondary text-sm leading-relaxed">

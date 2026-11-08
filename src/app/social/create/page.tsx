@@ -206,7 +206,7 @@ export default function CreatePostPage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="w-24 h-24 rounded-xl border-2 border-dashed border-white/10 hover:border-brand-red/40 flex flex-col items-center justify-center gap-1 text-brand-text-secondary hover:text-brand-red transition-all"
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-white/10 hover:border-brand-red/40 flex flex-col items-center justify-center gap-1 text-brand-text-secondary hover:text-brand-red-light transition-all"
                 >
                   {uploading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

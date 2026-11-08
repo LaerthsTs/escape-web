@@ -86,7 +86,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
         <div className="bg-brand-surface rounded-2xl border border-white/5 p-8 text-center max-w-md">
-          <Shield className="w-12 h-12 text-brand-red mx-auto mb-4" />
+          <Shield className="w-12 h-12 text-brand-red-light mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">{t('admin.access_required')}</h1>
           <p className="text-brand-text-secondary mb-6">{t('admin.access_desc')}</p>
           <Link
@@ -291,7 +291,7 @@ export default function AdminPage() {
               <h3 className="text-sm font-bold text-brand-text-secondary mb-4">{t('admin.company_plans')}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <PlanCard icon={Rocket} label="Starter" count={companies.plans.starter} color="text-emerald-400" bg="bg-emerald-500/10" />
-                <PlanCard icon={Diamond} label="Pro" count={companies.plans.pro} color="text-brand-red" bg="bg-brand-red/10" />
+                <PlanCard icon={Diamond} label="Pro" count={companies.plans.pro} color="text-brand-red-light" bg="bg-brand-red/10" />
                 <PlanCard icon={Crown} label="Enterprise" count={companies.plans.enterprise} color="text-purple-400" bg="bg-purple-500/10" />
                 <PlanCard icon={AlertCircle} label={t('admin.no_plan')} count={companies.plans.none} color="text-gray-400" bg="bg-white/5" />
               </div>
@@ -480,7 +480,7 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-sm font-medium text-right">{b.total}€</td>
                         <td className="px-4 py-3"><BookingStatusBadge status={b.status} /></td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${b.source === 'external' ? 'bg-blue-500/10 text-blue-400' : 'bg-brand-red/10 text-brand-red'}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${b.source === 'external' ? 'bg-blue-500/10 text-blue-400' : 'bg-brand-red/10 text-brand-red-light'}`}>
                             {b.source === 'external' ? 'Widget' : 'UNLOCKED'}
                           </span>
                         </td>
@@ -640,7 +640,7 @@ function CompanyDetailCard({ company, expanded, onToggle, onApprove, onDecline, 
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red font-bold">
+          <div className="w-10 h-10 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red-light font-bold">
             {company.name?.charAt(0)?.toUpperCase()}
           </div>
           <div>

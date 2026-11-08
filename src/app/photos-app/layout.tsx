@@ -46,7 +46,7 @@ function PhotosShell({ children }: { children: React.ReactNode }) {
             <Camera className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="text-base font-display font-bold tracking-wider">
-            UN<span className="text-brand-red">LOCKED</span>
+            UN<span className="text-brand-red-light">LOCKED</span>
             <span className="text-brand-text-muted text-xs ml-1.5 font-normal">Photos</span>
           </span>
         </div>
@@ -60,7 +60,7 @@ function PhotosShell({ children }: { children: React.ReactNode }) {
               logout();
               router.push('/login');
             }}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors text-brand-text-muted hover:text-brand-red"
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors text-brand-text-muted hover:text-brand-red-light"
           >
             <LogOut className="w-4 h-4" />
           </button>

@@ -21,7 +21,7 @@ export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
         <Unlock className={`${icon} text-brand-bone`} />
       </span>
       <span className={`font-blood ${text} tracking-wider text-brand-bone`}>
-        UN<span className="text-brand-red text-blood-glow animate-flicker">LOCKED</span>
+        UN<span className="text-brand-red-light text-blood-glow animate-flicker">LOCKED</span>
       </span>
     </span>
   );

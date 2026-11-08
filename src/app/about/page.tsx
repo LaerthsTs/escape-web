@@ -63,7 +63,7 @@ export default function AboutPage() {
           <AnimateIn animation="scaleIn">
             <Floating>
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-6">
-                <Unlock className="w-8 h-8 text-brand-red" />
+                <Unlock className="w-8 h-8 text-brand-red-light" />
               </div>
             </Floating>
           </AnimateIn>
@@ -87,7 +87,7 @@ export default function AboutPage() {
             <AnimateIn animation="fadeRight">
               <div>
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-red/10 mb-4">
-                  <Target className="w-6 h-6 text-brand-red" />
+                  <Target className="w-6 h-6 text-brand-red-light" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-display font-bold mb-4">{t('about.our_mission')}</h2>
                 <p className="text-brand-text-secondary leading-relaxed">
@@ -98,7 +98,7 @@ export default function AboutPage() {
             <AnimateIn animation="fadeLeft" delay={0.2}>
               <div>
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-red/10 mb-4">
-                  <Award className="w-6 h-6 text-brand-red" />
+                  <Award className="w-6 h-6 text-brand-red-light" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-display font-bold mb-4">{t('about.our_vision')}</h2>
                 <p className="text-brand-text-secondary leading-relaxed">
@@ -123,7 +123,7 @@ export default function AboutPage() {
               <StaggerItem key={i} animation="fadeUp">
               <div className="card p-6 text-center hover:-translate-y-1 transition-transform duration-300">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-4">
-                  <v.icon className="w-7 h-7 text-brand-red" />
+                  <v.icon className="w-7 h-7 text-brand-red-light" />
                 </div>
                 <h3 className="font-semibold mb-2">{v.title}</h3>
                 <p className="text-sm text-brand-text-secondary leading-relaxed">
@@ -162,7 +162,7 @@ export default function AboutPage() {
 
                   {/* Content */}
                   <div className={`ml-12 md:ml-0 md:w-1/2 ${i % 2 === 0 ? 'md:pr-12 md:text-right' : 'md:pl-12'}`}>
-                    <span className="text-brand-red font-display font-bold text-sm">
+                    <span className="text-brand-red-light font-display font-bold text-sm">
                       {item.year}
                     </span>
                     <h3 className="text-lg font-semibold mt-1 mb-2">
@@ -185,7 +185,7 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <AnimateIn animation="scaleIn">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-red/10 border border-brand-red/20 mb-6">
-              <Users className="w-7 h-7 text-brand-red" />
+              <Users className="w-7 h-7 text-brand-red-light" />
             </div>
           </AnimateIn>
           <AnimateIn animation="fadeUp" delay={0.15}>

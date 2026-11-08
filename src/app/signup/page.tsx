@@ -103,7 +103,7 @@ export default function SignupPage() {
               <Unlock className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
-              UN<span className="text-brand-red">LOCKED</span>
+              UN<span className="text-brand-red-light">LOCKED</span>
             </span>
           </Link>
           <h1 className="text-2xl font-display font-bold mb-2">{t('auth.create_account')}</h1>
@@ -232,15 +232,15 @@ export default function SignupPage() {
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="w-4 h-4 mt-0.5 rounded-sm border-brand-border bg-brand-surface text-brand-red focus:ring-brand-red/50"
+                className="w-4 h-4 mt-0.5 rounded-sm border-brand-border bg-brand-surface text-brand-red-light focus:ring-brand-red/50"
               />
               <span className="text-sm text-brand-text-secondary">
                 {t('auth.agree_to')}{' '}
-                <Link href="/terms" target="_blank" className="text-brand-red hover:underline">
+                <Link href="/terms" target="_blank" className="text-brand-red-light hover:underline">
                   {t('auth.terms_of_service')}
                 </Link>{' '}
                 {t('auth.and')}{' '}
-                <Link href="/privacy" target="_blank" className="text-brand-red hover:underline">
+                <Link href="/privacy" target="_blank" className="text-brand-red-light hover:underline">
                   {t('auth.privacy_policy')}
                 </Link>
               </span>
@@ -268,7 +268,7 @@ export default function SignupPage() {
             {t('auth.has_account')}{' '}
             <Link
               href="/login"
-              className="text-brand-red hover:text-brand-red-light font-medium transition-colors"
+              className="text-brand-red-light hover:text-brand-red-light font-medium transition-colors"
             >
               {t('auth.login_link')}
             </Link>

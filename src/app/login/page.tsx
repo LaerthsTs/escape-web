@@ -57,7 +57,7 @@ export default function LoginPage() {
               <Unlock className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-display font-bold tracking-wider">
-              UN<span className="text-brand-red">LOCKED</span>
+              UN<span className="text-brand-red-light">LOCKED</span>
             </span>
           </Link>
           <h1 className="text-2xl font-display font-bold mb-2">{t('auth.welcome_back')}</h1>
@@ -127,7 +127,7 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded-sm border-brand-border bg-brand-surface text-brand-red focus:ring-brand-red/50"
+                  className="w-4 h-4 rounded-sm border-brand-border bg-brand-surface text-brand-red-light focus:ring-brand-red/50"
                 />
                 <span className="text-sm text-brand-text-secondary">
                   {t('auth.remember_me')}
@@ -135,7 +135,7 @@ export default function LoginPage() {
               </label>
               <Link
                 href="#"
-                className="text-sm text-brand-red hover:text-brand-red-light transition-colors"
+                className="text-sm text-brand-red-light hover:text-brand-red-light transition-colors"
               >
                 {t('auth.forgot_password')}
               </Link>
@@ -163,7 +163,7 @@ export default function LoginPage() {
             {t('auth.no_account')}{' '}
             <Link
               href="/signup"
-              className="text-brand-red hover:text-brand-red-light font-medium transition-colors"
+              className="text-brand-red-light hover:text-brand-red-light font-medium transition-colors"
             >
               {t('auth.signup_free')}
             </Link>

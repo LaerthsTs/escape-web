@@ -44,7 +44,7 @@ const typeColors: Record<string, string> = {
   promo: 'bg-purple-500/20 text-purple-400',
   system: 'bg-blue-500/20 text-blue-400',
   slot_available: 'bg-cyan-500/20 text-cyan-400',
-  new_room: 'bg-brand-red/20 text-brand-red',
+  new_room: 'bg-brand-red/20 text-brand-red-light',
   photos_ready: 'bg-purple-500/20 text-purple-400',
   friend_request: 'bg-sky-500/20 text-sky-400',
   friend_accepted: 'bg-green-500/20 text-green-400',
