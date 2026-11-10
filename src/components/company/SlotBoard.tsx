@@ -7,7 +7,7 @@ import { api } from '../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
 import { useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { friendlyError } from '@/lib/errors';
-import { slotSortKey, isSlotPast, useNow } from '@/lib/slotTime';
+import { slotSortKey, isSlotPast, slotClosedReason, useNow } from '@/lib/slotTime';
 import { useToast } from './Toast';
 import {
   DoorOpen,
@@ -19,6 +19,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
 
 /*
@@ -29,7 +30,12 @@ import {
  *  - a slot with available:false is closed; a slot with a booking is taken;
  *  - on a weekday outside room.operatingDays the room is closed all day;
  *  - once a slot's start time has passed it counts as closed (shown greyed,
- *    can't be toggled, and the player booking page no longer offers it).
+ *    can't be toggled, and the player booking page no longer offers it);
+ *  - a free slot also stops taking bookings 1 hour before it starts, unless
+ *    the slot right before it is booked (staff are already there), in which
+ *    case it stays open until it starts (lib/slotTime slotClosedReason);
+ *  - "extra" times can be added to a single date; they are the slots of that
+ *    date that aren't in room.defaultTimeSlots and can be removed again.
  * Closing/opening means writing the date's slot list with setSlots. When the
  * result equals the defaults again we clear the date (empty list), so the room
  * keeps following its normal weekly schedule.
@@ -99,7 +105,8 @@ export function useSetSlots() {
   });
 }
 
-export type SlotState = 'open' | 'closed' | 'booked' | 'past';
+/** 'cutoff': free, inside the last hour, and the slot before it isn't booked. */
+export type SlotState = 'open' | 'closed' | 'booked' | 'past' | 'cutoff';
 
 /** Everything one room needs for one day: slots, states and the open/close actions. */
 export function useDaySlots(room: any, date: string, bookings: any[] | undefined, now: Date) {
@@ -121,8 +128,25 @@ export function useDaySlots(room: any, date: string, bookings: any[] | undefined
 
   const weekdayClosed = isClosedWeekday(room, date);
 
-  const stateOf = (s: Slot): SlotState =>
-    booked.has(s.time) ? 'booked' : isSlotPast(date, s.time, now) ? 'past' : s.available ? 'open' : 'closed';
+  const bookedTimes = useMemo(() => new Set(booked.keys()), [booked]);
+  const allTimes = useMemo(
+    () => new Set<string>([...(slots || []).map((s) => s.time), ...bookedTimes]),
+    [slots, bookedTimes]
+  );
+
+  const stateOf = (s: Slot): SlotState => {
+    if (booked.has(s.time)) return 'booked';
+    if (isSlotPast(date, s.time, now)) return 'past';
+    if (!s.available) return 'closed';
+    return slotClosedReason(date, s.time, allTimes, bookedTimes, now) === 'cutoff' ? 'cutoff' : 'open';
+  };
+
+  const defaultTimes = useMemo(
+    () => new Set(((room?.defaultTimeSlots || []) as { time: string }[]).map((s) => s.time)),
+    [room]
+  );
+  /** A time added for this date only (not part of the room's weekly schedule). */
+  const isExtra = (time: string) => !defaultTimes.has(time);
 
   const save = async (next: Slot[], undoTo: Slot[] | null, message: string) => {
     setBusy(true);
@@ -147,7 +171,7 @@ export function useDaySlots(room: any, date: string, bookings: any[] | undefined
     const current = slots.find((s) => s.time === time);
     if (!current) return;
     const st = stateOf(current);
-    if (st === 'booked' || st === 'past') return;
+    if (st === 'booked' || st === 'past' || st === 'cutoff') return;
     const next = slots.map((s) => (s.time === time ? { ...s, available: !s.available } : s));
     void save(
       next,
@@ -161,9 +185,41 @@ export function useDaySlots(room: any, date: string, bookings: any[] | undefined
     if (!slots) return;
     const next = slots.map((s) => {
       const st = stateOf(s);
-      return st === 'booked' || st === 'past' ? s : { ...s, available: open };
+      return st === 'booked' || st === 'past' || st === 'cutoff' ? s : { ...s, available: open };
     });
     void save(next, slots, t(open ? 'cx.slots.opened_all' : 'cx.slots.closed_all', { room: room.title }));
+  };
+
+  /**
+   * Add an extra time for this date only. Returns an error message, or null
+   * when the save went out.
+   */
+  const addSlot = (time: string, price: number): string | null => {
+    if (!slots) return null;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return t('cx.slots.extra_bad_time');
+    if (allTimes.has(time)) return t('cx.slots.extra_exists', { time });
+    if (isSlotPast(date, time, now)) return t('cx.slots.extra_past');
+    if (!Number.isFinite(price) || price < 0) return t('cx.slots.extra_bad_price');
+    const next = [...slots, { time, price, available: true }].sort(byTime);
+    void save(next, slots, t('cx.slots.extra_added', { time, room: room.title }));
+    return null;
+  };
+
+  /** Remove an extra (date-only) time that nobody has booked. */
+  const removeSlot = (time: string) => {
+    if (!slots || booked.has(time) || !isExtra(time)) return;
+    const next = slots.filter((s) => s.time !== time);
+    void save(next, slots, t('cx.slots.extra_removed', { time, room: room.title }));
+  };
+
+  /** Price to suggest for a new time: the closest earlier slot's, else the room's. */
+  const suggestPrice = (time?: string) => {
+    const list = slots || [];
+    if (time && list.length) {
+      const prev = [...list].reverse().find((s) => slotSortKey(s.time) < slotSortKey(time));
+      if (prev) return prev.price;
+    }
+    return list[list.length - 1]?.price ?? room?.price ?? 0;
   };
 
   const states = (slots || []).map(stateOf);
@@ -171,22 +227,79 @@ export function useDaySlots(room: any, date: string, bookings: any[] | undefined
     open: states.filter((s) => s === 'open').length,
     closed: states.filter((s) => s === 'closed').length,
     booked: booked.size,
-    past: states.filter((s) => s === 'past').length,
+    past: states.filter((s) => s === 'past' || s === 'cutoff').length,
   };
 
   // Bookings at times that are not in the slot list (custom times, blocks).
   const extraBooked = [...booked.values()].filter((b) => !slots?.some((s) => s.time === b.time)).sort(byTime);
 
-  return { slots, booked, weekdayClosed, busy, stateOf, toggle, setAll, counts, extraBooked };
+  return {
+    slots,
+    booked,
+    weekdayClosed,
+    busy,
+    stateOf,
+    toggle,
+    setAll,
+    counts,
+    extraBooked,
+    isExtra,
+    addSlot,
+    removeSlot,
+    suggestPrice,
+  };
 }
 
-/** One time button. Open/closed toggle on tap; booked links to the booking; past is inert. */
-export function SlotChip({
+/**
+ * One time button, plus a small × to delete it when it's an extra
+ * (date-only) time nobody has booked.
+ */
+export function SlotChip(props: {
+  slot: { time: string };
+  state: SlotState;
+  booking?: any;
+  date: string;
+  onToggle?: () => void;
+  onRemove?: () => void;
+  extra?: boolean;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
+  const { slot, state, extra, onRemove } = props;
+  const chip = <SlotChipBody {...props} />;
+  if (!extra) return chip;
+  return (
+    <div className="relative">
+      {chip}
+      <span
+        className="pointer-events-none absolute top-0.5 left-1 text-[8px] font-bold uppercase tracking-wide text-amber-300/90"
+        aria-hidden="true"
+      >
+        +
+      </span>
+      {onRemove && state !== 'booked' && (
+        <button
+          type="button"
+          onClick={onRemove}
+          title={t('cx.slots.extra_remove', { time: slot.time })}
+          aria-label={t('cx.slots.extra_remove', { time: slot.time })}
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-surface border border-white/15 text-brand-text-secondary hover:text-red-300 hover:border-red-500/40 flex items-center justify-center"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Open/closed toggle on tap; booked links to the booking; past and cutoff are inert. */
+function SlotChipBody({
   slot,
   state,
   booking,
   date,
   onToggle,
+  extra = false,
   compact = false,
 }: {
   slot: { time: string };
@@ -194,6 +307,7 @@ export function SlotChip({
   booking?: any;
   date: string;
   onToggle?: () => void;
+  extra?: boolean;
   compact?: boolean;
 }) {
   const { t } = useTranslation();
@@ -219,10 +333,10 @@ export function SlotChip({
     );
   }
 
-  if (state === 'past') {
+  if (state === 'past' || state === 'cutoff') {
     return (
       <div
-        title={t('cx.slots.past_title')}
+        title={t(state === 'past' ? 'cx.slots.past_title' : 'cx.slots.cutoff_title')}
         aria-disabled="true"
         className={`${size} rounded-xl border border-dashed border-white/10 bg-white/2 flex flex-col items-center justify-center text-center opacity-50 cursor-not-allowed`}
       >
@@ -243,7 +357,7 @@ export function SlotChip({
       title={t(open ? 'cx.slots.aria_close' : 'cx.slots.aria_open', { time: slot.time })}
       className={`${size} w-full rounded-xl border flex flex-col items-center justify-center text-center transition-all active:scale-95 ${
         open
-          ? 'border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20'
+          ? `${extra ? 'border-amber-400/40' : 'border-emerald-500/30'} bg-emerald-500/10 hover:bg-emerald-500/20`
           : 'border-white/10 bg-brand-bg hover:border-white/25'
       }`}
     >
@@ -283,7 +397,127 @@ export function SlotLegend() {
       <span className="flex items-center gap-1.5">
         <span className="w-2.5 h-2.5 rounded-full border border-dashed border-white/40" /> {t('cx.slots.legend_past')}
       </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-2.5 h-2.5 rounded-full border border-amber-400/70" /> {t('cx.slots.legend_extra')}
+      </span>
     </div>
+  );
+}
+
+/**
+ * "+ Extra time" button that turns into a small time + price form. Adds a time
+ * to this date only; the room's weekly schedule doesn't change.
+ */
+export function AddSlotButton({
+  onAdd,
+  suggestPrice,
+  busy,
+  compact = false,
+}: {
+  onAdd: (time: string, price: number) => string | null;
+  suggestPrice: (time?: string) => number;
+  busy: boolean;
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [time, setTime] = useState('');
+  const [price, setPrice] = useState('');
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [error, setError] = useState('');
+
+  const reset = () => {
+    setOpen(false);
+    setTime('');
+    setPrice('');
+    setPriceTouched(false);
+    setError('');
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+          setPrice(String(suggestPrice()));
+        }}
+        disabled={busy}
+        title={t('cx.slots.extra_add_title')}
+        className={`${
+          compact ? 'min-h-9 text-[11px]' : 'min-h-14 text-xs'
+        } w-full rounded-xl border border-dashed border-white/15 text-brand-text-secondary hover:text-white hover:border-white/30 flex items-center justify-center gap-1 font-medium transition-colors disabled:opacity-50`}
+      >
+        <Plus className="w-3.5 h-3.5" /> {t('cx.slots.extra_add')}
+      </button>
+    );
+  }
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = onAdd(time, Number(price));
+    if (err) setError(err);
+    else reset();
+  };
+
+  const inputCls =
+    'w-full bg-brand-bg border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:border-brand-red focus:outline-hidden scheme-dark';
+
+  return (
+    <form
+      onSubmit={submit}
+      className={`rounded-xl border border-white/15 bg-brand-surface p-1.5 flex flex-col gap-1.5 ${
+        compact ? '' : 'col-span-2 min-w-44'
+      }`}
+    >
+      <input
+        type="time"
+        value={time}
+        autoFocus
+        required
+        onChange={(e) => {
+          setTime(e.target.value);
+          setError('');
+          if (!priceTouched) setPrice(String(suggestPrice(e.target.value)));
+        }}
+        aria-label={t('cx.slots.extra_time')}
+        className={inputCls}
+      />
+      <label className="flex items-center gap-1 text-xs text-brand-text-secondary">
+        €
+        <input
+          type="number"
+          min={0}
+          step="0.5"
+          value={price}
+          onChange={(e) => {
+            setPrice(e.target.value);
+            setPriceTouched(true);
+            setError('');
+          }}
+          aria-label={t('cx.slots.extra_price')}
+          className={inputCls}
+        />
+      </label>
+      {error && <p className="text-[10px] leading-tight text-red-400">{error}</p>}
+      <div className="flex gap-1">
+        <button
+          type="submit"
+          disabled={busy || !time}
+          className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg bg-brand-red text-white disabled:opacity-50"
+        >
+          {t('cx.slots.extra_save')}
+        </button>
+        <button
+          type="button"
+          onClick={reset}
+          className="px-2 text-[11px] py-1.5 rounded-lg bg-white/5 text-brand-text-secondary hover:text-white"
+          aria-label={t('cx.common.cancel')}
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -314,7 +548,21 @@ export function RoomSlotRow({
   const { t } = useTranslation();
   const p = useCompanyPath();
   const now = useNow();
-  const { slots, booked, weekdayClosed, busy, stateOf, toggle, setAll, counts, extraBooked } = useDaySlots(
+  const {
+    slots,
+    booked,
+    weekdayClosed,
+    busy,
+    stateOf,
+    toggle,
+    setAll,
+    counts,
+    extraBooked,
+    isExtra,
+    addSlot,
+    removeSlot,
+    suggestPrice,
+  } = useDaySlots(
     room,
     date,
     bookings,
@@ -404,11 +652,14 @@ export function RoomSlotRow({
               booking={booked.get(s.time)}
               date={date}
               onToggle={() => toggle(s.time)}
+              extra={isExtra(s.time)}
+              onRemove={() => removeSlot(s.time)}
             />
           ))}
           {extraBooked.map((b) => (
             <SlotChip key={`b-${b._id}`} slot={b} state="booked" booking={b} date={date} />
           ))}
+          {date >= localDateKey(now) && <AddSlotButton onAdd={addSlot} suggestPrice={suggestPrice} busy={busy} />}
         </div>
       )}
     </div>
@@ -459,7 +710,21 @@ function DayCell({
   isToday: boolean;
 }) {
   const { t } = useTranslation();
-  const { slots, booked, weekdayClosed, busy, stateOf, toggle, setAll, counts, extraBooked } = useDaySlots(
+  const {
+    slots,
+    booked,
+    weekdayClosed,
+    busy,
+    stateOf,
+    toggle,
+    setAll,
+    counts,
+    extraBooked,
+    isExtra,
+    addSlot,
+    removeSlot,
+    suggestPrice,
+  } = useDaySlots(
     room,
     date,
     bookings,
@@ -479,10 +744,11 @@ function DayCell({
           <CalendarX className="w-4 h-4 mb-1 opacity-60" />
           {t('cx.cal.day_closed')}
         </div>
-      ) : slots.length === 0 && extraBooked.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-[11px] text-brand-text-secondary py-3">—</div>
       ) : (
         <>
+          {slots.length === 0 && extraBooked.length === 0 && (
+            <div className="flex-1 flex items-center justify-center text-[11px] text-brand-text-secondary py-3">—</div>
+          )}
           {slots.map((s) => (
             <SlotChip
               key={s.time}
@@ -491,12 +757,17 @@ function DayCell({
               booking={booked.get(s.time)}
               date={date}
               onToggle={() => toggle(s.time)}
+              extra={isExtra(s.time)}
+              onRemove={() => removeSlot(s.time)}
               compact
             />
           ))}
           {extraBooked.map((b) => (
             <SlotChip key={`b-${b._id}`} slot={b} state="booked" booking={b} date={date} compact />
           ))}
+          {date >= localDateKey(now) && (
+            <AddSlotButton onAdd={addSlot} suggestPrice={suggestPrice} busy={busy} compact />
+          )}
           {(counts.open > 0 || counts.closed > 0) && (
             <button
               onClick={() => setAll(counts.open === 0)}

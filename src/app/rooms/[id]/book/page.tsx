@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { isSlotPast, useNow } from '@/lib/slotTime';
+import { isSlotPast, slotClosedReason, useNow } from '@/lib/slotTime';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation } from 'convex/react';
@@ -130,12 +130,24 @@ export default function BookingPage() {
   }, [room, playerCount]);
 
   // Available time slots: combine default + custom, exclude booked.
-  // Times that have already started today are dropped: they can't be played any more.
+  // Times that have already started are dropped, and so are free times inside the
+  // last hour unless the time right before them is booked (see slotClosedReason).
   const now = useNow();
   const availableSlots = useMemo(() => {
-    const notPast = (s: { time: string }) => !selectedDate || !isSlotPast(selectedDate, s.time, now);
-    return computeSlots().filter(notPast);
-  }, [timeSlots, bookedTimes, room, selectedDate, now]); // eslint-disable-line react-hooks/exhaustive-deps
+    const slots = computeSlots();
+    if (!selectedDate) return slots;
+    const bookedSet = new Set((bookedTimes ?? []) as string[]);
+    const allTimes = new Set<string>([
+      ...((timeSlots && timeSlots.length > 0 ? timeSlots : room?.defaultTimeSlots || []) as any[]).map((s) => s.time),
+      ...slots.map((s: { time: string }) => s.time),
+      ...bookedSet,
+    ]);
+    return slots.filter((s: { time: string; booked: boolean }) =>
+      s.booked
+        ? !isSlotPast(selectedDate, s.time, now)
+        : slotClosedReason(selectedDate, s.time, allTimes, bookedSet, now) === null
+    );
+  },[timeSlots, bookedTimes, room, selectedDate, now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function computeSlots() {
     const bookedSet = new Set((bookedTimes ?? []) as string[]);

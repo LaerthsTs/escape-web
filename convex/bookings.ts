@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { assertSlotStillBookable } from "./slotRules";
 
 export const create = mutation({
   args: {
@@ -33,6 +34,8 @@ export const create = mutation({
 
     // Look up room to set companyId for tracking
     const room = await ctx.db.get(args.roomId);
+    // Started times / last-hour cutoff (see slotRules.ts)
+    await assertSlotStillBookable(ctx, room, args.date, args.time, existing);
 
     // If this booking is pending Stripe payment, mark it as pending
     const isPending = args.pendingPayment === true;

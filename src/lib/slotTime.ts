@@ -21,9 +21,57 @@ export function slotStart(date: string, time: string): Date {
   return start;
 }
 
-/** True once the slot's start time has passed: it can no longer be booked or opened. */
+/** True once the slot's start time has passed: it can no longer be played. */
 export function isSlotPast(date: string, time: string, now: Date = new Date()) {
   return slotStart(date, time).getTime() <= now.getTime();
+}
+
+/**
+ * A free slot stops taking bookings this long before it starts, so staff don't
+ * come in for a single late booking. Exception: when the slot right before it is
+ * booked, staff are already on site and it stays open until it starts.
+ */
+export const SLOT_CUTOFF_MS = 60 * 60 * 1000;
+
+/** The time that comes right before `time` on the day, among `times`, or null. */
+export function previousSlotTime(time: string, times: Iterable<string>): string | null {
+  const key = slotSortKey(time);
+  let best: string | null = null;
+  for (const t of times) {
+    const k = slotSortKey(t);
+    if (k < key && (best === null || k > slotSortKey(best))) best = t;
+  }
+  return best;
+}
+
+/** Moment a free slot stops taking bookings (see SLOT_CUTOFF_MS). */
+export function slotBookingDeadline(
+  date: string,
+  time: string,
+  allTimes: Iterable<string>,
+  bookedTimes: Set<string>
+): Date {
+  const start = slotStart(date, time);
+  const prev = previousSlotTime(time, allTimes);
+  if (prev && bookedTimes.has(prev)) return start;
+  return new Date(start.getTime() - SLOT_CUTOFF_MS);
+}
+
+/**
+ * Why a free slot can't be booked any more, or null when it still can:
+ * 'past' once it has started, 'cutoff' inside the last hour when the slot
+ * before it isn't booked.
+ */
+export function slotClosedReason(
+  date: string,
+  time: string,
+  allTimes: Iterable<string>,
+  bookedTimes: Set<string>,
+  now: Date = new Date()
+): 'past' | 'cutoff' | null {
+  if (isSlotPast(date, time, now)) return 'past';
+  if (slotBookingDeadline(date, time, allTimes, bookedTimes).getTime() <= now.getTime()) return 'cutoff';
+  return null;
 }
 
 /** Current time, refreshed every `intervalMs` so past slots grey out on their own. */

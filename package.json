@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^10.1.0",
-    "convex": "^1.46.0",
+    "convex": "^1.49.0",
     "framer-motion": "^14.2.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.57.0",
