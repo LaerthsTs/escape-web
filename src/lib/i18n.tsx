@@ -26,6 +26,16 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'Notifications',
     'nav.tickets': 'My Tickets',
 
+    // ── Coming soon gate ──
+    'soon.badge': 'Coming soon',
+    'soon.title': 'The doors are still locked',
+    'soon.subtitle': 'UNLOCKED, the new way to discover and book escape rooms in Greece, opens soon. Got a preview password? Step inside.',
+    'soon.password': 'Preview password',
+    'soon.enter': 'Enter',
+    'soon.error': 'Wrong password. Please try again.',
+    'soon.show': 'Show password',
+    'soon.hide': 'Hide password',
+
     // ── Horror microcopy ──
     'horror.enter': 'Enter if you dare',
     'horror.descend': 'Descend',
@@ -1894,6 +1904,16 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.notifications': 'Ειδοποιήσεις',
     'nav.tickets': 'Τα Εισιτήριά μου',
 
+    // ── Coming soon gate ──
+    'soon.badge': 'Ερχεται συντομα',
+    'soon.title': 'Οι πόρτες είναι ακόμα κλειδωμένες',
+    'soon.subtitle': 'Το UNLOCKED, ο νέος τρόπος να ανακαλύπτεις και να κλείνεις escape rooms στην Ελλάδα, ανοίγει σύντομα. Έχεις κωδικό προεπισκόπησης; Πέρασε μέσα.',
+    'soon.password': 'Κωδικός προεπισκόπησης',
+    'soon.enter': 'Είσοδος',
+    'soon.error': 'Λάθος κωδικός. Δοκίμασε ξανά.',
+    'soon.show': 'Εμφάνιση κωδικού',
+    'soon.hide': 'Απόκρυψη κωδικού',
+
     // ── Horror microcopy ──
     'horror.enter': 'Μπες αν τολμάς',
     'horror.descend': 'Κατέβα',
@@ -3761,6 +3781,16 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.profile': 'Profiel',
     'nav.notifications': 'Meldingen',
     'nav.tickets': 'Mijn Tickets',
+
+    // ── Coming soon gate ──
+    'soon.badge': 'Binnenkort',
+    'soon.title': 'De deuren zijn nog op slot',
+    'soon.subtitle': 'UNLOCKED, de nieuwe manier om escape rooms in Griekenland te ontdekken en te boeken, opent binnenkort. Heb je een previewwachtwoord? Kom binnen.',
+    'soon.password': 'Previewwachtwoord',
+    'soon.enter': 'Naar binnen',
+    'soon.error': 'Onjuist wachtwoord. Probeer het opnieuw.',
+    'soon.show': 'Wachtwoord tonen',
+    'soon.hide': 'Wachtwoord verbergen',
 
     // ── Horror microcopy ──
     'horror.enter': 'Kom binnen als je durft',

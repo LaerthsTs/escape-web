@@ -52,7 +52,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/cookies') ||
     pathname.startsWith('/for-escape-rooms');
 
-  const hideMainLayout = isCompanyRoute || isPhotosApp || (isSubdomain && !isPublicPage);
+  const isComingSoon = pathname === '/coming-soon';
+
+  const hideMainLayout = isCompanyRoute || isPhotosApp || isComingSoon || (isSubdomain && !isPublicPage);
 
   if (hideMainLayout) {
     // Company portal / Photos app have their own layout — no main Navbar/Footer
@@ -60,7 +62,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       <>
         <HorrorDefs />
         {children}
-        <CookieConsent />
+        {/* Keep the coming-soon password form clear; consent is asked once inside */}
+        {!isComingSoon && <CookieConsent />}
       </>
     );
   }

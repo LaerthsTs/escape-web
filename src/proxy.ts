@@ -1,9 +1,43 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { PREVIEW_COOKIE, previewPassword, previewToken } from '@/lib/previewGate';
 
-export function proxy(request: NextRequest) {
+// Reachable without the preview password (see src/lib/previewGate.ts)
+function isGateExempt(pathname: string) {
+  return (
+    pathname === '/coming-soon' ||
+    pathname === '/api/preview-access' ||
+    pathname === '/robots.txt' ||
+    pathname.startsWith('/icon') ||
+    pathname.startsWith('/apple-icon') ||
+    pathname.startsWith('/_next')
+  );
+}
+
+export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
+
+  // ── "Coming soon" password gate (on while PREVIEW_PASSWORD is set) ──
+  const password = previewPassword();
+  if (password) {
+    if (isGateExempt(pathname)) {
+      // Serve as-is on every host, before any subdomain rewrites
+      return NextResponse.next();
+    }
+    const token = request.cookies.get(PREVIEW_COOKIE)?.value;
+    if (token !== (await previewToken(password))) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/coming-soon';
+      url.search = '';
+      if (pathname !== '/') {
+        url.searchParams.set('next', pathname + request.nextUrl.search);
+      }
+      const resp = NextResponse.redirect(url);
+      resp.headers.set('X-Robots-Tag', 'noindex');
+      return resp;
+    }
+  }
 
   // ── business.unlocked.gr subdomain routing ──
   if (host.startsWith('business.unlocked.gr') || host.startsWith('business.localhost')) {
