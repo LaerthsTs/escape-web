@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
+import { useCompanyAuth, uiLocale, localDateKey } from '@/lib/companyAuth';
+import { friendlyError } from '@/lib/errors';
+import { statusLabel } from '@/lib/companyUi';
+import { useToast } from '@/components/company/Toast';
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,12 +27,15 @@ import {
   MessageSquare,
   Save,
   Pencil,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 
 export default function CompanyBookingsPage() {
   const { company } = useCompanyAuth();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const toast = useToast();
   const DAYS = [
     t('common.day_sun'), t('common.day_mon'), t('common.day_tue'),
     t('common.day_wed'), t('common.day_thu'), t('common.day_fri'), t('common.day_sat')
@@ -42,9 +48,16 @@ export default function CompanyBookingsPage() {
   ];
   const companyId = company?.id;
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(localDateKey());
+
+  // Deep links from the dashboard / slot board: /bookings?date=YYYY-MM-DD
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get('date');
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      setSelectedDate(d);
+      setCurrentDate(new Date(d + 'T12:00:00'));
+    }
+  }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showExternalModal, setShowExternalModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState<any>(null);
@@ -99,7 +112,19 @@ export default function CompanyBookingsPage() {
 
   const handleCancel = async (bookingId: string) => {
     if (!confirm(t('company.bookings.confirm_cancel'))) return;
-    await cancelBooking({ companyId: companyId as any, bookingId: bookingId as any });
+    try {
+      await cancelBooking({ companyId: companyId as any, bookingId: bookingId as any });
+      toast({ kind: 'success', message: t('cx.bookings.cancelled') });
+    } catch (err) {
+      toast({ kind: 'error', message: friendlyError(err, t) });
+    }
+  };
+
+  const paymentLabel = (status?: string) => {
+    if (!status) return t('company.bookings.na');
+    const key = `cx.payment.${status}`;
+    const tr = t(key);
+    return tr === key ? status : tr;
   };
 
   const handleComplete = (booking: any) => {
@@ -107,19 +132,19 @@ export default function CompanyBookingsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">{t('company.bookings.title')}</h1>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:flex gap-2">
           <button
             onClick={() => setShowExternalModal(true)}
-            className="btn-ghost text-sm flex items-center gap-1.5"
+            className="btn-ghost text-sm flex items-center justify-center gap-1.5"
           >
             <Ban className="w-4 h-4" /> {t('company.bookings.block_slot')}
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="btn-primary text-sm flex items-center gap-1.5"
+            className="btn-primary text-sm flex items-center justify-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> {t('company.bookings.new_booking')}
           </button>
@@ -128,15 +153,15 @@ export default function CompanyBookingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
-        <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
+        <div className="bg-brand-surface rounded-2xl border border-white/5 p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={handlePrevMonth} className="p-1 hover:bg-white/5 rounded-lg">
+            <button onClick={handlePrevMonth} aria-label={t('cx.common.prev_month')} className="p-1 hover:bg-white/5 rounded-lg">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <h2 className="font-semibold">
               {MONTHS[month]} {year}
             </h2>
-            <button onClick={handleNextMonth} className="p-1 hover:bg-white/5 rounded-lg">
+            <button onClick={handleNextMonth} aria-label={t('cx.common.next_month')} className="p-1 hover:bg-white/5 rounded-lg">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -157,7 +182,7 @@ export default function CompanyBookingsPage() {
               if (!day) return <div key={i} />;
               const isSelected = isSelectedMonth && day === selectedDayNum;
               const isToday =
-                new Date().toISOString().split('T')[0] ===
+                localDateKey() ===
                 `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               return (
                 <button
@@ -180,9 +205,9 @@ export default function CompanyBookingsPage() {
 
         {/* Bookings List */}
         <div className="lg:col-span-2">
-          <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
-            <h2 className="font-semibold mb-4">
-              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+          <div className="bg-brand-surface rounded-2xl border border-white/5 p-4 md:p-6">
+            <h2 className="font-semibold mb-4 capitalize">
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString(uiLocale(language), {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
@@ -224,12 +249,12 @@ export default function CompanyBookingsPage() {
                         />
                       </div>
                     )}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span className="text-lg font-bold text-brand-red-light">
                           {booking.time}
                         </span>
-                        <span className="font-semibold">{booking.roomTitle}</span>
+                        <span className="font-semibold truncate">{booking.roomTitle}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span
@@ -252,11 +277,11 @@ export default function CompanyBookingsPage() {
                               : 'bg-blue-500/10 text-blue-400'
                           }`}
                         >
-                          {booking.status === 'cancelled' ? t('company.bookings.status_cancelled') : booking.status === 'completed' ? t('company.bookings.status_completed') : booking.status === 'pending_payment' ? (t('company.bookings.status_pending_payment') || 'Pending Payment') : booking.status === 'upcoming' ? t('company.bookings.status_upcoming') : booking.status}
+                          {statusLabel(t, booking.status)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-brand-text-secondary">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-brand-text-secondary">
                       <span className="flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" /> {booking.playerName}
                       </span>
@@ -280,9 +305,29 @@ export default function CompanyBookingsPage() {
                           </div>
                           <div>
                             <span className="text-brand-text-secondary">{t('company.bookings.payment')}</span>
-                            <p className="font-semibold">{booking.paymentStatus || t('company.bookings.na')}</p>
+                            <p className="font-semibold">{paymentLabel(booking.paymentStatus)}</p>
                           </div>
                         </div>
+                        {(booking.playerPhone || booking.playerContact) && (
+                          <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                            {booking.playerPhone && (
+                              <a
+                                href={`tel:${booking.playerPhone}`}
+                                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10"
+                              >
+                                <Phone className="w-3.5 h-3.5" /> {booking.playerPhone}
+                              </a>
+                            )}
+                            {booking.playerContact && String(booking.playerContact).includes('@') && (
+                              <a
+                                href={`mailto:${booking.playerContact}`}
+                                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 max-w-full truncate"
+                              >
+                                <Mail className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{booking.playerContact}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {/* Internal Note */}
                         <div className="text-sm">
                           <div className="flex items-center gap-1.5 mb-1">
@@ -295,7 +340,8 @@ export default function CompanyBookingsPage() {
                                   setEditingNoteId(booking._id);
                                   setNoteText(booking.notes || '');
                                 }}
-                                className="ml-auto text-brand-text-muted hover:text-white transition-colors"
+                                className="ml-auto p-1.5 -m-1.5 text-brand-text-muted hover:text-white transition-colors"
+                                aria-label={t('cx.bookings.edit_note')}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -319,7 +365,10 @@ export default function CompanyBookingsPage() {
                                     try {
                                       await updateNotes({ companyId: companyId as any, bookingId: booking._id as any, notes: noteText });
                                       setEditingNoteId(null);
-                                    } catch { /* ignore */ }
+                                      toast({ kind: 'success', message: t('cx.bookings.note_saved') });
+                                    } catch (err) {
+                                      toast({ kind: 'error', message: friendlyError(err, t) });
+                                    }
                                     setSavingNote(false);
                                   }}
                                   disabled={savingNote}
@@ -470,15 +519,15 @@ function CompleteBookingModal({
 
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Failed to complete booking');
+      setError(friendlyError(err, t, 'cx.bookings.complete_failed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="bg-brand-surface rounded-2xl border border-white/5 p-6 w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4">
+      <div className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <Award className="w-5 h-5 text-brand-gold" />
@@ -557,7 +606,7 @@ function CompleteBookingModal({
                 placeholder={t('company.bookings.escape_time_placeholder')}
                 className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-brand-text-muted">min</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-brand-text-muted">{t('cx.common.min')}</span>
             </div>
           </div>
         )}
@@ -655,7 +704,7 @@ function RescheduleBookingModal({
   }, [slots, defaultSlots]);
 
   // Today's date  for the min attribute
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -671,15 +720,15 @@ function RescheduleBookingModal({
       });
       onClose();
     } catch (err: any) {
-      setError(err?.message || t('company.bookings.reschedule_failed'));
+      setError(friendlyError(err, t, 'company.bookings.reschedule_failed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="bg-brand-surface rounded-2xl border border-white/5 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4">
+      <div className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <CalendarClock className="w-5 h-5 text-blue-400" />
@@ -847,17 +896,20 @@ function CreateBookingModal({
       });
       onClose();
     } catch (err: any) {
-      setError(err?.message || t('company.bookings.failed_create'));
+      setError(friendlyError(err, t, 'company.bookings.failed_create'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="bg-brand-surface rounded-2xl border border-white/5 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4">
+      <div className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{t('company.bookings.new_booking')}</h2>
+          <div>
+            <h2 className="text-lg font-bold">{t('company.bookings.new_booking')}</h2>
+            <p className="text-xs text-brand-text-secondary">{date}</p>
+          </div>
           <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg">
             <X className="w-5 h-5" />
           </button>
@@ -1060,17 +1112,20 @@ function ExternalBlockModal({
       });
       onClose();
     } catch (err: any) {
-      setError(err?.message || t('company.bookings.failed_block'));
+      setError(friendlyError(err, t, 'company.bookings.failed_block'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="bg-brand-surface rounded-2xl border border-white/5 p-6 w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4">
+      <div className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{t('company.bookings.block_external')}</h2>
+          <div>
+            <h2 className="text-lg font-bold">{t('company.bookings.block_external')}</h2>
+            <p className="text-xs text-brand-text-secondary">{date}</p>
+          </div>
           <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg">
             <X className="w-5 h-5" />
           </button>

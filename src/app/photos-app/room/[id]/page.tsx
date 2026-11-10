@@ -6,11 +6,13 @@ import { api } from '../../../../../convex/_generated/api';
 import { useCompanyAuth } from '@/lib/companyAuth';
 import { Loader2 } from 'lucide-react';
 import PhotosTool from '@/components/photos/PhotosTool';
+import { useTranslation } from '@/lib/i18n';
 
 export default function RoomPhotosPage() {
   const params = useParams();
   const router = useRouter();
   const { company } = useCompanyAuth();
+  const { t } = useTranslation();
   const roomId = params.id as string;
   const companyId = company?.id;
 
@@ -34,9 +36,9 @@ export default function RoomPhotosPage() {
   if (!room) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <p className="text-brand-text-muted">Room not found</p>
+        <p className="text-brand-text-muted">{t('ph.room_not_found')}</p>
         <button onClick={() => router.push('/')} className="btn-primary">
-          Back to Rooms
+          {t('ph.back_to_rooms')}
         </button>
       </div>
     );

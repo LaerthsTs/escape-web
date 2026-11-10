@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
+import { friendlyError } from '@/lib/errors';
+import { useToast } from '@/components/company/Toast';
+import { effectiveSlots, toSave, useSetSlots } from '@/components/company/SlotBoard';
 import { useTranslation } from '@/lib/i18n';
 import Link from 'next/link';
 import {
@@ -17,6 +20,7 @@ import {
   Check,
   X,
   Clock,
+  Zap,
 } from 'lucide-react';
 
 const DAYS = ['common.day_sun', 'common.day_mon', 'common.day_tue', 'common.day_wed', 'common.day_thu', 'common.day_fri', 'common.day_sat'];
@@ -26,21 +30,28 @@ export default function RoomAvailabilityPage() {
   const { company } = useCompanyAuth();
   const p = useCompanyPath();
   const { t, language } = useTranslation();
+  const toast = useToast();
   const roomId = params.id as string;
 
   const room = useQuery(api.rooms.getById, roomId ? { id: roomId as any } : 'skip');
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(localDateKey());
+
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get('date');
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      setSelectedDate(d);
+      setCurrentDate(new Date(d + 'T12:00:00'));
+    }
+  }, []);
 
   const slots = useQuery(
     api.companies.getRoomSlots,
     roomId && selectedDate ? { roomId: roomId as any, date: selectedDate } : 'skip'
   );
 
-  const setSlotsMutation = useMutation(api.companies.setSlots);
+  const setSlotsMutation = useSetSlots();
 
   const [editSlots, setEditSlots] = useState<
     { time: string; price: number; available: boolean }[]
@@ -53,14 +64,34 @@ export default function RoomAvailabilityPage() {
   useMemo(() => {
     if (slots && !editing) {
       setEditSlots(
-        slots.map((s: any) => ({
+        effectiveSlots(room, slots).map((s) => ({
           time: s.time,
           price: s.price,
           available: s.available,
         }))
       );
     }
-  }, [slotsKey, editing]);
+  }, [slotsKey, editing, room]);
+
+  // One tap: open/close a slot and save straight away
+  const quickToggle = async (idx: number) => {
+    const before = editSlots;
+    const next = editSlots.map((s, i) => (i === idx ? { ...s, available: !s.available } : s));
+    setEditSlots(next);
+    try {
+      await setSlotsMutation({ roomId: roomId as any, date: selectedDate, slots: toSave(next, room) });
+      toast({
+        kind: 'success',
+        message: t(before[idx].available ? 'cx.slots.closed_one' : 'cx.slots.opened_one', {
+          time: before[idx].time,
+          room: room?.title || '',
+        }),
+      });
+    } catch (err) {
+      setEditSlots(before);
+      toast({ kind: 'error', message: friendlyError(err, t, 'cx.slots.save_failed') });
+    }
+  };
 
   // Calendar
   const year = currentDate.getFullYear();
@@ -121,18 +152,19 @@ export default function RoomAvailabilityPage() {
       await setSlotsMutation({
         roomId: roomId as any,
         date: selectedDate,
-        slots: editSlots.filter((s) => s.time),
+        slots: toSave(editSlots.filter((s) => s.time), room),
       });
       setEditing(false);
+      toast({ kind: 'success', message: t('cx.availability.saved') });
     } catch (err) {
-      alert(t('company.availability.failed_save'));
+      toast({ kind: 'error', message: friendlyError(err, t, 'company.availability.failed_save') });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link
@@ -148,6 +180,15 @@ export default function RoomAvailabilityPage() {
           </p>
         </div>
       </div>
+
+      <Link
+        href={p(`/company/slots?room=${roomId}&date=${selectedDate}`)}
+        className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm hover:bg-emerald-500/10"
+      >
+        <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
+        <span className="flex-1">{t('cx.availability.board_hint')}</span>
+        <ChevronRight className="w-4 h-4 text-brand-text-secondary" />
+      </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
@@ -186,7 +227,7 @@ export default function RoomAvailabilityPage() {
               if (!day) return <div key={i} />;
               const isSelected = isSelectedMonth && day === selectedDayNum;
               const isToday =
-                new Date().toISOString().split('T')[0] ===
+                localDateKey() ===
                 `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               return (
                 <button
@@ -214,7 +255,7 @@ export default function RoomAvailabilityPage() {
               <div>
                 <h2 className="font-semibold">
                   {new Date(selectedDate + 'T00:00:00').toLocaleDateString(
-                    language === 'el' ? 'el-GR' : 'en-US',
+                    uiLocale(language),
                     { weekday: 'long', month: 'long', day: 'numeric' }
                   )}
                 </h2>
@@ -225,9 +266,9 @@ export default function RoomAvailabilityPage() {
               {!editing ? (
                 <button
                   onClick={handleStartEdit}
-                  className="btn-primary text-sm"
+                  className="btn-ghost text-sm"
                 >
-                  {t('company.availability.edit_slots')}
+                  {t('cx.availability.edit_times')}
                 </button>
               ) : (
                 <div className="flex gap-2">
@@ -235,7 +276,7 @@ export default function RoomAvailabilityPage() {
                     onClick={() => setEditing(false)}
                     className="btn-ghost text-sm"
                   >
-                    Cancel
+                    {t('cx.common.cancel')}
                   </button>
                   <button
                     onClick={handleSave}
@@ -319,7 +360,8 @@ export default function RoomAvailabilityPage() {
                         <button
                           type="button"
                           onClick={() => removeSlot(idx)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-red-400 hover:text-red-300 p-1"
+                          aria-label={t('cx.availability.remove_time')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -332,15 +374,18 @@ export default function RoomAvailabilityPage() {
                         <span className="text-brand-text-secondary">
                           €{slot.price}
                         </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ml-auto ${
+                        <button
+                          type="button"
+                          onClick={() => quickToggle(idx)}
+                          className={`text-xs px-3 py-1.5 rounded-full font-medium ml-auto transition-colors ${
                             slot.available
-                              ? 'bg-green-500/10 text-green-400'
-                              : 'bg-red-500/10 text-red-400'
+                              ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                              : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                           }`}
+                          title={t(slot.available ? 'cx.slots.aria_close' : 'cx.slots.aria_open', { time: slot.time })}
                         >
                           {slot.available ? t('company.availability.available') : t('company.availability.unavailable')}
-                        </span>
+                        </button>
                       </>
                     )}
                   </div>

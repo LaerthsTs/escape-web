@@ -44,7 +44,9 @@ const LocationPicker = dynamic(
   )}
 );
 
-const PLAN_ROOM_LIMITS: Record<string, number> = { free: 1, starter: 1, pro: 10, enterprise: Infinity };
+import { roomLimitFor } from '@/lib/plans';
+import { friendlyError } from '@/lib/errors';
+import { uiLocale } from '@/lib/companyAuth';
 
 const THEMES = ['Horror', 'Adventure', 'Sci-Fi', 'Mystery', 'Fantasy', 'Historical', 'Comedy', 'Thriller'];
 const TAG_OPTIONS = ['Beginner Friendly', 'Team Building', 'Couples', 'Family', 'Intense', 'Immersive', 'Physical', 'Mental', 'Story Driven', 'Competitive'];
@@ -90,7 +92,7 @@ export default function NewRoomPage() {
   );
 
   const plan = (stats as any)?.plan || company?.platformPlan || 'starter';
-  const roomLimit = PLAN_ROOM_LIMITS[plan] || 3;
+  const roomLimit = roomLimitFor(plan, (stats as any)?.roomLimit);
   const roomCount = stats?.totalRooms ?? 0;
   const atLimit = roomCount >= roomLimit;
 
@@ -336,16 +338,17 @@ export default function NewRoomPage() {
         }
       }
 
-      router.push(p('/company/rooms'));
+      router.push(p(`/company/rooms?created=${roomId}`));
     } catch (err: any) {
-      setError(err?.message || t('company.rooms.new.failed_create'));
+      setError(friendlyError(err, t, 'company.rooms.new.failed_create'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
         <Link
           href={p('/company/rooms')}
@@ -373,9 +376,9 @@ export default function NewRoomPage() {
           <div>
             <p className="font-semibold text-yellow-400">{t('company.rooms.new.limit_warning')}</p>
             <p className="text-sm text-brand-text-secondary mt-1">
-              {t('company.rooms.new.limit_plan_info', { plan, limit: roomLimit === Infinity ? 'unlimited' : String(roomLimit), count: String(roomCount) })}
+              {t('company.rooms.new.limit_plan_info', { plan: t(`company.onboarding.plan_${plan}`), limit: roomLimit === Infinity ? '∞' : String(roomLimit), count: String(roomCount) })}
               {plan !== 'enterprise' && (
-                <> {t('company.rooms.new.upgrade_in_settings')} <Link href={p('/company/settings')} className="text-brand-red-light hover:underline">{t('company.rooms.new.settings_link')}</Link> {t('company.rooms.new.to_add_more')}</>
+                <> {t('company.rooms.new.upgrade_in_settings')} <Link href={p('/company/billing')} className="text-brand-red-light hover:underline">{t('company.nav.billing')}</Link> {t('company.rooms.new.to_add_more')}</>
               )}
             </p>
           </div>
@@ -825,7 +828,7 @@ export default function NewRoomPage() {
                     {(() => {
                       const d = new Date(form.releaseDate);
                       d.setDate(d.getDate() - 3);
-                      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                      return d.toLocaleDateString(uiLocale(language), { month: 'short', day: 'numeric', year: 'numeric' });
                     })()}
                   </p>
                 </div>

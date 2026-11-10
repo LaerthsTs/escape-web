@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSelectedLayoutSegments } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
@@ -19,21 +19,27 @@ import { BloodDrips } from '@/components/horror/BloodDrips';
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const isCompanyRoute = pathname.startsWith('/company');
-  const isPhotosApp = pathname.startsWith('/photos-app');
+  // On business./photos. subdomains the proxy rewrites /x to /company/x or
+  // /photos-app/x. usePathname() shows the visible URL, but the route segments
+  // are the rewritten ones on both server and client, so use them to recognise
+  // the portals without a hydration mismatch.
+  const segments = useSelectedLayoutSegments();
+  const isCompanyRoute = pathname.startsWith('/company') || segments[0] === 'company';
+  const isPhotosApp = pathname.startsWith('/photos-app') || segments[0] === 'photos-app';
 
-  // Detect subdomain via cookie set by middleware (works on first render, no SSR mismatch)
-  const [isSubdomain, setIsSubdomain] = useState(() => {
-    if (typeof document !== 'undefined') {
-      return document.cookie.includes('x-subdomain=');
-    }
-    return false;
-  });
+  // Subdomain flag for the few pages served as-is on a subdomain (e.g. /p/ on photos.).
+  // Set after mount: reading the cookie during the first render made the client
+  // disagree with the server and threw a hydration error.
+  const [isSubdomain, setIsSubdomain] = useState(false);
   const [isBusinessSubdomain, setIsBusinessSubdomain] = useState(false);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const h = window.location.hostname;
-      if (h === 'photos.unlocked.gr' || h === 'business.unlocked.gr') {
+      if (
+        document.cookie.includes('x-subdomain=') ||
+        h === 'photos.unlocked.gr' ||
+        h === 'business.unlocked.gr'
+      ) {
         setIsSubdomain(true);
       }
       if (h === 'business.unlocked.gr') {

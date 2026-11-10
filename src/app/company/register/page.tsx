@@ -9,13 +9,22 @@ import { Building2, Mail, Lock, Eye, EyeOff, Phone, MapPin, FileText, ArrowRight
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
-import { useCompanyPath } from '@/lib/companyAuth';
+import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { friendlyError } from '@/lib/errors';
+
+function passwordProblem(pw: string): string | null {
+  if (pw.length < 8) return 'cx.pw.too_short';
+  if (!/[A-Z]/.test(pw)) return 'cx.pw.need_upper';
+  if (!/[0-9]/.test(pw)) return 'cx.pw.need_number';
+  return null;
+}
 
 export default function CompanyRegisterPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const p = useCompanyPath();
   const registerMutation = useMutation(api.companies.register);
+  const { login } = useCompanyAuth();
 
   const [form, setForm] = useState({
     name: '',
@@ -40,6 +49,11 @@ export default function CompanyRegisterPage() {
     e.preventDefault();
     setError('');
 
+    const pwProblem = passwordProblem(form.password);
+    if (pwProblem) {
+      setError(t(pwProblem));
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setError(t('company.register.error_password_mismatch'));
       return;
@@ -59,14 +73,19 @@ export default function CompanyRegisterPage() {
       });
 
       if (result && typeof result === 'object' && 'error' in result) {
-        setError((result as { error: string }).error);
+        setError(friendlyError((result as { error: string }).error, t, 'company.register.error_failed'));
         return;
       }
 
-      // Registration successful — redirect to login
-      router.push(p('/company/login?registered=true'));
+      // Registration successful: sign in straight away and continue to the next step
+      try {
+        await login(form.email, form.password);
+        router.replace(p('/company/onboarding'));
+      } catch {
+        router.push(p('/company/login?registered=true'));
+      }
     } catch (err: any) {
-      setError(err?.message || t('company.register.error_failed'));
+      setError(friendlyError(err, t, 'company.register.error_failed'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +94,7 @@ export default function CompanyRegisterPage() {
   return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-12">
       {/* Language toggle */}
-      <div className="absolute top-4 right-4">
+      <div className="fixed top-4 right-4 z-50">
         <LanguageToggle />
       </div>
 
@@ -97,14 +116,14 @@ export default function CompanyRegisterPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-brand-surface rounded-2xl p-8 border border-white/5">
+        <div className="bg-brand-surface rounded-2xl p-5 sm:p-8 border border-white/5">
           <h1 className="text-2xl font-bold mb-2">{t('company.register.heading')}</h1>
           <p className="text-brand-text-secondary text-sm mb-6">
             {t('company.register.subtitle')}
           </p>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -133,6 +152,7 @@ export default function CompanyRegisterPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type="email"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -226,17 +246,30 @@ export default function CompanyRegisterPage() {
                   onChange={(e) => updateField('password', e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={t('cx.auth.show_password')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-secondary hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                {[
+                  { ok: form.password.length >= 8, key: 'cx.pw.rule_len' },
+                  { ok: /[A-Z]/.test(form.password), key: 'cx.pw.rule_upper' },
+                  { ok: /[0-9]/.test(form.password), key: 'cx.pw.rule_number' },
+                ].map((r) => (
+                  <li key={r.key} className={r.ok ? 'text-emerald-400' : 'text-brand-text-secondary'}>
+                    {r.ok ? '✓' : '•'} {t(r.key)}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Confirm Password */}
@@ -250,8 +283,9 @@ export default function CompanyRegisterPage() {
                   onChange={(e) => updateField('confirmPassword', e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>

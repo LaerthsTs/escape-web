@@ -22,6 +22,9 @@ import {
   Tag,
 } from 'lucide-react';
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { friendlyError } from '@/lib/errors';
+import { PLANS as PLAN_DATA, SUPPORT_EMAIL, mailto } from '@/lib/plans';
 
 const PLANS = [
   {
@@ -43,8 +46,8 @@ const PLANS = [
     id: 'starter' as const,
     icon: Rocket,
     color: '#4CAF50',
-    priceMonth: '€58',
-    priceYear: '€580',
+    priceMonth: `€${PLAN_DATA.starter.monthly}`,
+    priceYear: `€${PLAN_DATA.starter.yearly}`,
     features: [
       'company.onboarding.starter_f1',
       'company.onboarding.starter_f2',
@@ -57,8 +60,8 @@ const PLANS = [
     id: 'pro' as const,
     icon: Diamond,
     color: '#E53E3E',
-    priceMonth: '€98',
-    priceYear: '€980',
+    priceMonth: `€${PLAN_DATA.pro.monthly}`,
+    priceYear: `€${PLAN_DATA.pro.yearly}`,
     popular: true,
     features: [
       'company.onboarding.pro_f1',
@@ -72,8 +75,8 @@ const PLANS = [
     id: 'enterprise' as const,
     icon: Briefcase,
     color: '#7C4DFF',
-    priceMonth: '€198',
-    priceYear: '€1980',
+    priceMonth: `€${PLAN_DATA.enterprise.monthly}`,
+    priceYear: `€${PLAN_DATA.enterprise.yearly}`,
     features: [
       'company.onboarding.ent_f1',
       'company.onboarding.ent_f2',
@@ -106,6 +109,7 @@ export default function CompanyOnboardingPage() {
   const resubmit = useMutation(api.companies.resubmitForReview);
 
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
@@ -137,7 +141,7 @@ export default function CompanyOnboardingPage() {
       refreshCompany({ onboardingStatus: 'approved' });
       router.replace(p('/company'));
     }
-  }, [status, router, refreshCompany]);
+  }, [status, router, refreshCompany, p]);
 
   // Keep local auth in sync with server data
   useEffect(() => {
@@ -242,7 +246,9 @@ export default function CompanyOnboardingPage() {
           UN<span className="text-brand-red-light">LOCKED</span>
         </span>
       </div>
-      <h1 className="text-lg font-bold">{title}</h1>
+      <h1 className="text-lg font-bold hidden sm:block">{title}</h1>
+      <div className="flex items-center gap-2">
+      <LanguageToggle />
       <button
         onClick={handleLogout}
         className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-brand-text-secondary hover:text-white transition-all"
@@ -250,6 +256,7 @@ export default function CompanyOnboardingPage() {
       >
         <LogOut className="w-4 h-4" />
       </button>
+      </div>
     </div>
   );
 
@@ -263,11 +270,11 @@ export default function CompanyOnboardingPage() {
           {renderHeader(t('company.onboarding.terms_title'))}
           {renderSteps()}
 
-          <div className="px-6 pb-32">
+          <div className="px-4 sm:px-6 pb-40">
             <div
               ref={termsRef}
               onScroll={handleScroll}
-              className="bg-brand-surface rounded-2xl border border-white/5 p-8 max-h-[60vh] overflow-y-auto"
+              className="bg-brand-surface rounded-2xl border border-white/5 p-5 sm:p-8 max-h-[60vh] overflow-y-auto"
             >
               <h2 className="text-xl font-bold text-white mb-6">
                 {t('company.onboarding.platform_terms_title')}
@@ -289,6 +296,9 @@ export default function CompanyOnboardingPage() {
           {/* Fixed footer */}
           <div className="fixed bottom-0 left-0 right-0 bg-brand-bg/95 backdrop-blur-sm border-t border-white/5 px-6 py-4">
             <div className="max-w-3xl mx-auto">
+              {actionError && (
+                <p role="alert" className="text-sm text-red-400 text-center mb-3">{actionError}</p>
+              )}
               {!scrolledToEnd && (
                 <p className="text-xs text-brand-text-secondary text-center mb-3 flex items-center justify-center gap-1">
                   <ChevronDown className="w-3 h-3" />
@@ -299,9 +309,15 @@ export default function CompanyOnboardingPage() {
                 disabled={!scrolledToEnd || loading}
                 onClick={async () => {
                   setLoading(true);
-                  await acceptTerms({ companyId: companyId as any });
-                  refreshCompany({ onboardingStatus: 'pending_plan' });
-                  setLoading(false);
+                  setActionError('');
+                  try {
+                    await acceptTerms({ companyId: companyId as any });
+                    refreshCompany({ onboardingStatus: 'pending_plan' });
+                  } catch (err) {
+                    setActionError(friendlyError(err, t));
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
                 className={`w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all ${
                   scrolledToEnd
@@ -332,6 +348,7 @@ export default function CompanyOnboardingPage() {
     const handleSelectPlan = async (planId: 'free' | 'starter' | 'pro' | 'enterprise') => {
       setSelectedPlanId(planId);
       setLoading(true);
+      setActionError('');
       try {
         // Free plan: skip Stripe, go straight to review
         if (planId === 'free') {
@@ -355,6 +372,7 @@ export default function CompanyOnboardingPage() {
         window.location.href = checkoutUrl;
       } catch (err: any) {
         console.error('Stripe checkout error:', err);
+        setActionError(friendlyError(err, t, 'cx.onboarding.checkout_failed'));
         setLoading(false);
         setSelectedPlanId(null);
       }
@@ -443,7 +461,7 @@ export default function CompanyOnboardingPage() {
 
                       window.location.href = checkoutUrl;
                     } catch (err: any) {
-                      setDiscountResult({ valid: false, error: err.message || 'Failed to apply code' });
+                      setDiscountResult({ valid: false, error: friendlyError(err, t, 'cx.onboarding.checkout_failed') });
                     } finally {
                       setDiscountChecking(false);
                     }
@@ -459,7 +477,11 @@ export default function CompanyOnboardingPage() {
               </div>
               {discountResult && !discountResult.valid && (
                 <p className="text-xs text-red-400 mt-2">
-                  {t(`company.onboarding.discount_${discountResult.error}`) || t('company.onboarding.discount_invalid_code')}
+                  {(() => {
+                    const key = `company.onboarding.discount_${discountResult.error}`;
+                    const tr = t(key);
+                    return tr !== key ? tr : discountResult.error || t('company.onboarding.discount_invalid_code');
+                  })()}
                 </p>
               )}
               {discountResult && discountResult.valid && (
@@ -479,6 +501,12 @@ export default function CompanyOnboardingPage() {
                 </p>
               )}
             </div>
+
+            {actionError && (
+              <div role="alert" className="max-w-xl mx-auto mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm text-center">
+                {actionError}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {PLANS.map((plan) => {
@@ -607,7 +635,7 @@ export default function CompanyOnboardingPage() {
         <div className="px-6 flex items-center justify-center mt-8">
           {status === 'declined' ? (
             /* Declined */
-            <div className="w-full bg-brand-surface rounded-2xl border border-red-500/20 p-10 text-center">
+            <div className="w-full bg-brand-surface rounded-2xl border border-red-500/20 p-6 sm:p-10 text-center">
               <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
                 <XCircle className="w-14 h-14 text-red-400" />
               </div>
@@ -629,13 +657,20 @@ export default function CompanyOnboardingPage() {
                 </div>
               )}
 
+              {actionError && <p role="alert" className="text-sm text-red-400 mb-4">{actionError}</p>}
               <button
                 disabled={loading}
                 onClick={async () => {
                   setLoading(true);
-                  await resubmit({ companyId: companyId as any });
-                  refreshCompany({ onboardingStatus: 'pending_review' });
-                  setLoading(false);
+                  setActionError('');
+                  try {
+                    await resubmit({ companyId: companyId as any });
+                    refreshCompany({ onboardingStatus: 'pending_review' });
+                  } catch (err) {
+                    setActionError(friendlyError(err, t));
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
                 className="bg-brand-red hover:bg-brand-red/90 text-white px-8 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto transition-all"
               >
@@ -651,7 +686,7 @@ export default function CompanyOnboardingPage() {
             </div>
           ) : (
             /* Pending Review */
-            <div className="w-full bg-brand-surface rounded-2xl border border-white/5 p-10 text-center">
+            <div className="w-full bg-brand-surface rounded-2xl border border-white/5 p-6 sm:p-10 text-center">
               <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-6">
                 <Clock className="w-14 h-14 text-amber-400" />
               </div>
@@ -694,6 +729,21 @@ export default function CompanyOnboardingPage() {
                     {t('company.onboarding.check_review')}
                   </span>
                 </div>
+              </div>
+
+              <div className="mt-8 text-left bg-brand-bg/60 rounded-xl border border-white/5 p-4 max-w-md mx-auto">
+                <p className="text-sm font-semibold mb-2">{t('cx.onboarding.next_title')}</p>
+                <ul className="space-y-1.5 text-sm text-brand-text-secondary list-disc pl-5">
+                  <li>{t('cx.onboarding.next_1')}</li>
+                  <li>{t('cx.onboarding.next_2')}</li>
+                  <li>{t('cx.onboarding.next_3')}</li>
+                </ul>
+                <a
+                  href={mailto(t('cx.onboarding.question_subject', { company: company?.name || '' }))}
+                  className="inline-block mt-3 text-sm text-brand-red-light hover:underline"
+                >
+                  {t('cx.onboarding.questions', { email: SUPPORT_EMAIL })}
+                </a>
               </div>
             </div>
           )}

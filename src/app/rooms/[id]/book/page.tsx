@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { isSlotPast, useNow } from '@/lib/slotTime';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation } from 'convex/react';
@@ -128,8 +129,15 @@ export default function BookingPage() {
     return room.price * playerCount;
   }, [room, playerCount]);
 
-  // Available time slots: combine default + custom, exclude booked
+  // Available time slots: combine default + custom, exclude booked.
+  // Times that have already started today are dropped: they can't be played any more.
+  const now = useNow();
   const availableSlots = useMemo(() => {
+    const notPast = (s: { time: string }) => !selectedDate || !isSlotPast(selectedDate, s.time, now);
+    return computeSlots().filter(notPast);
+  }, [timeSlots, bookedTimes, room, selectedDate, now]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function computeSlots() {
     const bookedSet = new Set((bookedTimes ?? []) as string[]);
 
     // If there are custom time slots for this date, use those
@@ -158,7 +166,7 @@ export default function BookingPage() {
       price: room?.price ?? 0,
       booked: bookedSet.has(t),
     }));
-  }, [timeSlots, bookedTimes, room]);
+  }
 
   const canProceed = selectedDate && selectedTime && isAuthenticated && userHasPhone;
 
@@ -289,6 +297,9 @@ export default function BookingPage() {
                     <Clock className="w-5 h-5 text-brand-red-light" />
                     {t('book.select_time')}
                   </h3>
+                  {availableSlots.length === 0 && (
+                    <p className="text-sm text-brand-text-secondary">{t('cx.book.no_times_left')}</p>
+                  )}
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {availableSlots.map((slot: any) => (
                       <div key={slot.time} className="relative">

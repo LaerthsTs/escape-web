@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, Mail, Lock, Eye, EyeOff, ArrowRight, Shield, Calendar, QrCode, BarChart2, Code, Globe } from 'lucide-react';
@@ -10,6 +10,8 @@ import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import { friendlyError } from '@/lib/errors';
+import { mailto } from '@/lib/plans';
 
 export default function CompanyLoginPage() {
   const { t } = useTranslation();
@@ -22,11 +24,17 @@ export default function CompanyLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const adminLogin = useMutation(api.companies.adminLogin);
+  const [justRegistered, setJustRegistered] = useState(false);
 
-  if (isAuthenticated) {
-    router.replace(p('/company'));
-    return null;
-  }
+  useEffect(() => {
+    setJustRegistered(new URLSearchParams(window.location.search).get('registered') === 'true');
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace(p('/company'));
+  }, [isAuthenticated, router, p]);
+
+  if (isAuthenticated) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +55,7 @@ export default function CompanyLoginPage() {
       await login(email, password);
       router.replace(p('/company'));
     } catch (err: any) {
-      setError(err?.message || t('company.auth.login_failed'));
+      setError(friendlyError(err, t, 'cx.err.login_failed'));
     } finally {
       setLoading(false);
     }
@@ -78,14 +86,20 @@ export default function CompanyLoginPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-brand-surface rounded-2xl p-8 border border-white/5">
+        <div className="bg-brand-surface rounded-2xl p-5 sm:p-8 border border-white/5">
           <h1 className="text-2xl font-bold mb-2">{t('company.auth.welcome')}</h1>
           <p className="text-brand-text-secondary text-sm mb-6">
             {t('company.auth.subtitle')}
           </p>
 
+          {justRegistered && !error && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 mb-4 text-emerald-300 text-sm">
+              {t('cx.auth.registered')}
+            </div>
+          )}
+
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -97,6 +111,7 @@ export default function CompanyLoginPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -112,6 +127,7 @@ export default function CompanyLoginPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -120,12 +136,22 @@ export default function CompanyLoginPage() {
                 />
                 <button
                   type="button"
+                  aria-label={t('cx.auth.show_password')}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-secondary hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-end -mt-1">
+              <a
+                href={mailto(t('cx.auth.forgot_subject'), t('cx.auth.forgot_body', { email: email || '' }))}
+                className="text-xs text-brand-text-secondary hover:text-white hover:underline"
+              >
+                {t('cx.auth.forgot')}
+              </a>
             </div>
 
             <button

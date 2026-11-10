@@ -41,6 +41,36 @@ const CompanyAuthContext = createContext<CompanyAuthContextType>({
   refreshCompany: () => {},
 });
 
+// ── Session sharing across business./photos. subdomains ──
+// localStorage is per-origin, so a login on business.unlocked.gr is invisible to
+// photos.unlocked.gr. On the real domain the session is mirrored into a cookie
+// scoped to .unlocked.gr so one login covers both portals.
+const SESSION_KEY = 'unlocked_company';
+
+function sharedCookieDomain(): string | null {
+  if (typeof window === 'undefined') return null;
+  const h = window.location.hostname;
+  return h === 'unlocked.gr' || h.endsWith('.unlocked.gr') ? '.unlocked.gr' : null;
+}
+
+function readSharedSession(): string | null {
+  if (typeof document === 'undefined') return null;
+  const m = document.cookie.match(/(?:^|; )unlocked_company=([^;]*)/);
+  if (!m || !m[1]) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return null;
+  }
+}
+
+function writeSharedSession(value: string | null) {
+  const domain = sharedCookieDomain();
+  if (!domain) return;
+  const base = `${SESSION_KEY}=${value ? encodeURIComponent(value) : ''}; domain=${domain}; path=/; SameSite=Lax; Secure`;
+  document.cookie = value ? `${base}; max-age=${60 * 60 * 24 * 30}` : `${base}; max-age=0`;
+}
+
 export function CompanyAuthProvider({ children }: { children: ReactNode }) {
   const [company, setCompany] = useState<CompanyUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,12 +78,14 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation(api.companies.loginCompany);
 
   useEffect(() => {
-    const stored = localStorage.getItem('unlocked_company');
+    const stored = localStorage.getItem(SESSION_KEY) || readSharedSession();
     if (stored) {
       try {
         setCompany(JSON.parse(stored));
+        localStorage.setItem(SESSION_KEY, stored);
       } catch {
-        localStorage.removeItem('unlocked_company');
+        localStorage.removeItem(SESSION_KEY);
+        writeSharedSession(null);
       }
     }
     setIsLoading(false);
@@ -61,7 +93,9 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
 
   const persistCompany = useCallback((c: CompanyUser) => {
     setCompany(c);
-    localStorage.setItem('unlocked_company', JSON.stringify(c));
+    const json = JSON.stringify(c);
+    localStorage.setItem(SESSION_KEY, json);
+    writeSharedSession(json);
   }, []);
 
   const login = useCallback(
@@ -85,7 +119,8 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setCompany(null);
-    localStorage.removeItem('unlocked_company');
+    localStorage.removeItem(SESSION_KEY);
+    writeSharedSession(null);
   }, []);
 
   const refreshCompany = useCallback(
@@ -141,4 +176,24 @@ export function useCompanyPath() {
   );
 
   return p;
+}
+
+/** URL of the Photos portal for the current environment. */
+export function photosPortalUrl(): string {
+  if (typeof window === 'undefined') return 'https://photos.unlocked.gr';
+  const { hostname, port, protocol } = window.location;
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    return `${protocol}//photos.localhost${port ? ':' + port : ''}`;
+  }
+  return 'https://photos.unlocked.gr';
+}
+
+/** Locale for Intl date formatting in the chosen UI language. */
+export function uiLocale(language: string): string {
+  return language === 'el' ? 'el-GR' : language === 'nl' ? 'nl-NL' : 'en-GB';
+}
+
+/** Today's date as YYYY-MM-DD in the browser's local time zone (not UTC). */
+export function localDateKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

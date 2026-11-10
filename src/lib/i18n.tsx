@@ -6,6 +6,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { companyTranslations } from './i18nCompany';
 
 export type Language = 'en' | 'el' | 'nl';
 
@@ -5674,6 +5675,10 @@ const translations: Record<Language, Record<string, string>> = {
     'dir.cta_browse': 'Bekijk Kamers',
   },
 };
+
+// Company + Photos portal texts live in ./i18nCompany (Dutch falls back to English).
+Object.assign(translations.en, companyTranslations.en);
+Object.assign(translations.el, companyTranslations.el);
 
 interface I18nContextType {
   language: Language;

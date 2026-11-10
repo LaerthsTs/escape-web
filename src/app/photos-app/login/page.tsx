@@ -1,28 +1,35 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useCompanyAuth } from '@/lib/companyAuth';
-import { useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
+import { useTranslation } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { friendlyError } from '@/lib/errors';
+import { mailto } from '@/lib/plans';
 
 export default function PhotosLoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { login, isAuthenticated } = useCompanyAuth();
-  const searchParams = useSearchParams();
-  const justRegistered = searchParams.get('registered') === 'true';
+  const [justRegistered, setJustRegistered] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (isAuthenticated) {
-    router.replace('/');
-    return null;
-  }
+  useEffect(() => {
+    setJustRegistered(new URLSearchParams(window.location.search).get('registered') === 'true');
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace('/');
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,14 +39,17 @@ export default function PhotosLoginPage() {
       await login(email, password);
       router.replace('/');
     } catch (err: any) {
-      setError(err?.message || 'Invalid email or password');
+      setError(friendlyError(err, t, 'cx.err.login_failed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
+    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-12">
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -52,34 +62,35 @@ export default function PhotosLoginPage() {
               <span className="text-brand-text-muted text-sm ml-1.5 font-normal">Photos</span>
             </span>
           </div>
-          <p className="text-brand-text-secondary text-sm">
-            Sign in to manage your escape room photos
-          </p>
+          <p className="text-brand-text-secondary text-sm">{t('ph.auth.login_sub')}</p>
         </div>
 
         {/* Form */}
-        <div className="bg-brand-surface rounded-2xl p-8 border border-white/5">
-          <h1 className="text-2xl font-bold mb-6">Sign In</h1>
+        <div className="bg-brand-surface rounded-2xl p-5 sm:p-8 border border-white/5">
+          <h1 className="text-2xl font-bold mb-2">{t('ph.auth.login_title')}</h1>
+          <p className="text-xs text-brand-text-secondary mb-6">{t('ph.auth.same_account')}</p>
 
-          {justRegistered && (
+          {justRegistered && !error && (
             <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-4 text-green-400 text-sm">
-              Account created! Sign in to get started.
+              {t('cx.auth.registered')}
             </div>
           )}
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Email</label>
+              <label htmlFor="ph-email" className="block text-sm text-brand-text-secondary mb-1.5">{t('company.auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
+                  id="ph-email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -90,11 +101,13 @@ export default function PhotosLoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Password</label>
+              <label htmlFor="ph-password" className="block text-sm text-brand-text-secondary mb-1.5">{t('company.auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
+                  id="ph-password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -103,12 +116,22 @@ export default function PhotosLoginPage() {
                 />
                 <button
                   type="button"
+                  aria-label={t('cx.auth.show_password')}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-secondary hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-end -mt-1">
+              <a
+                href={mailto(t('cx.auth.forgot_subject'), t('cx.auth.forgot_body', { email: email || '' }))}
+                className="text-xs text-brand-text-secondary hover:text-white hover:underline"
+              >
+                {t('cx.auth.forgot')}
+              </a>
             </div>
 
             <button
@@ -120,7 +143,7 @@ export default function PhotosLoginPage() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Sign In <ArrowRight className="w-4 h-4" />
+                  {t('company.auth.login')} <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
@@ -128,14 +151,14 @@ export default function PhotosLoginPage() {
         </div>
 
         <p className="text-center text-sm text-brand-text-secondary mt-6">
-          Don&apos;t have an account?{' '}
+          {t('company.auth.no_account')}{' '}
           <Link href="/register" className="text-brand-red-light hover:underline font-medium">
-            Create Account
+            {t('company.auth.register_link')}
           </Link>
         </p>
 
         <p className="text-center text-xs text-brand-text-muted mt-4">
-          Powered by <span className="text-brand-red-light font-bold">UNLOCKED</span>
+          {t('ph.powered_by')} <span className="text-brand-red-light font-bold">UNLOCKED</span>
         </p>
       </div>
     </div>

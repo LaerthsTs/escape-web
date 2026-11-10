@@ -1,17 +1,18 @@
 ﻿'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { photosPortalUrl } from '@/lib/companyAuth';
+import { useTranslation } from '@/lib/i18n';
 
+// Old link target: the Photos tool now lives on its own subdomain.
 export default function CompanyPhotosPage() {
-  const router = useRouter();
+  const { t } = useTranslation();
   useEffect(() => {
-    // Redirect to the Photos app for the new room-based flow
-    window.location.href = 'https://photos.unlocked.gr';
+    window.location.href = photosPortalUrl();
   }, []);
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-brand-text-muted">Redirecting to Photos Tool...</p>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <p className="text-brand-text-muted">{t('cx.photos.redirecting')}</p>
     </div>
   );
 }

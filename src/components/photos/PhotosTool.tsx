@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../convex/_generated/api';
 import { useCompanyAuth } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
+import { useToast } from '@/components/company/Toast';
+import { friendlyError } from '@/lib/errors';
 import {
   Camera,
   Upload,
@@ -777,6 +779,7 @@ type Step = 'gallery' | 'upload' | 'edit' | 'send' | 'settings';
 export default function PhotosTool({ roomId, roomTitle }: { roomId: string; roomTitle?: string }) {
   const { company } = useCompanyAuth();
   const { t } = useTranslation();
+  const toast = useToast();
   const router = useRouter();
   const companyId = company?.id;
 
@@ -945,6 +948,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
     } catch (err) {
       console.error('Upload failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.upload') });
     } finally {
       setUploading(false);
     }
@@ -1008,6 +1012,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
     } catch (err) {
       console.error('Processing failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.process') });
     } finally {
       setProcessing(false);
     }
@@ -1035,6 +1040,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       setSendSuccess(true);
     } catch (err) {
       console.error('Send failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.send') });
     } finally {
       setSending(false);
     }
@@ -1042,10 +1048,13 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
   const handleDeletePhoto = async (photoId: string) => {
     if (!companyId) return;
+    if (!confirm(t('ph.delete_confirm'))) return;
     try {
       await deletePhotoMut({ photoId: photoId as any, companyId: companyId as any });
+      toast({ kind: 'success', message: t('ph.deleted') });
     } catch (err) {
       console.error('Delete failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.delete') });
     }
   };
 
@@ -1109,6 +1118,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
     } catch (err) {
       console.error('Logo upload failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.upload') });
     } finally {
       setUploadingLogo(false);
     }
@@ -1134,6 +1144,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
     } catch (err) {
       console.error('Overlay upload failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.upload') });
     } finally {
       setUploadingOverlay(false);
     }
@@ -1161,6 +1172,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       setStep('gallery');
     } catch (err) {
       console.error('Save settings failed:', err);
+      toast({ kind: 'error', message: friendlyError(err, t, 'ph.err.save') });
     } finally {
       setSavingSettings(false);
     }
@@ -1171,26 +1183,27 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
   // ═══════════════════════════════════════════
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={step === 'gallery' ? () => router.push('/') : step === 'settings' ? resetToGallery : resetToGallery}
             className="p-2 hover:bg-white/5 rounded-xl transition-colors"
+            aria-label={t('ph.back')}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <Camera className="w-7 h-7 text-brand-red-light" />
-              {roomTitle || 'Photos'}
+              <span className="truncate">{roomTitle || t('ph.photos')}</span>
             </h1>
             <p className="text-brand-text-secondary text-sm mt-1">
-              {step === 'gallery' && 'Upload, brand, and send team photos in seconds'}
-              {step === 'edit' && 'Edit and apply branding'}
-              {step === 'send' && 'Send to players'}
-              {step === 'settings' && 'Logo, overlay & branding settings for this room'}
+              {step === 'gallery' && t('ph.sub.gallery')}
+              {step === 'edit' && t('ph.sub.edit')}
+              {step === 'send' && t('ph.sub.send')}
+              {step === 'settings' && t('ph.sub.settings')}
             </p>
           </div>
         </div>
@@ -1202,7 +1215,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
               className="btn-secondary flex items-center gap-2"
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Branding</span>
+              <span className="hidden sm:inline">{t('ph.branding')}</span>
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1210,7 +1223,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
               className="btn-primary flex items-center gap-2"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              New Photo
+              {t('ph.new_photo')}
             </button>
           </div>
         )}
@@ -1218,13 +1231,13 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
       {/* Stats Bar */}
       {step === 'gallery' && stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 mb-6">
           {[
-            { icon: Camera, label: 'Photos', value: stats.totalPhotos, accent: 'text-brand-red-light' },
-            { icon: Camera, label: 'Today', value: stats.todayPhotos, accent: 'text-blue-400' },
-            { icon: Mail, label: 'Emails Sent', value: stats.totalEmails, accent: 'text-green-400' },
-            { icon: Eye, label: 'Page Views', value: stats.totalViews, accent: 'text-purple-400' },
-            { icon: Download, label: 'Downloads', value: stats.totalDownloads, accent: 'text-yellow-400' },
+            { icon: Camera, label: t('ph.stat.photos'), value: stats.totalPhotos, accent: 'text-brand-red-light' },
+            { icon: Camera, label: t('ph.stat.today'), value: stats.todayPhotos, accent: 'text-blue-400' },
+            { icon: Mail, label: t('ph.stat.emails'), value: stats.totalEmails, accent: 'text-green-400' },
+            { icon: Eye, label: t('ph.stat.views'), value: stats.totalViews, accent: 'text-purple-400' },
+            { icon: Download, label: t('ph.stat.downloads'), value: stats.totalDownloads, accent: 'text-yellow-400' },
           ].map((s) => (
             <div key={s.label} className="bg-brand-surface rounded-xl border border-white/5 p-4 text-center">
               <s.icon className={`w-5 h-5 ${s.accent} mx-auto mb-1`} />
@@ -1245,14 +1258,14 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
           ) : photos.length === 0 ? (
             <div className="text-center py-20 bg-brand-surface rounded-2xl border border-white/5">
               <Camera className="w-16 h-16 text-brand-border mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No photos yet</h3>
-              <p className="text-brand-text-muted mb-6">Upload your first team photo to get started</p>
+              <h3 className="text-xl font-semibold mb-2">{t('ph.empty_title')}</h3>
+              <p className="text-brand-text-muted mb-6 px-4">{t('ph.empty_desc')}</p>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="btn-primary inline-flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                Upload Photo
+                {t('ph.upload_photo')}
               </button>
             </div>
           ) : (
@@ -1270,26 +1283,26 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                   />
 
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
 
                   {/* Bottom info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="text-xs font-medium truncate">{photo.teamName || 'Untitled'}</div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="text-xs font-medium truncate">{photo.teamName || t('ph.untitled')}</div>
                     <div className="text-xs text-brand-text-muted">{photo.room?.title || ''}</div>
                     <div className="flex items-center gap-2 mt-1">
                       {photo.status === 'sent' && (
                         <span className="text-xs text-green-400 flex items-center gap-0.5">
-                          <CheckCircle className="w-3 h-3" /> Sent ({photo.emailsSent})
+                          <CheckCircle className="w-3 h-3" /> {t('ph.status.sent', { count: String(photo.emailsSent ?? 0) })}
                         </span>
                       )}
                       {photo.status === 'ready' && (
                         <span className="text-xs text-blue-400 flex items-center gap-0.5">
-                          <CheckCircle className="w-3 h-3" /> Ready
+                          <CheckCircle className="w-3 h-3" /> {t('ph.status.ready')}
                         </span>
                       )}
                       {photo.status === 'draft' && (
                         <span className="text-xs text-yellow-400 flex items-center gap-0.5">
-                          <Wand2 className="w-3 h-3" /> Draft
+                          <Wand2 className="w-3 h-3" /> {t('ph.status.draft')}
                         </span>
                       )}
                     </div>
@@ -1301,7 +1314,8 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                       e.stopPropagation();
                       handleDeletePhoto(photo._id);
                     }}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 rounded-lg md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    aria-label={t('ph.delete_photo')}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-white" />
                   </button>
@@ -1320,7 +1334,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             <div className="bg-brand-surface rounded-2xl border border-white/5 overflow-hidden">
               <div className="aspect-4/3 relative">
                 {previewUrl ? (
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-contain bg-black" />
+                  <img src={previewUrl} alt={t('ph.preview')} className="w-full h-full object-contain bg-black" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-brand-bg">
                     <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
@@ -1331,8 +1345,8 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
             {/* Filters strip */}
             <div className="mt-4">
-              <label className="text-sm font-medium text-brand-text-secondary mb-2 block">Filters</label>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <label className="text-sm font-medium text-brand-text-secondary mb-2 block">{t('ph.filters')}</label>
+              <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {FILTERS.map((f) => (
                   <button
                     key={f.name}
@@ -1343,7 +1357,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                         : 'bg-brand-surface border-white/10 text-brand-text-secondary hover:border-brand-red/30'
                     }`}
                   >
-                    {f.label}
+                    {f.name === 'none' ? t('ph.filter_original') : f.label}
                   </button>
                 ))}
               </div>
@@ -1355,13 +1369,13 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Team name */}
             <div>
               <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                <Users className="w-4 h-4" /> Team Name
+                <Users className="w-4 h-4" /> {t('ph.team_name')}
               </label>
               <input
                 type="text"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
-                placeholder="e.g. The Masterminds"
+                placeholder={t('ph.team_placeholder')}
                 className="input-field w-full"
               />
             </div>
@@ -1369,7 +1383,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Escape result */}
             <div>
               <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                <Trophy className="w-4 h-4" /> Result
+                <Trophy className="w-4 h-4" /> {t('ph.result')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -1380,7 +1394,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                       : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                   }`}
                 >
-                  <CheckCircle className="w-4 h-4" /> Escaped
+                  <CheckCircle className="w-4 h-4" /> {t('ph.escaped')}
                 </button>
                 <button
                   onClick={() => setEscaped(escaped === false ? undefined : false)}
@@ -1390,7 +1404,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                       : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                   }`}
                 >
-                  <XCircle className="w-4 h-4" /> Locked In
+                  <XCircle className="w-4 h-4" /> {t('ph.locked_in')}
                 </button>
               </div>
             </div>
@@ -1399,13 +1413,13 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {escaped === true && (
               <div>
                 <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                  <Timer className="w-4 h-4" /> Escape Time
+                  <Timer className="w-4 h-4" /> {t('ph.escape_time')}
                 </label>
                 <input
                   type="text"
                   value={escapeTime}
                   onChange={(e) => setEscapeTime(e.target.value)}
-                  placeholder="e.g. 45:23"
+                  placeholder={t('ph.time_placeholder')}
                   className="input-field w-full"
                 />
               </div>
@@ -1414,11 +1428,14 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Apply branding toggle */}
             <div className="flex items-center justify-between bg-brand-surface rounded-xl border border-white/5 p-4">
               <div>
-                <div className="text-sm font-medium">Apply Branding</div>
-                <div className="text-xs text-brand-text-muted">Logo, overlay & text from your room preset</div>
+                <div className="text-sm font-medium">{t('ph.apply_branding')}</div>
+                <div className="text-xs text-brand-text-muted">{t('ph.apply_branding_desc')}</div>
               </div>
               <button
                 onClick={() => setApplyBrand(!applyBrand)}
+                role="switch"
+                aria-checked={applyBrand}
+                aria-label={t('ph.apply_branding')}
                 className={`w-12 h-6 rounded-full transition-colors relative ${applyBrand ? 'bg-brand-red' : 'bg-brand-border'}`}
               >
                 <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${applyBrand ? 'translate-x-6' : 'translate-x-0.5'}`} />
@@ -1427,8 +1444,8 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
             {/* Action buttons */}
             <div className="flex gap-3 pt-2">
-              <button onClick={resetToGallery} className="btn-secondary flex-1">
-                Cancel
+              <button onClick={resetToGallery} className="btn-ghost flex-1">
+                {t('cx.common.cancel')}
               </button>
               <button
                 onClick={handleSaveAndContinue}
@@ -1440,7 +1457,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 ) : (
                   <Wand2 className="w-4 h-4" />
                 )}
-                Process & Continue
+                {t('ph.process_continue')}
               </button>
             </div>
           </div>
@@ -1456,7 +1473,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
               {previewUrl ? (
                 <img
                   src={previewUrl}
-                  alt="Processed"
+                  alt={t('ph.preview')}
                   className="w-full h-full object-contain bg-black cursor-pointer"
                   onClick={() => setModalUrl(previewUrl)}
                 />
@@ -1478,7 +1495,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
               {escaped !== undefined && (
                 <div className={`flex items-center gap-2 text-sm ${escaped ? 'text-green-400' : 'text-red-400'}`}>
                   {escaped ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  {escaped ? `Escaped${escapeTime ? ` — ${escapeTime}` : ''}` : 'Locked In'}
+                  {escaped ? `${t('ph.escaped')}${escapeTime ? ` · ${escapeTime}` : ''}` : t('ph.locked_in')}
                 </div>
               )}
             </div>
@@ -1489,14 +1506,14 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {sendSuccess ? (
               <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8 text-center">
                 <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-green-400 mb-1">Photo Sent!</h3>
+                <h3 className="text-lg font-bold text-green-400 mb-1">{t('ph.sent_title')}</h3>
                 <p className="text-sm text-brand-text-secondary mb-4">
-                  Emails have been queued and will arrive in seconds.
+                  {t('ph.sent_desc')}
                 </p>
 
                 {/* Hosted link */}
                 <div className="bg-brand-surface rounded-xl p-4 mb-4">
-                  <div className="text-xs text-brand-text-muted mb-1.5">Hosted Photo Page</div>
+                  <div className="text-xs text-brand-text-muted mb-1.5">{t('ph.hosted_page')}</div>
                   <div className="text-sm font-medium break-all text-brand-red-light">
                     {window.location.origin}/p/{currentPhotoId}
                   </div>
@@ -1504,15 +1521,20 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/p/${currentPhotoId}`);
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${window.location.origin}/p/${currentPhotoId}`);
+                        toast({ kind: 'success', message: t('ph.link_copied') });
+                      } catch {
+                        toast({ kind: 'error', message: t('cx.widget.copy_failed') });
+                      }
                     }}
-                    className="btn-secondary flex-1 text-sm"
+                    className="btn-ghost flex-1 text-sm"
                   >
-                    Copy Link
+                    {t('ph.copy_link')}
                   </button>
                   <button onClick={resetToGallery} className="btn-primary flex-1 text-sm">
-                    New Photo
+                    {t('ph.new_photo')}
                   </button>
                 </div>
               </div>
@@ -1520,7 +1542,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
               <>
                 <div>
                   <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                    <Mail className="w-4 h-4" /> Player Emails
+                    <Mail className="w-4 h-4" /> {t('ph.player_emails')}
                   </label>
                   <textarea
                     value={emailAddresses}
@@ -1530,13 +1552,13 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     className="input-field w-full resize-none"
                   />
                   <p className="text-xs text-brand-text-muted mt-1">
-                    Separate multiple emails with commas or spaces
+                    {t('ph.emails_hint')}
                   </p>
                 </div>
 
                 {/* Hosted link preview */}
                 <div className="bg-brand-surface rounded-xl border border-white/5 p-4">
-                  <div className="text-xs text-brand-text-muted mb-1">Hosted Photo Page</div>
+                  <div className="text-xs text-brand-text-muted mb-1">{t('ph.hosted_page')}</div>
                   <div className="text-sm text-brand-text-secondary break-all">
                     {window.location.origin}/p/{currentPhotoId}
                   </div>
@@ -1545,9 +1567,9 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 <div className="flex gap-3">
                   <button
                     onClick={() => setStep('edit')}
-                    className="btn-secondary flex-1"
+                    className="btn-ghost flex-1"
                   >
-                    Back to Edit
+                    {t('ph.back_to_edit')}
                   </button>
                   <button
                     onClick={handleSendEmails}
@@ -1559,7 +1581,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     ) : (
                       <Send className="w-4 h-4" />
                     )}
-                    Send Photo
+                    {t('ph.send_photo')}
                   </button>
                 </div>
 
@@ -1570,7 +1592,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                   }}
                   className="w-full text-center text-sm text-brand-text-muted hover:text-brand-text-secondary transition-colors"
                 >
-                  Skip — just save the photo
+                  {t('ph.skip_send')}
                 </button>
               </>
             )}
@@ -1611,7 +1633,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     {settingsTextTemplate && (
                       <div className="absolute bottom-0 left-0 right-0" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
                         <p className="text-center text-white font-semibold text-sm py-4 px-3 uppercase tracking-wider">
-                          {settingsTextTemplate.replace(/\{\{room\}\}/gi, roomTitle || 'Room Name').replace(/\{\{team\}\}/gi, 'Team Name').replace(/\{\{time\}\}/gi, '45:30')}
+                          {settingsTextTemplate.replace(/\{\{room\}\}/gi, roomTitle || t('ph.sample_room')).replace(/\{\{team\}\}/gi, t('ph.sample_team')).replace(/\{\{time\}\}/gi, '45:30')}
                         </p>
                       </div>
                     )}
@@ -1626,7 +1648,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 ) : (
                   <div className="text-center">
                     <Layers className="w-16 h-16 text-brand-border mx-auto mb-3" />
-                    <p className="text-brand-text-muted text-sm">Upload a logo to see the preview</p>
+                    <p className="text-brand-text-muted text-sm px-4">{t('ph.preview_empty')}</p>
                   </div>
                 )}
               </div>
@@ -1645,7 +1667,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                 }`}
               >
-                <Image className="w-4 h-4" /> Logo Mode
+                <Image className="w-4 h-4" /> {t('ph.logo_mode')}
               </button>
               <button
                 onClick={() => setSettingsUseOverlay(true)}
@@ -1655,7 +1677,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     : 'bg-brand-surface border-white/10 text-brand-text-muted hover:border-white/20'
                 }`}
               >
-                <Layers className="w-4 h-4" /> Overlay Mode
+                <Layers className="w-4 h-4" /> {t('ph.overlay_mode')}
               </button>
             </div>
 
@@ -1663,13 +1685,14 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {!settingsUseOverlay && (
               <>
                 <div>
-                  <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block">Logo</label>
+                  <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block">{t('ph.logo')}</label>
                   <div className="flex items-center gap-3">
                     {settingsLogoUrl ? (
                       <div className="relative w-16 h-16 bg-brand-bg rounded-xl border border-white/10 flex items-center justify-center overflow-hidden">
                         <img src={settingsLogoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
                         <button
                           onClick={() => { setSettingsLogoUrl(''); setSettingsLogoStorageId(undefined); }}
+                          aria-label={t('ph.remove')}
                           className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
                         >
                           <X className="w-3 h-3 text-white" />
@@ -1679,19 +1702,19 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     <button
                       onClick={() => logoInputRef.current?.click()}
                       disabled={uploadingLogo}
-                      className="btn-secondary flex items-center gap-2 text-sm"
+                      className="btn-ghost flex items-center gap-2 text-sm"
                     >
                       {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      {settingsLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                      {settingsLogoUrl ? t('ph.change_logo') : t('ph.upload_logo')}
                     </button>
                   </div>
-                  <p className="text-xs text-brand-text-muted mt-1">PNG with transparent background works best</p>
+                  <p className="text-xs text-brand-text-muted mt-1">{t('ph.logo_hint')}</p>
                 </div>
 
                 {/* Logo scale */}
                 <div>
                   <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block">
-                    Logo Size ({Math.round(settingsLogoScale * 100)}%)
+                    {t('ph.logo_size')} ({Math.round(settingsLogoScale * 100)}%)
                   </label>
                   <input
                     type="range"
@@ -1703,21 +1726,21 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                     className="w-full accent-brand-red"
                   />
                   <div className="flex justify-between text-xs text-brand-text-muted mt-1">
-                    <span>Small</span>
-                    <span>Large</span>
+                    <span>{t('ph.small')}</span>
+                    <span>{t('ph.large')}</span>
                   </div>
                 </div>
 
                 {/* Logo position */}
                 <div>
-                  <label className="text-sm font-medium text-brand-text-secondary mb-2 block">Logo Position</label>
+                  <label className="text-sm font-medium text-brand-text-secondary mb-2 block">{t('ph.logo_position')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: 'top-left', label: 'Top Left' },
-                      { value: 'top-right', label: 'Top Right' },
-                      { value: 'bottom-left', label: 'Bottom Left' },
-                      { value: 'bottom-right', label: 'Bottom Right' },
-                      { value: 'bottom-center', label: 'Bottom Center' },
+                      { value: 'top-left', label: t('ph.pos.top_left') },
+                      { value: 'top-right', label: t('ph.pos.top_right') },
+                      { value: 'bottom-left', label: t('ph.pos.bottom_left') },
+                      { value: 'bottom-right', label: t('ph.pos.bottom_right') },
+                      { value: 'bottom-center', label: t('ph.pos.bottom_center') },
                     ].map((pos) => (
                       <button
                         key={pos.value}
@@ -1740,7 +1763,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {settingsUseOverlay && (
               <div>
                 <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block">
-                  Full-Frame Overlay
+                  {t('ph.overlay')}
                 </label>
                 <div className="flex items-center gap-3">
                   {settingsOverlayUrl ? (
@@ -1748,6 +1771,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                       <img src={settingsOverlayUrl} alt="Overlay" className="w-full h-full object-cover" />
                       <button
                         onClick={() => { setSettingsOverlayUrl(''); setSettingsOverlayStorageId(undefined); }}
+                        aria-label={t('ph.remove')}
                         className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
                       >
                         <X className="w-3 h-3 text-white" />
@@ -1757,14 +1781,14 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                   <button
                     onClick={() => overlayInputRef.current?.click()}
                     disabled={uploadingOverlay}
-                    className="btn-secondary flex items-center gap-2 text-sm"
+                    className="btn-ghost flex items-center gap-2 text-sm"
                   >
                     {uploadingOverlay ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    {settingsOverlayUrl ? 'Change Overlay' : 'Upload Overlay'}
+                    {settingsOverlayUrl ? t('ph.change_overlay') : t('ph.upload_overlay')}
                   </button>
                 </div>
                 <p className="text-xs text-brand-text-muted mt-1">
-                  PNG with transparent areas — placed over the entire photo
+                  {t('ph.overlay_hint')}
                 </p>
               </div>
             )}
@@ -1772,7 +1796,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Opacity */}
             <div>
               <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block">
-                Opacity ({Math.round(settingsOpacity * 100)}%)
+                {t('ph.opacity')} ({Math.round(settingsOpacity * 100)}%)
               </label>
               <input
                 type="range"
@@ -1788,7 +1812,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Brand color */}
             <div>
               <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                <Palette className="w-4 h-4" /> Brand Color
+                <Palette className="w-4 h-4" /> {t('ph.brand_color')}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -1810,24 +1834,24 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
             {/* Text template */}
             <div>
               <label className="text-sm font-medium text-brand-text-secondary mb-1.5 block flex items-center gap-1.5">
-                <Type className="w-4 h-4" /> Text Overlay
+                <Type className="w-4 h-4" /> {t('ph.text_overlay')}
               </label>
               <input
                 type="text"
                 value={settingsTextTemplate}
                 onChange={(e) => setSettingsTextTemplate(e.target.value)}
-                placeholder="e.g. {{room}} — Escaped in {{time}}"
+                placeholder={t('ph.text_placeholder')}
                 className="input-field w-full"
               />
               <p className="text-xs text-brand-text-muted mt-1">
-                Use {'{{room}}'}, {'{{team}}'}, {'{{time}}'} as placeholders
+                {t('ph.text_hint')}
               </p>
             </div>
 
             {/* Default filter */}
             <div>
-              <label className="text-sm font-medium text-brand-text-secondary mb-2 block">Default Filter</label>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <label className="text-sm font-medium text-brand-text-secondary mb-2 block">{t('ph.default_filter')}</label>
+              <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {FILTERS.map((f) => (
                   <button
                     key={f.name}
@@ -1838,7 +1862,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                         : 'bg-brand-surface border-white/10 text-brand-text-secondary hover:border-brand-red/30'
                     }`}
                   >
-                    {f.label}
+                    {f.name === 'none' ? t('ph.filter_original') : f.label}
                   </button>
                 ))}
               </div>
@@ -1846,8 +1870,8 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
 
             {/* Save */}
             <div className="flex gap-3 pt-2">
-              <button onClick={resetToGallery} className="btn-secondary flex-1">
-                Cancel
+              <button onClick={resetToGallery} className="btn-ghost flex-1">
+                {t('cx.common.cancel')}
               </button>
               <button
                 onClick={handleSaveSettings}
@@ -1859,7 +1883,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
                 ) : (
                   <Save className="w-4 h-4" />
                 )}
-                Save Branding
+                {t('ph.save_branding')}
               </button>
             </div>
           </div>
@@ -1908,10 +1932,10 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setModalUrl(null)}
         >
-          <button className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full">
+          <button className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full" aria-label={t('cx.common.close')}>
             <X className="w-6 h-6 text-white" />
           </button>
-          <img src={modalUrl} alt="Full preview" className="max-w-full max-h-full object-contain rounded-xl" />
+          <img src={modalUrl} alt={t('ph.preview')} className="max-w-full max-h-full object-contain rounded-xl" />
         </div>
       )}
     </div>

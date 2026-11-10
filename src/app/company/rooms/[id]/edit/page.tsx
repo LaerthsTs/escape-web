@@ -34,6 +34,9 @@ import {
   Languages,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { friendlyError } from '@/lib/errors';
+import { uiLocale } from '@/lib/companyAuth';
+import { useToast } from '@/components/company/Toast';
 import { translateRoom } from '@/lib/translate';
 
 const LocationPicker = dynamic(
@@ -120,6 +123,7 @@ export default function EditRoomPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t, language } = useTranslation();
+  const toast = useToast();
 
   // ── Translation State ──
   const LANGS = [
@@ -314,9 +318,11 @@ export default function EditRoomPage() {
         }
       }
 
+      toast({ kind: 'success', message: t('cx.rooms.saved') });
       router.push(p('/company/rooms'));
     } catch (err: any) {
-      setError(err?.message || t('company.rooms.edit.failed_update'));
+      setError(friendlyError(err, t, 'company.rooms.edit.failed_update'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -329,7 +335,7 @@ export default function EditRoomPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
         <Link href={p('/company/rooms')} className="p-2 rounded-xl hover:bg-white/5 transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -712,7 +718,7 @@ export default function EditRoomPage() {
                     {(() => {
                       const d = new Date(form.releaseDate);
                       d.setDate(d.getDate() - 3);
-                      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                      return d.toLocaleDateString(uiLocale(language), { month: 'short', day: 'numeric', year: 'numeric' });
                     })()}
                   </p>
                 </div>

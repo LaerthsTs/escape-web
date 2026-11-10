@@ -1,8 +1,10 @@
 'use client';
 
-import { useQuery, useMutation } from 'convex/react';
+import { useEffect, useState } from 'react';
+import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
+import { roomLimitFor } from '@/lib/plans';
 import Link from 'next/link';
 import {
   DoorOpen,
@@ -31,12 +33,18 @@ import {
   Code,
   Target,
   Repeat,
-  Timer,
   MessageSquare,
   Globe,
+  Check,
+  Building2,
+  Image as ImageIcon,
+  X,
+  Rocket,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
+import { SlotWeekCalendar } from '@/components/company/SlotBoard';
+import { statusLabel, WIDGET_COPIED, readFlag } from '@/lib/companyUi';
 
 function getGreeting(t: (key: string) => string) {
   const h = new Date().getHours();
@@ -45,22 +53,15 @@ function getGreeting(t: (key: string) => string) {
   return t('company.greeting.evening');
 }
 
-function formatDate() {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+const CHECKLIST_DISMISSED = 'unlocked_checklist_dismissed';
 
 export default function CompanyDashboardPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { company } = useCompanyAuth();
   const p = useCompanyPath();
   const companyId = company?.id;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   const stats = useQuery(
     api.companies.getDashboardStats,
@@ -77,51 +78,121 @@ export default function CompanyDashboardPage() {
     companyId ? { companyId: companyId as any, date: today } : 'skip'
   );
 
+  const rooms = useQuery(api.companies.getRooms, companyId ? { companyId: companyId as any } : 'skip');
+  const companyData = useQuery(api.companies.getById, companyId ? { id: companyId as any } : 'skip');
+
+  const [checklistDismissed, setChecklistDismissed] = useState(true);
+  const [widgetCopied, setWidgetCopied] = useState(false);
+  useEffect(() => {
+    setChecklistDismissed(readFlag(CHECKLIST_DISMISSED));
+    setWidgetCopied(readFlag(WIDGET_COPIED));
+  }, []);
+
   const plan = (stats as any)?.plan || company?.platformPlan || 'starter';
-  const PLAN_ROOM_LIMITS: Record<string, number> = { free: 1, starter: 1, pro: 10, enterprise: Infinity };
-  const roomLimit = PLAN_ROOM_LIMITS[plan] || 3;
+  const roomLimit = roomLimitFor(plan, (stats as any)?.roomLimit);
   const roomCount = stats?.totalRooms ?? 0;
   const atLimit = roomCount >= roomLimit;
   const activeRooms = stats?.activeRooms ?? 0;
 
-  // Onboarding banner
-  const onboardingStatus = company?.onboardingStatus;
-  if (onboardingStatus && onboardingStatus !== 'approved') {
-    return <OnboardingBanner status={onboardingStatus} companyId={companyId!} />;
-  }
+  const bookableRooms = (rooms || []).filter((r: any) => !r.photosOnly && r.isActive !== false);
 
   const upcomingCount = todayBookings?.filter((b: any) => b.status === 'upcoming').length ?? 0;
   const completedCount = todayBookings?.filter((b: any) => b.status === 'completed').length ?? 0;
+
+  // ── Getting started checklist ──
+  const cd: any = companyData;
+  const realRooms = (rooms || []).filter((r: any) => !r.photosOnly);
+  const steps = [
+    {
+      key: 'profile',
+      done: !!(cd?.phone && cd?.address && cd?.city && cd?.description),
+      label: t('cx.start.profile'),
+      desc: t('cx.start.profile_desc'),
+      href: p('/company/settings'),
+      icon: Building2,
+    },
+    {
+      key: 'room',
+      done: realRooms.length > 0,
+      label: t('cx.start.room'),
+      desc: t('cx.start.room_desc'),
+      href: p('/company/rooms/new'),
+      icon: DoorOpen,
+    },
+    {
+      key: 'photo',
+      done: realRooms.some((r: any) => r.image && !String(r.image).startsWith('/placeholder')),
+      label: t('cx.start.photo'),
+      desc: t('cx.start.photo_desc'),
+      href: realRooms[0] ? p(`/company/rooms/${realRooms[0]._id}/edit`) : p('/company/rooms/new'),
+      icon: ImageIcon,
+    },
+    {
+      key: 'times',
+      done: realRooms.some((r: any) => (r.defaultTimeSlots || []).length > 0),
+      label: t('cx.start.times'),
+      desc: t('cx.start.times_desc'),
+      href: realRooms[0] ? p(`/company/rooms/${realRooms[0]._id}/edit`) : p('/company/rooms/new'),
+      icon: Clock,
+    },
+    {
+      key: 'widget',
+      done: widgetCopied,
+      label: t('cx.start.widget'),
+      desc: t('cx.start.widget_desc'),
+      href: p('/company/settings?tab=widget'),
+      icon: Code,
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const showChecklist = !!companyData && rooms !== undefined && !checklistDismissed && doneCount < steps.length;
+
+  const dismissChecklist = () => {
+    setChecklistDismissed(true);
+    try {
+      localStorage.setItem(CHECKLIST_DISMISSED, '1');
+    } catch {}
+  };
+
+  const dateLine = new Date().toLocaleDateString(uiLocale(language), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* ── Hero Header ── */}
       <AnimateIn animation="fadeUp">
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-brand-surface via-brand-surface to-brand-red/5 border border-white/5 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-brand-surface via-brand-surface to-brand-red/5 border border-white/5 p-5 md:p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-red/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <p className="text-sm text-brand-text-secondary mb-1">{formatDate()}</p>
+          <div className="min-w-0">
+            <p className="text-sm text-brand-text-secondary mb-1 capitalize">{dateLine}</p>
             <h1 className="text-2xl md:text-3xl font-bold">
               {getGreeting(t)}, <span className="text-brand-red-light">{company?.name}</span>
             </h1>
             <p className="text-brand-text-secondary mt-1.5 text-sm">
               {todayBookings
                 ? todayBookings.length > 0
-                  ? `${t('company.dashboard.you_have')} ${todayBookings.length} ${todayBookings.length !== 1 ? t('company.dashboard.bookings_plural') : t('company.dashboard.booking_singular')} ${t('company.dashboard.today')} — ${upcomingCount} ${t('company.dashboard.upcoming')}, ${completedCount} ${t('company.dashboard.completed')}`
+                  ? `${t('company.dashboard.you_have')} ${todayBookings.length} ${todayBookings.length !== 1 ? t('company.dashboard.bookings_plural') : t('company.dashboard.booking_singular')} ${t('company.dashboard.today')} · ${upcomingCount} ${t('company.dashboard.upcoming')}, ${completedCount} ${t('company.dashboard.completed')}`
                   : t('company.dashboard.no_bookings_today')
                 : t('company.dashboard.loading_schedule')}
             </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Link href={p('/company/bookings')} className="btn-ghost text-sm flex items-center gap-2 py-2.5! px-4!">
-              <CalendarDays className="w-4 h-4" /> {t('company.nav.bookings')}
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 shrink-0">
+            <Link href={p('/company/slots')} className="btn-ghost text-sm flex items-center gap-2 py-2.5! px-4!">
+              <Clock className="w-4 h-4" /> {t('cx.nav.slots')}
             </Link>
             {atLimit ? (
-              <div className="flex items-center gap-2 text-sm text-brand-text-secondary bg-brand-bg border border-white/5 rounded-xl px-4 py-2.5">
+              <Link
+                href={p('/company/billing')}
+                className="flex items-center gap-2 text-sm text-brand-text-secondary bg-brand-bg border border-white/5 rounded-xl px-4 py-2.5 hover:border-yellow-500/30"
+              >
                 <Lock className="w-4 h-4 text-yellow-400" />
                 <span>{t('company.dashboard.room_limit')}</span>
-              </div>
+              </Link>
             ) : (
               <Link href={p('/company/rooms/new')} className="btn-primary text-sm flex items-center gap-2">
                 <Plus className="w-4 h-4" /> {t('company.dashboard.add_room')}
@@ -132,8 +203,84 @@ export default function CompanyDashboardPage() {
       </div>
       </AnimateIn>
 
-      {/* ── Today&apos;s Metrics (live pulse) ── */}
-      <StaggerContainer stagger={0.1} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Getting started ── */}
+      {showChecklist && (
+        <div className="bg-brand-surface rounded-2xl border border-brand-red/20 p-5 md:p-6">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-bold flex items-center gap-2">
+                <Rocket className="w-4 h-4 text-brand-red-light" /> {t('cx.start.title')}
+              </h2>
+              <p className="text-sm text-brand-text-secondary mt-0.5">
+                {t('cx.start.progress', { done: String(doneCount), total: String(steps.length) })}
+              </p>
+            </div>
+            <button
+              onClick={dismissChecklist}
+              className="p-1.5 rounded-lg text-brand-text-secondary hover:text-white hover:bg-white/5"
+              aria-label={t('cx.start.hide')}
+              title={t('cx.start.hide')}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full bg-brand-red rounded-full transition-all"
+              style={{ width: `${(doneCount / steps.length) * 100}%` }}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+            {steps.map((s, i) => {
+              const isNext = !s.done && steps.findIndex((x) => !x.done) === i;
+              return (
+                <Link
+                  key={s.key}
+                  href={s.href}
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
+                    s.done
+                      ? 'border-white/5 bg-brand-bg/40 opacity-60'
+                      : isNext
+                      ? 'border-brand-red/30 bg-brand-red/5 hover:bg-brand-red/10'
+                      : 'border-white/5 bg-brand-bg/60 hover:border-white/15'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                      s.done ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/5 text-brand-text-secondary'
+                    }`}
+                  >
+                    {s.done ? <Check className="w-4 h-4" /> : i + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-medium ${s.done ? 'line-through' : ''}`}>{s.label}</p>
+                    {!s.done && <p className="text-xs text-brand-text-secondary mt-0.5">{s.desc}</p>}
+                  </div>
+                  {isNext && <ArrowRight className="w-4 h-4 text-brand-red-light ml-auto mt-1 shrink-0" />}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Slot calendar: the week at a glance, tap a time to open/close it ── */}
+      {bookableRooms.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-brand-red-light" /> {t('cx.cal.title')}
+            </h2>
+            <Link href={p('/company/slots')} className="text-xs text-brand-red-light hover:underline flex items-center gap-1">
+              {t('cx.cal.full_view')} <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <SlotWeekCalendar rooms={bookableRooms} companyId={companyId} />
+        </div>
+      )}
+
+      {/* ── Today's Metrics (live pulse) ── */}
+      <StaggerContainer stagger={0.1} className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           icon={CalendarDays}
           label={t('company.dashboard.todays_bookings')}
@@ -160,7 +307,11 @@ export default function CompanyDashboardPage() {
           label={t('company.dashboard.active_rooms')}
           value={`${activeRooms}/${roomCount}`}
           accent="red"
-          detail={roomLimit !== Infinity ? `${roomLimit} max (${plan})` : `${plan} ${t('company.plan.plan_label')}`}
+          detail={
+            roomLimit !== Infinity
+              ? t('cx.dashboard.max_rooms', { limit: String(roomLimit), plan: t(`company.onboarding.plan_${plan}`) })
+              : `${t(`company.onboarding.plan_${plan}`)} ${t('company.plan.plan_label')}`
+          }
         />
       </StaggerContainer>
 
@@ -197,13 +348,6 @@ export default function CompanyDashboardPage() {
                 color="text-emerald-400"
               />
               <OverviewRow
-                icon={CheckCircle}
-                label={t('company.dashboard.completed')}
-                value={String(stats?.advanced?.completedBookings ?? 0)}
-                sub={t('company.dashboard.bookings_plural')}
-                color="text-orange-400"
-              />
-              <OverviewRow
                 icon={CalendarDays}
                 label={t('company.dashboard.upcoming')}
                 value={String(stats?.upcomingBookings ?? 0)}
@@ -223,9 +367,10 @@ export default function CompanyDashboardPage() {
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/5" />
                     <circle
                       cx="18" cy="18" r="15.9" fill="none" strokeWidth="3"
-                      strokeDasharray={`${(roomCount / roomLimit) * 100} ${100 - (roomCount / roomLimit) * 100}`}
+                      strokeDasharray={`${Math.min(roomCount / roomLimit, 1) * 100} ${100 - Math.min(roomCount / roomLimit, 1) * 100}`}
                       strokeLinecap="round"
                       className={atLimit ? 'text-yellow-500' : 'text-brand-red-light'}
+                      stroke="currentColor"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -238,7 +383,7 @@ export default function CompanyDashboardPage() {
                     {atLimit ? t('company.dashboard.upgrade_to_add') : `${roomLimit - roomCount} ${roomLimit - roomCount !== 1 ? t('company.dashboard.rooms_available') : t('company.dashboard.room_available')}`}
                   </p>
                   {atLimit && (
-                    <Link href={p('/company/settings')} className="text-xs text-brand-red-light hover:underline mt-1 inline-block">
+                    <Link href={p('/company/billing')} className="text-xs text-brand-red-light hover:underline mt-1 inline-block">
                       {t('company.dashboard.upgrade_plan')} →
                     </Link>
                   )}
@@ -248,12 +393,12 @@ export default function CompanyDashboardPage() {
           )}
         </AnimateIn>
 
-        {/* Right: Today&apos;s Schedule */}
+        {/* Right: Today's Schedule */}
         <AnimateIn animation="fadeLeft" delay={0.2} className="lg:col-span-3">
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-5 h-full">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold flex items-center gap-2">
-                <Clock className="w-4 h-4 text-brand-red-light" /> {t('company.dashboard.todays_schedule')}
+                <CalendarDays className="w-4 h-4 text-brand-red-light" /> {t('company.dashboard.todays_schedule')}
               </h2>
               <Link href={p('/company/bookings')} className="text-xs text-brand-red-light hover:underline flex items-center gap-1">
                 {t('company.dashboard.view_all')} <ArrowRight className="w-3 h-3" />
@@ -261,47 +406,44 @@ export default function CompanyDashboardPage() {
             </div>
 
             {!todayBookings ? (
-              <div className="text-center py-12 text-brand-text-secondary text-sm">{t('company.dashboard.loading')}</div>
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                ))}
+              </div>
             ) : todayBookings.length === 0 ? (
               <div className="text-center py-12">
                 <CalendarDays className="w-10 h-10 mx-auto mb-3 text-brand-text-secondary/20" />
                 <p className="text-brand-text-secondary text-sm">{t('company.dashboard.no_bookings_for_today')}</p>
                 <Link href={p('/company/bookings')} className="text-xs text-brand-red-light hover:underline mt-2 inline-block">
-                  {t('company.dashboard.go_to_bookings')} →
+                  {t('company.dashboard.go_to_bookings')}
                 </Link>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
-                {todayBookings.map((booking: any, idx: number) => (
-                  <div
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                {todayBookings.map((booking: any) => (
+                  <Link
                     key={booking._id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-brand-bg/50 border border-white/3 hover:border-white/10 transition-colors group"
+                    href={p(`/company/bookings?date=${today}`)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-brand-bg/50 border border-white/3 hover:border-white/10 transition-colors"
                   >
-                    {/* Time column */}
-                    <div className="relative flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${
-                        booking.status === 'completed'
-                          ? 'bg-green-500/10 text-green-400'
-                          : booking.status === 'cancelled'
-                          ? 'bg-red-500/10 text-red-400'
-                          : 'bg-brand-red/10 text-brand-red-light'
-                      }`}>
-                        {booking.time}
-                      </div>
-                      {idx < todayBookings.length - 1 && (
-                        <div className="w-px h-3 bg-white/5 mt-1" />
-                      )}
+                    <div className={`w-14 h-10 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                      booking.status === 'completed'
+                        ? 'bg-green-500/10 text-green-400'
+                        : booking.status === 'cancelled'
+                        ? 'bg-red-500/10 text-red-400'
+                        : 'bg-brand-red/10 text-brand-red-light'
+                    }`}>
+                      {booking.time}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{booking.roomTitle}</p>
-                      <p className="text-xs text-brand-text-secondary mt-0.5">
+                      <p className="text-xs text-brand-text-secondary mt-0.5 truncate">
                         {booking.playerName} · {booking.players} {t('company.dashboard.players')}
                       </p>
                     </div>
 
-                    {/* Badges */}
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         booking.status === 'cancelled'
@@ -310,7 +452,7 @@ export default function CompanyDashboardPage() {
                           ? 'bg-green-500/10 text-green-400'
                           : 'bg-blue-500/10 text-blue-400'
                       }`}>
-                        {booking.status}
+                        {statusLabel(t, booking.status)}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         booking.source === 'external'
@@ -320,7 +462,7 @@ export default function CompanyDashboardPage() {
                         {booking.source === 'external' ? t('company.dashboard.external') : 'UNLOCKED'}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -426,7 +568,7 @@ export default function CompanyDashboardPage() {
       {plan === 'starter' && stats && (
         <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-brand-surface to-brand-red/5 border border-white/5 p-6">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10 flex items-center gap-5">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center shrink-0">
               <Sparkles className="w-6 h-6 text-brand-red-light" />
             </div>
@@ -436,7 +578,7 @@ export default function CompanyDashboardPage() {
                 {t('company.dashboard.unlock_analytics_desc')}
               </p>
             </div>
-            <Link href={p('/company/settings')} className="btn-primary text-sm shrink-0 flex items-center gap-1.5">
+            <Link href={p('/company/billing')} className="btn-primary text-sm shrink-0 flex items-center gap-1.5">
               {t('company.dashboard.upgrade')} <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -456,6 +598,14 @@ export default function CompanyDashboardPage() {
             desc={t('company.dashboard.new_escape_room')}
             color="text-brand-red-light"
             disabled={atLimit}
+            disabledHref={p('/company/billing')}
+          />
+          <QuickAction
+            href={p('/company/slots')}
+            icon={Clock}
+            label={t('cx.nav.slots')}
+            desc={t('cx.dashboard.slots_desc')}
+            color="text-emerald-400"
           />
           <QuickAction
             href={p('/company/bookings')}
@@ -472,13 +622,6 @@ export default function CompanyDashboardPage() {
             color="text-purple-400"
           />
           <QuickAction
-            href={p('/company/settings')}
-            icon={Settings}
-            label={t('company.nav.settings')}
-            desc={t('company.dashboard.plan_preferences')}
-            color="text-green-400"
-          />
-          <QuickAction
             href={p('/company/settings?tab=widget')}
             icon={Code}
             label={t('company.dashboard.widget_title')}
@@ -486,11 +629,11 @@ export default function CompanyDashboardPage() {
             color="text-orange-400"
           />
           <QuickAction
-            href="/services/website"
-            icon={Globe}
-            label={t('company.nav.web_services')}
-            desc={t('company.dashboard.web_services_desc')}
-            color="text-cyan-400"
+            href={p('/company/settings')}
+            icon={Settings}
+            label={t('company.nav.settings')}
+            desc={t('company.dashboard.plan_preferences')}
+            color="text-green-400"
           />
         </div>
       </div>
@@ -568,17 +711,17 @@ function MiniStat({ icon: Icon, label, value, color }: {
 }
 
 /* ── Quick Action Link ── */
-function QuickAction({ href, icon: Icon, label, desc, color, disabled }: {
-  href: string; icon: any; label: string; desc: string; color: string; disabled?: boolean;
+function QuickAction({ href, icon: Icon, label, desc, color, disabled, disabledHref }: {
+  href: string; icon: any; label: string; desc: string; color: string; disabled?: boolean; disabledHref?: string;
 }) {
   const { t } = useTranslation();
   if (disabled) {
     return (
-      <div className="p-4 rounded-2xl bg-brand-surface/50 border border-white/5 opacity-50 cursor-not-allowed">
-        <Lock className="w-5 h-5 text-brand-text-secondary mb-2" />
+      <Link href={disabledHref || href} className="p-4 rounded-2xl bg-brand-surface/50 border border-white/5 hover:border-yellow-500/30 transition-all">
+        <Lock className="w-5 h-5 text-yellow-400/80 mb-2" />
         <p className="text-sm font-medium text-brand-text-secondary">{label}</p>
-        <p className="text-[10px] text-brand-text-secondary mt-0.5">{t('company.dashboard.limit_reached')}</p>
-      </div>
+        <p className="text-[10px] text-brand-text-secondary mt-0.5">{t('company.dashboard.limit_reached')} · {t('company.dashboard.upgrade')}</p>
+      </Link>
     );
   }
   return (
@@ -588,177 +731,4 @@ function QuickAction({ href, icon: Icon, label, desc, color, disabled }: {
       <p className="text-[10px] text-brand-text-secondary mt-0.5">{desc}</p>
     </Link>
   );
-}
-
-function OnboardingBanner({
-  status,
-  companyId,
-}: {
-  status: string;
-  companyId: string;
-}) {
-  const { t } = useTranslation();
-  const acceptTerms = useMutation(api.companies.acceptTerms);
-  const selectPlan = useMutation(api.companies.selectPlan);
-  const resubmit = useMutation(api.companies.resubmitForReview);
-
-  if (status === 'pending_terms') {
-    return (
-      <div className="p-6 md:p-8 max-w-2xl mx-auto mt-12">
-        <div className="bg-brand-surface rounded-2xl border border-white/5 p-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">{t('company.onboarding.welcome')}</h1>
-          <p className="text-brand-text-secondary mb-6">
-            {t('company.onboarding.terms_intro')}
-          </p>
-          <div className="bg-brand-bg rounded-xl p-4 mb-6 text-left text-sm text-brand-text-secondary max-h-48 overflow-y-auto">
-            <p className="font-semibold text-white mb-2">{t('company.onboarding.terms_title')}</p>
-            <p>
-              {t('company.onboarding.terms_body')}
-            </p>
-          </div>
-          <button
-            onClick={() => acceptTerms({ companyId: companyId as any })}
-            className="btn-primary py-3! px-8"
-          >
-            {t('company.onboarding.accept_terms')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'pending_plan') {
-    return (
-      <div className="p-6 md:p-8 max-w-4xl mx-auto mt-12">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">{t('company.onboarding.choose_plan')}</h1>
-          <p className="text-brand-text-secondary mt-2">
-            {t('company.onboarding.choose_plan_desc')}
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: t('company.plan.starter'),
-              value: 'starter' as const,
-              price: t('company.onboarding.free'),
-              features: [t('company.onboarding.starter_f1'), t('company.onboarding.starter_f2'), t('company.onboarding.starter_f3')],
-            },
-            {
-              name: t('company.plan.pro'),
-              value: 'pro' as const,
-              price: '€98/' + t('company.onboarding.mo'),
-              features: [
-                t('company.onboarding.pro_f1'),
-                t('company.onboarding.pro_f2'),
-                t('company.onboarding.pro_f3'),
-                t('company.onboarding.pro_f4'),
-              ],
-              popular: true,
-            },
-            {
-              name: t('company.plan.enterprise'),
-              value: 'enterprise' as const,
-              price: '€198/' + t('company.onboarding.mo'),
-              features: [
-                t('company.onboarding.ent_f1'),
-                t('company.onboarding.ent_f2'),
-                t('company.onboarding.ent_f3'),
-                t('company.onboarding.ent_f4'),
-                t('company.onboarding.ent_f5'),
-                t('company.onboarding.ent_f6'),
-                t('company.onboarding.ent_f7'),
-                t('company.onboarding.ent_f8'),
-                t('company.onboarding.ent_f9'),
-              ],
-            },
-          ].map((plan) => (
-            <div
-              key={plan.value}
-              className={`bg-brand-surface rounded-2xl border p-6 ${
-                plan.popular
-                  ? 'border-brand-red ring-1 ring-brand-red/20'
-                  : 'border-white/5'
-              }`}
-            >
-              {plan.popular && (
-                <span className="text-xs bg-brand-red text-white px-3 py-1 rounded-full font-medium">
-                  {t('company.onboarding.most_popular')}
-                </span>
-              )}
-              <h3 className="text-xl font-bold mt-3">{plan.name}</h3>
-              <p className="text-2xl font-bold text-brand-red-light mt-2">
-                {plan.price}
-              </p>
-              <ul className="mt-4 space-y-2">
-                {plan.features.map((f) => (
-                  <li
-                    key={f}
-                    className="text-sm text-brand-text-secondary flex items-center gap-2"
-                  >
-                    <span className="text-green-400">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() =>
-                  selectPlan({
-                    companyId: companyId as any,
-                    plan: plan.value,
-                  })
-                }
-                className={`w-full mt-6 py-2.5 rounded-xl font-medium transition-all ${
-                  plan.popular
-                    ? 'btn-primary'
-                    : 'bg-white/5 hover:bg-white/10 text-white'
-                }`}
-              >
-                {t('company.onboarding.select')} {plan.name}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'pending_review') {
-    return (
-      <div className="p-6 md:p-8 max-w-2xl mx-auto mt-12">
-        <div className="bg-brand-surface rounded-2xl border border-white/5 p-8 text-center">
-          <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-8 h-8 text-yellow-400" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">{t('company.onboarding.under_review')}</h1>
-          <p className="text-brand-text-secondary">
-            {t('company.onboarding.under_review_desc')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'declined') {
-    return (
-      <div className="p-6 md:p-8 max-w-2xl mx-auto mt-12">
-        <div className="bg-brand-surface rounded-2xl border border-red-500/20 p-8 text-center">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">✗</span>
-          </div>
-          <h1 className="text-2xl font-bold mb-2">{t('company.onboarding.declined')}</h1>
-          <p className="text-brand-text-secondary mb-6">
-            {t('company.onboarding.declined_desc')}
-          </p>
-          <button
-            onClick={() => resubmit({ companyId: companyId as any })}
-            className="btn-primary py-3! px-8"
-          >
-            {t('company.onboarding.resubmit')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
 }

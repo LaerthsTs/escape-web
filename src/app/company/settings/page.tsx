@@ -4,7 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
+import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import Link from 'next/link';
+import { PLANS, asPlanId } from '@/lib/plans';
+import { WIDGET_COPIED, setFlag } from '@/lib/companyUi';
+import { useToast } from '@/components/company/Toast';
+import { friendlyError } from '@/lib/errors';
 import {
   Building2,
   Phone,
@@ -57,6 +62,8 @@ import { useTranslation } from '@/lib/i18n';
 export default function CompanySettingsPage() {
   const { company, refreshCompany } = useCompanyAuth();
   const { t } = useTranslation();
+  const p = useCompanyPath();
+  const toast = useToast();
   const companyId = company?.id;
 
   const companyData = useQuery(
@@ -97,37 +104,6 @@ export default function CompanySettingsPage() {
   // Widget copy state
   const [widgetCopied, setWidgetCopied] = useState(false);
 
-  // Photo preset state
-  const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
-  const getUrlMutation = useMutation(api.companies.getUrlMutation);
-  const savePreset = useMutation(api.bookingPhotos.savePreset);
-  const photoPreset = useQuery(
-    api.bookingPhotos.getPreset,
-    companyId ? { companyId: companyId as any } : 'skip'
-  );
-  const [presetForm, setPresetForm] = useState({
-    logoPosition: 'bottom-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-center',
-    brandColor: '#FF1E1E',
-    watermarkOpacity: 0.3,
-    textTemplate: '',
-  });
-  const [presetLogoUrl, setPresetLogoUrl] = useState('');
-  const [presetLogoStorageId, setPresetLogoStorageId] = useState<any>(null);
-  const [presetLogoPreview, setPresetLogoPreview] = useState('');
-  const [presetLogoUploading, setPresetLogoUploading] = useState(false);
-  const [presetSaving, setPresetSaving] = useState(false);
-  const [presetMsg, setPresetMsg] = useState('');
-  const [presetLoaded, setPresetLoaded] = useState(false);
-  const presetLogoRef = useRef<HTMLInputElement>(null);
-
-  // Overlay state
-  const [overlayUrl, setOverlayUrl] = useState('');
-  const [overlayStorageId, setOverlayStorageId] = useState<any>(null);
-  const [overlayPreview, setOverlayPreview] = useState('');
-  const [overlayUploading, setOverlayUploading] = useState(false);
-  const [useOverlay, setUseOverlay] = useState(false);
-  const overlayRef = useRef<HTMLInputElement>(null);
-
   // Respect ?tab= query param
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -135,24 +111,6 @@ export default function CompanySettingsPage() {
       setActiveTab(tab);
     }
   }, [searchParams]);
-
-  // Populate photo preset form
-  useEffect(() => {
-    if (photoPreset && !presetLoaded) {
-      setPresetForm({
-        logoPosition: photoPreset.logoPosition || 'bottom-right',
-        brandColor: photoPreset.brandColor || '#FF1E1E',
-        watermarkOpacity: photoPreset.watermarkOpacity ?? 0.3,
-        textTemplate: photoPreset.textTemplate || '',
-      });
-      if (photoPreset.logoUrl) setPresetLogoUrl(photoPreset.logoUrl);
-      if (photoPreset.logoStorageId) setPresetLogoStorageId(photoPreset.logoStorageId);
-      if ((photoPreset as any).overlayUrl) setOverlayUrl((photoPreset as any).overlayUrl);
-      if ((photoPreset as any).overlayStorageId) setOverlayStorageId((photoPreset as any).overlayStorageId);
-      if ((photoPreset as any).useOverlay) setUseOverlay(true);
-      setPresetLoaded(true);
-    }
-  }, [photoPreset, presetLoaded]);
 
   // Populate forms
   useEffect(() => {
@@ -188,9 +146,10 @@ export default function CompanySettingsPage() {
       });
       refreshCompany({ name: profile.name });
       setProfileMsg(t('company.settings.profile_success'));
+      toast({ kind: 'success', message: t('company.settings.profile_success') });
       setTimeout(() => setProfileMsg(''), 3000);
     } catch (err: any) {
-      setProfileMsg(t('company.settings.profile_error'));
+      setProfileMsg(friendlyError(err, t, 'company.settings.profile_error'));
     } finally {
       setProfileSaving(false);
     }
@@ -272,92 +231,66 @@ export default function CompanySettingsPage() {
   // Derive plan from live companyData or from session
   const currentPlan = (companyData as any)?.platformPlan || company?.platformPlan || null;
 
-  const PLAN_DETAILS: Record<string, { label: string; price: string; yearlyPrice: string; color: string; bg: string; border: string; Icon: any; features: string[] }> = {
-    starter: {
-      label: t('company.plan.starter'),
-      price: '€58/mo',
-      yearlyPrice: '€580/yr',
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/20',
-      Icon: Rocket,
-      features: [t('company.settings.feature_3_rooms'), t('company.settings.feature_basic_analytics'), t('company.settings.feature_email_support'), t('company.settings.feature_unlocked_listing')],
-    },
-    pro: {
-      label: t('company.plan.pro'),
-      price: '€98/mo',
-      yearlyPrice: '€980/yr',
-      color: 'text-brand-red-light',
-      bg: 'bg-brand-red/10',
-      border: 'border-brand-red/20',
-      Icon: Diamond,
-      features: [t('company.settings.feature_10_rooms'), t('company.settings.feature_advanced_analytics'), t('company.settings.feature_priority_support'), t('company.settings.feature_featured_listing'), t('company.settings.feature_push_notifications')],
-    },
-    enterprise: {
-      label: t('company.plan.enterprise'),
-      price: '€198/mo',
-      yearlyPrice: '€1980/yr',
-      color: 'text-purple-400',
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/20',
-      Icon: Crown,
-      features: [t('company.settings.feature_unlimited_rooms'), t('company.settings.feature_full_analytics'), t('company.settings.feature_dedicated_manager'), t('company.settings.feature_custom_branding'), t('company.settings.feature_api_access'), t('company.settings.feature_white_label')],
-    },
-  };
-
   // Plan card expand state
   const [planExpanded, setPlanExpanded] = useState(false);
 
+  const widgetCode = `<!-- UNLOCKED Booking Widget -->\n<div id="booking-widget"></div>\n<script\n  src="https://widget.unlocked.gr/booking-widget.js"\n  data-company-id="${companyId || 'YOUR_COMPANY_ID'}"\n  defer></script>`;
+
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <h1 className="text-2xl md:text-3xl font-bold mb-2">{t('company.settings.title')}</h1>
       <p className="text-brand-text-secondary mb-6">
         {t('company.settings.subtitle')}
       </p>
 
       {/* Current Plan Card */}
-      {currentPlan && PLAN_DETAILS[currentPlan] && (() => {
-        const plan = PLAN_DETAILS[currentPlan];
-        const visibleFeatures = planExpanded ? plan.features : plan.features.slice(0, 3);
-        const hasMore = plan.features.length > 3;
+      {currentPlan && (() => {
+        const id = asPlanId(currentPlan);
+        const pl = PLANS[id];
+        const features = pl.features.map((k) => t(k));
+        const visibleFeatures = planExpanded ? features : features.slice(0, 3);
         return (
-          <div className={`${plan.bg} ${plan.border} border rounded-2xl p-5 mb-8 transition-all`}>
+          <div className="bg-brand-surface border border-white/5 rounded-2xl p-5 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl ${plan.bg} flex items-center justify-center`}>
-                  <plan.Icon className={`w-6 h-6 ${plan.color}`} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: pl.color + '20' }}>
+                  <Rocket className="w-6 h-6" style={{ color: pl.color }} />
                 </div>
                 <div>
                   <p className="text-xs text-brand-text-secondary font-medium uppercase tracking-wide mb-0.5">{t('company.settings.current_plan')}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-xl font-bold ${plan.color}`}>{plan.label}</span>
-                    <span className="text-sm text-brand-text-secondary">{plan.price}</span>
-                    <span className="text-xs text-brand-text-secondary/60">({plan.yearlyPrice})</span>
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-xl font-bold" style={{ color: pl.color }}>{t(`company.onboarding.plan_${id}`)}</span>
+                    <span className="text-sm text-brand-text-secondary">
+                      {id === 'free' ? t('company.onboarding.free') : `€${pl.monthly}/${t('billing.month')} · €${pl.yearly}/${t('billing.year')}`}
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                {visibleFeatures.map((f, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 text-xs bg-white/5 rounded-lg px-2 py-1 text-brand-text-secondary">
-                    <Check className={`w-3 h-3 ${plan.color}`} /> {f}
-                  </span>
-                ))}
-                {hasMore && (
-                  <button
-                    onClick={() => setPlanExpanded(!planExpanded)}
-                    className={`text-xs font-medium ${plan.color} hover:underline self-center transition-all`}
-                  >
-                    {planExpanded ? t('company.settings.show_less') : t('company.settings.show_more', { count: String(plan.features.length - 3) })}
-                  </button>
-                )}
-              </div>
+              <Link href={p('/company/billing')} className="btn-ghost text-sm py-2! px-4! text-center shrink-0">
+                {t('cx.settings.change_plan')}
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center mt-4">
+              {visibleFeatures.map((f, i) => (
+                <span key={i} className="inline-flex items-center gap-1 text-xs bg-white/5 rounded-lg px-2 py-1 text-brand-text-secondary">
+                  <Check className="w-3 h-3" style={{ color: pl.color }} /> {f}
+                </span>
+              ))}
+              {features.length > 3 && (
+                <button
+                  onClick={() => setPlanExpanded(!planExpanded)}
+                  className="text-xs font-medium text-brand-red-light hover:underline"
+                >
+                  {planExpanded ? t('company.settings.show_less') : t('company.settings.show_more', { count: String(features.length - 3) })}
+                </button>
+              )}
             </div>
           </div>
         );
       })()}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 bg-brand-surface rounded-xl p-1 border border-white/5">
+      <div className="flex gap-1 mb-6 bg-brand-surface rounded-xl p-1 border border-white/5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {[
           { key: 'profile', label: t('company.settings.tab_profile'), icon: Building2 },
           { key: 'early-access', label: t('company.settings.tab_early_access'), icon: Zap },
@@ -367,7 +300,7 @@ export default function CompanySettingsPage() {
           <button
             key={key}
             onClick={() => setActiveTab(key as any)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`shrink-0 sm:flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
               activeTab === key
                 ? 'bg-brand-red text-white'
                 : 'text-brand-text-secondary hover:text-white'
@@ -426,7 +359,7 @@ export default function CompanySettingsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.settings.address')}</label>
                 <div className="relative">
@@ -567,8 +500,8 @@ export default function CompanySettingsPage() {
               )}
 
               {/* Toggle */}
-              <div className="flex items-center justify-between p-4 bg-brand-bg rounded-xl border border-white/5">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-3 p-4 bg-brand-bg rounded-xl border border-white/5">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${earlyAccessEnabled ? 'bg-brand-red/20' : 'bg-white/5'}`}>
                     <Shield className={`w-5 h-5 ${earlyAccessEnabled ? 'text-brand-red-light' : 'text-brand-text-secondary'}`} />
                   </div>
@@ -727,8 +660,8 @@ export default function CompanySettingsPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between p-4 bg-brand-bg rounded-xl border border-white/5">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3 p-4 bg-brand-bg rounded-xl border border-white/5">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${autoTranslateEnabled ? 'bg-blue-500/20' : 'bg-white/5'}`}>
                   <Languages className={`w-5 h-5 ${autoTranslateEnabled ? 'text-blue-400' : 'text-brand-text-secondary'}`} />
                 </div>
@@ -813,17 +746,30 @@ export default function CompanySettingsPage() {
 
           {/* Embed Code */}
           <div className="bg-brand-surface rounded-2xl border border-white/5 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <Code className="w-5 h-5 text-brand-red-light" />
                 {t('company.widget.embed_code')}
               </h3>
+              <div className="flex flex-wrap gap-2">
+              <a
+                href={`mailto:?subject=${encodeURIComponent(t('cx.widget.dev_mail_subject'))}&body=${encodeURIComponent(t('cx.widget.dev_mail_body') + '\n\n' + widgetCode)}`}
+                onClick={() => setFlag(WIDGET_COPIED)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+              >
+                <Mail className="w-4 h-4" /> {t('cx.widget.email_dev')}
+              </a>
               <button
-                onClick={() => {
-                  const code = `<!-- UNLOCKED Booking Widget -->\n<div id="booking-widget"></div>\n<script\n  src="https://widget.unlocked.gr/booking-widget.js"\n  data-company-id="${companyId}"\n  defer></script>`;
-                  navigator.clipboard.writeText(code);
-                  setWidgetCopied(true);
-                  setTimeout(() => setWidgetCopied(false), 2500);
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(widgetCode);
+                    setFlag(WIDGET_COPIED);
+                    setWidgetCopied(true);
+                    toast({ kind: 'success', message: t('company.widget.copied') });
+                    setTimeout(() => setWidgetCopied(false), 2500);
+                  } catch {
+                    toast({ kind: 'error', message: t('cx.widget.copy_failed') });
+                  }
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   widgetCopied
@@ -837,11 +783,12 @@ export default function CompanySettingsPage() {
                   <><Copy className="w-4 h-4" /> {t('company.widget.copy')}</>
                 )}
               </button>
+              </div>
             </div>
 
             <div className="relative">
               <pre className="bg-brand-bg rounded-xl p-5 overflow-x-auto text-sm font-mono text-brand-text-secondary border border-white/5 leading-relaxed">
-                <code>{`<!-- UNLOCKED Booking Widget -->\n<div id="booking-widget"></div>\n<script\n  src="https://widget.unlocked.gr/booking-widget.js"\n  data-company-id="${companyId || 'YOUR_COMPANY_ID'}"\n  defer></script>`}</code>
+                <code>{widgetCode}</code>
               </pre>
             </div>
 

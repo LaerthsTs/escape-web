@@ -6,6 +6,9 @@ import { api } from '../../../../convex/_generated/api';
 import { useCompanyAuth } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { PlanBadge } from '../PlanBadge';
+import { PLANS, PLAN_ORDER, asPlanId, mailto, SUPPORT_EMAIL } from '@/lib/plans';
+import { friendlyError } from '@/lib/errors';
+import { uiLocale } from '@/lib/companyAuth';
 import {
   CreditCard,
   Calendar,
@@ -20,17 +23,12 @@ import {
   Receipt,
   ArrowUpRight,
   Loader2,
+  Check,
+  Mail,
 } from 'lucide-react';
 
-const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
-  free: { monthly: 0, yearly: 0 },
-  starter: { monthly: 29, yearly: 290 },
-  pro: { monthly: 49, yearly: 490 },
-  enterprise: { monthly: 99, yearly: 990 },
-};
-
 export default function BillingPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { company, refreshCompany } = useCompanyAuth();
   const companyId = company?.id;
 
@@ -60,7 +58,7 @@ export default function BillingPage() {
         });
         if (!cancelled) setSubscription(details);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || 'Failed to load subscription details');
+        if (!cancelled) setError(friendlyError(err, t, 'cx.billing.load_failed'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -81,7 +79,7 @@ export default function BillingPage() {
       });
       window.location.href = url;
     } catch (err: any) {
-      setError(err.message || 'Failed to open billing portal');
+      setError(friendlyError(err, t, 'cx.billing.portal_failed'));
       setPortalLoading(false);
     }
   };
@@ -107,10 +105,12 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyData]);
 
-  const price = PLAN_PRICES[plan]?.[period as 'monthly' | 'yearly'] ?? 0;
+  const planId = asPlanId(plan);
+  const price = PLANS[planId][period === 'yearly' ? 'yearly' : 'monthly'];
+  const locale = uiLocale(language);
 
   const formatDate = (ts: number) => {
-    return new Date(ts * 1000).toLocaleDateString(undefined, {
+    return new Date(ts * 1000).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -118,7 +118,7 @@ export default function BillingPage() {
   };
 
   const formatDateMs = (ts: number) => {
-    return new Date(ts).toLocaleDateString(undefined, {
+    return new Date(ts).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -166,15 +166,26 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-bg flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-red-light animate-spin" />
       </div>
     );
   }
 
+  const upgradeMail = (target: string) =>
+    mailto(
+      t('cx.billing.mail_subject', { plan: t(`company.onboarding.plan_${target}`) }),
+      t('cx.billing.mail_body', {
+        company: company?.name || '',
+        email: company?.email || '',
+        from: t(`company.onboarding.plan_${planId}`),
+        to: t(`company.onboarding.plan_${target}`),
+      })
+    );
+
   return (
-    <div className="min-h-screen bg-brand-bg">
-      <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
+    <div>
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -350,57 +361,117 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="bg-brand-surface border border-white/5 rounded-2xl p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-brand-red-light" />
-            {plan === 'free' ? t('billing.upgrade_title') : t('billing.manage_title')}
+        {/* Plans */}
+        <div id="plans" className="bg-brand-surface border border-white/5 rounded-2xl p-6 mb-6 scroll-mt-20">
+          <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
+            <ArrowUpRight className="w-5 h-5 text-brand-red-light" />
+            {t('cx.billing.plans_title')}
           </h2>
-          <p className="text-sm text-brand-text-secondary mb-6">
-            {plan === 'free' ? t('billing.upgrade_description') : t('billing.manage_description')}
+          <p className="text-sm text-brand-text-secondary mb-5">
+            {planId === 'free' ? t('cx.billing.plans_desc_free') : t('cx.billing.plans_desc_paid')}
           </p>
-
-          {plan === 'free' ? (
-            <div className="flex flex-col sm:flex-row gap-3">
-              <a
-                href="/company/onboarding"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-red hover:bg-brand-red/90 text-white font-semibold rounded-xl transition-all"
-              >
-                <ArrowUpRight className="w-5 h-5" />
-                {t('billing.upgrade_now')}
-              </a>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={portalLoading || !hasStripeCustomer}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-red hover:bg-brand-red/90 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {PLAN_ORDER.map((id) => {
+              const pl = PLANS[id];
+              const current = id === planId;
+              const isUp = PLAN_ORDER.indexOf(id) > PLAN_ORDER.indexOf(planId);
+              return (
+                <div
+                  key={id}
+                  className={`rounded-xl border p-4 flex flex-col ${
+                    current ? 'border-brand-red/40 bg-brand-red/5' : 'border-white/5 bg-brand-bg/50'
+                  }`}
                 >
-                  {portalLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <ExternalLink className="w-5 h-5" />
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-bold" style={{ color: pl.color }}>{t(`company.onboarding.plan_${id}`)}</p>
+                    {current && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-brand-red/15 text-brand-red-light px-2 py-0.5 rounded-full">
+                        {t('cx.billing.current')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xl font-bold">
+                    {id === 'free' ? t('company.onboarding.free') : `€${pl.monthly}`}
+                    {id !== 'free' && <span className="text-xs font-normal text-brand-text-secondary">/{t('billing.month')}</span>}
+                  </p>
+                  {id !== 'free' && (
+                    <p className="text-[11px] text-brand-text-secondary">€{pl.yearly}/{t('billing.year')}</p>
                   )}
-                  {t('billing.manage_subscription')}
-                </button>
-              </div>
+                  <p className="text-xs text-brand-text-secondary mt-2">
+                    {pl.roomLimit === Infinity
+                      ? t('cx.billing.rooms_unlimited')
+                      : t('cx.billing.rooms_upto', { count: String(pl.roomLimit) })}
+                  </p>
+                  <ul className="mt-2 space-y-1 flex-1">
+                    {pl.features.slice(0, 4).map((k) => (
+                      <li key={k} className="text-xs text-brand-text-secondary flex items-start gap-1.5">
+                        <Check className="w-3 h-3 mt-0.5 shrink-0" style={{ color: pl.color }} /> {t(k)}
+                      </li>
+                    ))}
+                  </ul>
+                  {!current && id !== 'free' && (
+                    planId !== 'free' && hasStripeCustomer ? (
+                      <button
+                        onClick={handleManageSubscription}
+                        disabled={portalLoading}
+                        className={`mt-3 w-full text-sm font-medium py-2 rounded-lg transition-colors ${
+                          isUp ? 'bg-brand-red hover:bg-brand-red/90 text-white' : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        {isUp ? t('cx.billing.upgrade_to') : t('cx.billing.switch_to')}
+                      </button>
+                    ) : (
+                      <a
+                        href={upgradeMail(id)}
+                        className={`mt-3 w-full text-center text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                          isUp ? 'bg-brand-red hover:bg-brand-red/90 text-white' : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        <Mail className="w-3.5 h-3.5" /> {t('cx.billing.request')}
+                      </a>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-brand-text-secondary mt-4">
+            {planId !== 'free' && hasStripeCustomer
+              ? t('cx.billing.portal_note')
+              : t('cx.billing.request_note', { email: SUPPORT_EMAIL })}
+          </p>
+        </div>
 
-              {!hasStripeCustomer && (
-                <p className="text-xs text-brand-text-secondary mt-3 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  {t('billing.no_stripe_customer')}
-                </p>
-              )}
-            </>
-          )}
-
+        {/* Manage */}
+        {planId !== 'free' && (
+          <div className="bg-brand-surface border border-white/5 rounded-2xl p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-brand-red-light" />
+              {t('billing.manage_title')}
+            </h2>
+            <p className="text-sm text-brand-text-secondary mb-6">{t('billing.manage_description')}</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleManageSubscription}
+                disabled={portalLoading || !hasStripeCustomer}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-red hover:bg-brand-red/90 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {portalLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ExternalLink className="w-5 h-5" />}
+                {t('billing.manage_subscription')}
+              </button>
+            </div>
+            {!hasStripeCustomer && (
+              <p className="text-xs text-brand-text-secondary mt-3 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {t('billing.no_stripe_customer')}
+              </p>
+            )}
           <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-2 text-xs text-brand-text-secondary">
             <Shield className="w-3.5 h-3.5" />
             {t('billing.stripe_powered')}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -6,10 +6,23 @@ import Link from 'next/link';
 import { Camera, Building2, Mail, Lock, Eye, EyeOff, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import { useTranslation } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { friendlyError } from '@/lib/errors';
+import { useCompanyAuth } from '@/lib/companyAuth';
+
+function passwordProblem(pw: string): string | null {
+  if (pw.length < 8) return 'cx.pw.too_short';
+  if (!/[A-Z]/.test(pw)) return 'cx.pw.need_upper';
+  if (!/[0-9]/.test(pw)) return 'cx.pw.need_number';
+  return null;
+}
 
 export default function PhotosRegisterPage() {
   const router = useRouter();
   const registerMutation = useMutation(api.companies.register);
+  const { t } = useTranslation();
+  const { login } = useCompanyAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,8 +38,13 @@ export default function PhotosRegisterPage() {
     e.preventDefault();
     setError('');
 
+    const pwProblem = passwordProblem(password);
+    if (pwProblem) {
+      setError(t(pwProblem));
+      return;
+    }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('company.register.error_password_mismatch'));
       return;
     }
 
@@ -43,13 +61,18 @@ export default function PhotosRegisterPage() {
       });
 
       if (result && typeof result === 'object' && 'error' in result) {
-        setError((result as { error: string }).error);
+        setError(friendlyError((result as { error: string }).error, t, 'company.register.error_failed'));
         return;
       }
 
-      router.push('/login?registered=true');
+      try {
+        await login(email, password);
+        router.replace('/');
+      } catch {
+        router.push('/login?registered=true');
+      }
     } catch (err: any) {
-      setError(err?.message || 'Registration failed. Please try again.');
+      setError(friendlyError(err, t, 'company.register.error_failed'));
     } finally {
       setLoading(false);
     }
@@ -57,6 +80,9 @@ export default function PhotosRegisterPage() {
 
   return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-12">
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -70,23 +96,24 @@ export default function PhotosRegisterPage() {
             </span>
           </div>
           <p className="text-brand-text-secondary text-sm">
-            Create your account to get started
+            {t('ph.auth.register_sub')}
           </p>
         </div>
 
         {/* Form */}
-        <div className="bg-brand-surface rounded-2xl p-8 border border-white/5">
-          <h1 className="text-2xl font-bold mb-6">Create Account</h1>
+        <div className="bg-brand-surface rounded-2xl p-5 sm:p-8 border border-white/5">
+          <h1 className="text-2xl font-bold mb-2">{t('ph.auth.register_title')}</h1>
+          <p className="text-xs text-brand-text-secondary mb-6">{t('ph.auth.register_note')}</p>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
+            <div role="alert" className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-red-400 text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Business Name</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.register.company_name')}</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
@@ -94,18 +121,19 @@ export default function PhotosRegisterPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
-                  placeholder="Your escape room business"
+                  placeholder={t('company.register.company_name_placeholder')}
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Email</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
@@ -116,7 +144,7 @@ export default function PhotosRegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Phone</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.register.phone')}</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
@@ -131,7 +159,7 @@ export default function PhotosRegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">City</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.register.city')}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
@@ -139,19 +167,21 @@ export default function PhotosRegisterPage() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
-                  placeholder="Athens"
+                  placeholder={t('company.register.city_placeholder')}
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Password</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
+                  autoComplete="new-password"
+                  minLength={8}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-11 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
@@ -160,20 +190,23 @@ export default function PhotosRegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={t('cx.auth.show_password')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-secondary hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <p className="mt-2 text-xs text-brand-text-secondary">{t('cx.pw.rules_short')}</p>
             </div>
 
             <div>
-              <label className="block text-sm text-brand-text-secondary mb-1.5">Confirm Password</label>
+              <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.register.confirm_password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-text-secondary" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
+                  autoComplete="new-password"
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full bg-brand-bg border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden transition-colors"
                   placeholder="••••••••"
@@ -191,7 +224,7 @@ export default function PhotosRegisterPage() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Create Account <ArrowRight className="w-4 h-4" />
+                  {t('company.register.submit')} <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
@@ -199,14 +232,14 @@ export default function PhotosRegisterPage() {
         </div>
 
         <p className="text-center text-sm text-brand-text-secondary mt-6">
-          Already have an account?{' '}
+          {t('company.register.has_account')}{' '}
           <Link href="/login" className="text-brand-red-light hover:underline font-medium">
-            Sign In
+            {t('company.register.sign_in')}
           </Link>
         </p>
 
         <p className="text-center text-xs text-brand-text-muted mt-4">
-          Powered by <span className="text-brand-red-light font-bold">UNLOCKED</span>
+          {t('ph.powered_by')} <span className="text-brand-red-light font-bold">UNLOCKED</span>
         </p>
       </div>
     </div>
