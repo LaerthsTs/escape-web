@@ -10,9 +10,6 @@ import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import {
   ArrowLeft,
-  Calendar,
-  Clock,
-  Users,
   ChevronLeft,
   ChevronRight,
   DoorOpen,
@@ -26,7 +23,7 @@ export default function BookingPage() {
   const router = useRouter();
   const roomId = params.id as string;
   const { user, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const MONTHS = [
     t('common.month_1'), t('common.month_2'), t('common.month_3'), t('common.month_4'),
@@ -106,6 +103,9 @@ export default function BookingPage() {
       setCurrentMonth(currentMonth + 1);
     }
   };
+
+  // Nothing to book in the past, so the calendar can't page back before this month
+  const isCurrentMonth = currentMonth === today.getMonth() && currentYear === today.getFullYear();
 
   const handleDayClick = (day: number) => {
     const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -224,49 +224,62 @@ export default function BookingPage() {
   return (
     <>
       <section className="pt-28 pb-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back */}
           <Link
             href={`/rooms/${roomId}`}
-            className="inline-flex items-center gap-2 text-brand-text-secondary hover:text-white transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-bone transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('book.back_to_room', { room: room.title })}
           </Link>
 
-          <h1 className="section-heading mb-2">
-            {t('book.title')} <span className="text-gradient">{room.title}</span>
+          <div className="horror-label mb-3 flex items-center gap-3">
+            <span className="h-px w-8 bg-brand-red/60" />
+            {t('book.title')}
+          </div>
+          <h1 className="text-3xl md:text-5xl font-display font-black leading-[1.05] text-brand-bone text-balance mb-3 [text-shadow:0_2px_0_rgba(0,0,0,0.8),0_0_30px_rgba(200,16,27,0.18)]">
+            {room.title}
           </h1>
           <p className="text-brand-text-secondary mb-10">
             {t('book.subtitle')}
           </p>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start">
             {/* Left: Calendar + Time */}
             <div className="lg:col-span-2 space-y-6">
               {/* Calendar */}
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="flex items-center gap-2 font-semibold">
-                    <Calendar className="w-5 h-5 text-brand-red-light" />
+              <div className="panel p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                  <h3 className="flex items-center gap-2.5 text-lg font-display font-bold text-brand-bone">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-brand-red/50 bg-brand-red/10 font-type text-xs text-brand-red-light">1</span>
                     {t('book.select_date')}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-brand-surface transition-colors">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={prevMonth}
+                      disabled={isCurrentMonth}
+                      aria-label="Previous month"
+                      className="p-2 rounded-md border border-brand-border text-brand-text-secondary hover:border-brand-red/60 hover:text-brand-bone disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-sm font-medium min-w-[140px] text-center">
+                    <span className="text-sm font-medium text-brand-bone min-w-[130px] text-center">
                       {MONTHS[currentMonth]} {currentYear}
                     </span>
-                    <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-brand-surface transition-colors">
+                    <button
+                      onClick={nextMonth}
+                      aria-label="Next month"
+                      className="p-2 rounded-md border border-brand-border text-brand-text-secondary hover:border-brand-red/60 hover:text-brand-bone transition-colors"
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1.5">
                   {DAYS.map((d) => (
-                    <div key={d} className="text-center text-xs text-brand-text-muted py-2 font-medium">
+                    <div key={d} className="text-center font-type text-[11px] tracking-[0.12em] text-brand-text-muted py-2">
                       {d}
                     </div>
                   ))}
@@ -285,14 +298,15 @@ export default function BookingPage() {
                         key={i}
                         disabled={isPast}
                         onClick={() => handleDayClick(day)}
-                        className={`aspect-square rounded-lg text-sm font-medium transition-all ${
+                        aria-pressed={isSelected}
+                        className={`aspect-square sm:aspect-[4/3] rounded-md border text-sm font-medium tabular-nums transition-all duration-200 ${
                           isPast
-                            ? 'text-brand-border cursor-not-allowed'
+                            ? 'border-brand-border/30 text-brand-text-muted/50 line-through decoration-brand-border cursor-not-allowed'
                             : isSelected
-                            ? 'bg-brand-red text-white'
+                            ? 'border-brand-red-light/60 bg-brand-red text-brand-bone shadow-[0_0_18px_rgba(200,16,27,0.6)]'
                             : isToday
-                            ? 'bg-brand-red/20 text-brand-red-light hover:bg-brand-red hover:text-white'
-                            : 'hover:bg-brand-surface text-brand-text-secondary hover:text-white'
+                            ? 'border-brand-red/60 bg-brand-red/10 text-brand-red-light hover:bg-brand-red/25 hover:text-brand-bone'
+                            : 'border-brand-border/70 bg-black/30 text-brand-text hover:border-brand-red/60 hover:bg-brand-red/10 hover:text-brand-bone'
                         }`}
                       >
                         {day}
@@ -304,26 +318,27 @@ export default function BookingPage() {
 
               {/* Time Slots */}
               {selectedDate && (
-                <div className="card p-6">
-                  <h3 className="flex items-center gap-2 font-semibold mb-4">
-                    <Clock className="w-5 h-5 text-brand-red-light" />
+                <div className="panel p-5 sm:p-6">
+                  <h3 className="flex items-center gap-2.5 text-lg font-display font-bold text-brand-bone mb-4">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-brand-red/50 bg-brand-red/10 font-type text-xs text-brand-red-light">2</span>
                     {t('book.select_time')}
                   </h3>
                   {availableSlots.length === 0 && (
                     <p className="text-sm text-brand-text-secondary">{t('cx.book.no_times_left')}</p>
                   )}
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3">
                     {availableSlots.map((slot: any) => (
                       <div key={slot.time} className="relative">
                         <button
                           disabled={slot.booked}
                           onClick={() => setSelectedTime(slot.time)}
-                          className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                          aria-pressed={selectedTime === slot.time}
+                          className={`w-full py-3 px-2 rounded-md border text-sm font-semibold tabular-nums transition-all duration-200 ${
                             slot.booked
-                              ? 'bg-brand-surface/50 text-brand-border cursor-not-allowed line-through'
+                              ? 'border-brand-border/50 bg-black/20 text-brand-text-muted/60 cursor-not-allowed line-through'
                               : selectedTime === slot.time
-                              ? 'bg-brand-red text-white'
-                              : 'bg-brand-surface text-brand-text-secondary hover:text-white hover:bg-brand-surface/80 border border-brand-border hover:border-brand-red/30'
+                              ? 'border-brand-red-light/60 bg-brand-red text-brand-bone shadow-[0_0_18px_rgba(200,16,27,0.6)]'
+                              : 'border-brand-border bg-black/30 text-brand-text hover:border-brand-red/60 hover:bg-brand-red/10 hover:text-brand-bone'
                           }`}
                         >
                           {slot.time}
@@ -335,8 +350,8 @@ export default function BookingPage() {
                             title={alertedTimes.has(slot.time) ? t('book.alert_on') : t('book.alert_off')}
                             className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
                               alertedTimes.has(slot.time)
-                                ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30'
-                                : 'bg-brand-surface border border-white/10 text-brand-text-secondary hover:border-yellow-500/50 hover:text-yellow-400'
+                                ? 'bg-brand-gold text-black shadow-[0_0_12px_rgba(201,154,46,0.6)]'
+                                : 'bg-brand-card border border-brand-border text-brand-text-secondary hover:border-brand-gold/60 hover:text-brand-gold'
                             }`}
                           >
                             {alertLoading === slot.time ? (
@@ -356,26 +371,26 @@ export default function BookingPage() {
 
               {/* Player Count */}
               {selectedTime && (
-                <div className="card p-6">
-                  <h3 className="flex items-center gap-2 font-semibold mb-4">
-                    <Users className="w-5 h-5 text-brand-red-light" />
+                <div className="panel p-5 sm:p-6">
+                  <h3 className="flex items-center gap-2.5 text-lg font-display font-bold text-brand-bone mb-4">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-brand-red/50 bg-brand-red/10 font-type text-xs text-brand-red-light">3</span>
                     {t('book.num_players')}
                   </h3>
                   <div className="flex items-center gap-4">
                     <button
                       disabled={playerCount <= (room.playersMin || 1)}
                       onClick={() => setPlayerCount((c) => c - 1)}
-                      className="w-10 h-10 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center font-bold text-lg hover:border-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      className="w-11 h-11 rounded-md bg-black/30 border border-brand-border flex items-center justify-center font-bold text-lg text-brand-bone hover:border-brand-red/60 hover:bg-brand-red/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                       −
                     </button>
-                    <span className="text-2xl font-display font-bold min-w-[40px] text-center">
+                    <span className="text-3xl font-display font-black text-brand-bone tabular-nums min-w-[44px] text-center">
                       {playerCount}
                     </span>
                     <button
                       disabled={playerCount >= (room.playersMax || 10)}
                       onClick={() => setPlayerCount((c) => c + 1)}
-                      className="w-10 h-10 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center font-bold text-lg hover:border-brand-red/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                      className="w-11 h-11 rounded-md bg-black/30 border border-brand-border flex items-center justify-center font-bold text-lg text-brand-bone hover:border-brand-red/60 hover:bg-brand-red/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                       +
                     </button>
@@ -389,19 +404,19 @@ export default function BookingPage() {
 
             {/* Right: Summary */}
             <div className="lg:col-span-1">
-              <div className="card p-6 sticky top-24">
-                <h3 className="font-semibold mb-4">{t('book.summary')}</h3>
+              <div className="panel p-6 lg:sticky lg:top-28">
+                <h3 className="horror-label mb-5">{t('book.summary')}</h3>
 
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-brand-text-muted">{t('book.room')}</span>
-                    <span className="font-medium text-right max-w-[160px] truncate">{room.title}</span>
+                  <div className="flex justify-between gap-4">
+                    <span className="shrink-0 text-brand-text-muted">{t('book.room')}</span>
+                    <span className="font-medium text-brand-bone text-right">{room.title}</span>
                   </div>
                   {selectedDate && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-4">
                       <span className="text-brand-text-muted">{t('book.date')}</span>
-                      <span className="font-medium">
-                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', {
+                      <span className="font-medium text-brand-bone tabular-nums">
+                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString(language === 'en' ? 'en-GB' : language, {
                           weekday: 'short',
                           day: 'numeric',
                           month: 'short',
@@ -410,15 +425,15 @@ export default function BookingPage() {
                     </div>
                   )}
                   {selectedTime && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-4">
                       <span className="text-brand-text-muted">{t('book.time')}</span>
-                      <span className="font-medium">{selectedTime}</span>
+                      <span className="font-medium text-brand-bone tabular-nums">{selectedTime}</span>
                     </div>
                   )}
                   {selectedTime && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-4">
                       <span className="text-brand-text-muted">{t('book.players')}</span>
-                      <span className="font-medium">{playerCount}</span>
+                      <span className="font-medium text-brand-bone tabular-nums">{playerCount}</span>
                     </div>
                   )}
                 </div>
@@ -426,7 +441,7 @@ export default function BookingPage() {
                 <div className="border-t border-brand-border mt-4 pt-4">
                   <div className="flex justify-between items-baseline">
                     <span className="text-brand-text-muted">{t('book.total')}</span>
-                    <span className="text-2xl font-display font-bold">€{totalPrice}</span>
+                    <span className="text-3xl font-display font-black text-brand-bone tabular-nums">€{totalPrice}</span>
                   </div>
                 </div>
 
@@ -446,7 +461,7 @@ export default function BookingPage() {
                         value={phoneInput}
                         onChange={(e) => setPhoneInput(e.target.value)}
                         placeholder="+30 6XX XXX XXXX"
-                        className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden"
+                        className="input-field flex-1 min-w-0 text-sm"
                       />
                       <button
                         disabled={!phoneInput.trim() || savingPhone}
