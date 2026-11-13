@@ -1,4 +1,4 @@
-/* Fonts (Inter, Noto Serif Display, Nosifer, Special Elite) are linked in app/layout.tsx;
+/* Fonts (Inter, Noto Serif Display, Nosifer, Special Elite, plus Cousine for Greek typewriter text) are linked in app/layout.tsx;
    a remote @import here is dropped by the CSS pipeline. */
 @import 'tailwindcss';
 
@@ -34,7 +34,7 @@
   --font-sans: Inter, system-ui, sans-serif;
   --font-display: 'Noto Serif Display', Georgia, 'Times New Roman', serif;
   --font-blood: Nosifer, 'Noto Serif Display', Georgia, serif;
-  --font-type: 'Special Elite', 'Courier New', Courier, monospace;
+  --font-type: 'Special Elite', Cousine, 'Courier New', Courier, monospace;
 
   --animate-glow-pulse: glow-pulse 2s ease-in-out infinite alternate;
   --animate-fade-up: fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -354,7 +354,7 @@
 }
 
 @utility horror-label {
-  @apply font-type text-xs tracking-[0.25em] text-brand-red-light/80;
+  @apply font-type text-[13px] tracking-[0.2em] text-brand-red-light/90;
 }
 
 /* Glitching text. Usage: <span class="glitch" data-text="Same text">Same text</span> */
@@ -480,6 +480,17 @@
 
   ::selection {
     @apply bg-brand-red text-white;
+  }
+
+  /* Keyboard focus is visible everywhere; mouse clicks stay clean */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-red-light);
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
   }
 
   ::-webkit-scrollbar {

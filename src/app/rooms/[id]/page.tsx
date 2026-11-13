@@ -7,8 +7,10 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
+import { themeLabel } from '@/lib/roomThemes';
 import {
   Star,
+  Skull,
   Clock,
   Users,
   MapPin,
@@ -56,6 +58,7 @@ export default function RoomDetailsPage() {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [showTestPopup, setShowTestPopup] = useState(true);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const isWishlisted = false; // Would need to query user's wishlist
 
@@ -132,25 +135,28 @@ export default function RoomDetailsPage() {
       )}
 
       {/* Hero Image */}
-      <section className="relative h-[40vh] md:h-[50vh] overflow-hidden">
-        {room.image ? (
+      <section className="relative h-[44vh] md:h-[56vh] overflow-hidden bg-black">
+        {room.image && !imageFailed ? (
           <img
             src={room.image}
             alt={room.title}
-            className="w-full h-full object-cover"
+            onError={() => setImageFailed(true)}
+            className="w-full h-full object-cover contrast-110 brightness-90"
           />
         ) : (
-          <div className="w-full h-full bg-linear-to-br from-brand-surface to-brand-card flex items-center justify-center">
-            <DoorOpen className="w-24 h-24 text-brand-border/30" />
+          <div className="w-full h-full bg-[radial-gradient(70%_70%_at_50%_55%,#2a1010,#0a0505)] flex items-center justify-center">
+            <DoorOpen className="w-24 h-24 text-brand-border/60" />
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-brand-bg via-brand-bg/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-brand-bg via-brand-bg/45 to-black/50" />
+        {/* Vignette so the photo sinks into the page */}
+        <div aria-hidden className="absolute inset-0 shadow-[inset_0_0_160px_rgba(0,0,0,0.85)]" />
 
         {/* Back button */}
-        <div className="absolute top-24 left-4 z-20">
+        <div className="absolute top-24 left-4 sm:left-6 lg:left-8 z-20">
           <Link
             href="/discover"
-            className="flex items-center gap-2 bg-brand-card/80 backdrop-blur-xs px-4 py-2 rounded-xl border border-brand-border/50 text-sm hover:border-brand-red/30 transition-all"
+            className="flex items-center gap-2 bg-black/70 backdrop-blur-xs px-4 py-2 rounded-md border border-brand-border text-sm text-brand-text hover:border-brand-red/60 hover:text-brand-bone transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('room.back')}
@@ -161,7 +167,7 @@ export default function RoomDetailsPage() {
         {isAuthenticated && (
           <button
             onClick={handleWishlist}
-            className="absolute top-24 right-4 z-20 w-11 h-11 bg-brand-card/80 backdrop-blur-xs rounded-full flex items-center justify-center border border-brand-border/50 hover:border-brand-red/30 transition-all"
+            className="absolute top-24 right-4 sm:right-6 lg:right-8 z-20 w-11 h-11 bg-black/70 backdrop-blur-xs rounded-full flex items-center justify-center border border-brand-border hover:border-brand-red/60 transition-all"
           >
             <Heart
               className={`w-5 h-5 ${
@@ -171,28 +177,10 @@ export default function RoomDetailsPage() {
           </button>
         )}
 
-        {/* Badges */}
-        <div className="absolute bottom-6 left-4 z-20 flex gap-2">
-          {(room as any).isEarlyAccessPartner && (
-            <span className="bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-              <BadgeCheck className="w-3.5 h-3.5" /> {t('badge.early_access')}
-            </span>
-          )}
-          {room.isNew && (
-            <span className="bg-brand-red text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-              <Zap className="w-3 h-3" /> {t('featured.new')}
-            </span>
-          )}
-          {room.isTrending && (
-            <span className="bg-brand-gold text-black text-xs font-bold px-3 py-1.5 rounded-full">
-              {t('featured.trending')}
-            </span>
-          )}
-        </div>
       </section>
 
       {/* Content */}
-      <section className="relative z-10 -mt-6">
+      <section className="relative z-10 -mt-24 md:-mt-32 pb-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Countdown Banner */}
           {releaseCountdown && (
@@ -216,13 +204,30 @@ export default function RoomDetailsPage() {
             </div>
           )}
 
-          <div className="card p-6 md:p-8">
+          <div className="card p-6 md:p-10 hover:border-brand-border! hover:shadow-[inset_0_0_40px_rgba(0,0,0,0.6)]!">
             {/* Title & location */}
             <div className="mb-6">
-              <span className="inline-block text-xs font-medium px-2.5 py-1 rounded-full mb-3 bg-brand-surface text-brand-text-secondary">
-                {room.theme}
-              </span>
-              <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="font-type text-[11px] tracking-[0.18em] uppercase px-2 py-0.5 rounded-sm border border-brand-red/50 text-brand-red-light">
+                  {themeLabel(t, room.theme)}
+                </span>
+                {(room as any).isEarlyAccessPartner && (
+                  <span className="bg-emerald-700/90 text-white text-xs font-bold px-2.5 py-1 rounded-sm flex items-center gap-1">
+                    <BadgeCheck className="w-3 h-3" /> {t('badge.early_access')}
+                  </span>
+                )}
+                {room.isNew && (
+                  <span className="bg-brand-red text-brand-bone text-xs font-bold px-2.5 py-1 rounded-sm flex items-center gap-1 shadow-[0_0_14px_rgba(255,40,50,0.5)]">
+                    <Zap className="w-3 h-3" /> {t('featured.new')}
+                  </span>
+                )}
+                {room.isTrending && (
+                  <span className="bg-black/80 border border-brand-gold/60 text-brand-gold text-xs font-bold px-2.5 py-1 rounded-sm">
+                    {t('featured.trending')}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-3xl md:text-5xl font-display font-black leading-[1.05] text-brand-bone text-balance mb-3 [text-shadow:0_2px_0_rgba(0,0,0,0.8),0_0_30px_rgba(200,16,27,0.18)]">
                 {room.title}
               </h1>
               {(room as any).companyName && (
@@ -238,41 +243,35 @@ export default function RoomDetailsPage() {
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-brand-surface rounded-xl p-4 text-center">
-                <Star className="w-5 h-5 text-brand-gold fill-brand-gold mx-auto mb-1" />
-                <div className="text-lg font-bold">{room.rating}</div>
-                <div className="text-xs text-brand-text-muted">{room.reviews} {t('featured.reviews')}</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px mb-8 overflow-hidden rounded-md border border-brand-border bg-brand-border">
+              <div className="bg-brand-dark p-4 text-center">
+                <Star className={`w-5 h-5 mx-auto mb-1.5 ${room.reviews > 0 ? 'text-brand-gold fill-brand-gold' : 'text-brand-text-muted'}`} />
+                <div className="text-xl font-display font-bold text-brand-bone tabular-nums">{room.reviews > 0 ? room.rating : '—'}</div>
+                <div className="text-xs text-brand-text-muted mt-0.5">{room.reviews} {t('featured.reviews')}</div>
               </div>
-              <div className="bg-brand-surface rounded-xl p-4 text-center">
-                <Clock className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
-                <div className="text-lg font-bold">{room.duration} {t('featured.min')}</div>
-                <div className="text-xs text-brand-text-muted">{t('room.duration')}</div>
+              <div className="bg-brand-dark p-4 text-center">
+                <Clock className="w-5 h-5 text-brand-red-light mx-auto mb-1.5" />
+                <div className="text-xl font-display font-bold text-brand-bone tabular-nums">{room.duration} {t('featured.min')}</div>
+                <div className="text-xs text-brand-text-muted mt-0.5">{t('room.duration')}</div>
               </div>
-              <div className="bg-brand-surface rounded-xl p-4 text-center">
-                <Users className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                <div className="text-lg font-bold">{room.players}</div>
-                <div className="text-xs text-brand-text-muted">{t('room.players')}</div>
+              <div className="bg-brand-dark p-4 text-center">
+                <Users className="w-5 h-5 text-brand-red-light mx-auto mb-1.5" />
+                <div className="text-xl font-display font-bold text-brand-bone tabular-nums">{room.players}</div>
+                <div className="text-xs text-brand-text-muted mt-0.5">{t('room.players')}</div>
               </div>
-              <div className="bg-brand-surface rounded-xl p-4 text-center">
-                <Shield className="w-5 h-5 text-brand-red-light mx-auto mb-1" />
-                <div className="text-lg font-bold">{room.difficulty}/{room.maxDifficulty}</div>
-                <div className="text-xs text-brand-text-muted">{t('featured.difficulty')}</div>
-              </div>
-            </div>
-
-            {/* Difficulty dots */}
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-sm text-brand-text-secondary">{t('featured.difficulty')}:</span>
-              <div className="flex gap-1">
-                {Array.from({ length: room.maxDifficulty || 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-3 h-3 rounded-full ${
-                      i < room.difficulty ? 'bg-brand-red' : 'bg-brand-border'
-                    }`}
-                  />
-                ))}
+              <div className="bg-brand-dark p-4 text-center">
+                <div className="flex justify-center gap-0.5 mb-1.5 h-5 items-center" aria-hidden>
+                  {Array.from({ length: room.maxDifficulty || 5 }).map((_, i) => (
+                    <Skull
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < room.difficulty ? 'text-brand-red-light drop-shadow-[0_0_4px_rgba(255,40,50,0.8)]' : 'text-brand-border'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="text-xl font-display font-bold text-brand-bone tabular-nums">{room.difficulty}/{room.maxDifficulty}</div>
+                <div className="text-xs text-brand-text-muted mt-0.5">{t('featured.difficulty')}</div>
               </div>
             </div>
 
@@ -282,7 +281,7 @@ export default function RoomDetailsPage() {
                 {room.tags.map((tag: string, i: number) => (
                   <span
                     key={i}
-                    className="text-xs font-medium px-3 py-1.5 rounded-full bg-brand-red/10 text-brand-red-light border border-brand-red/20"
+                    className="text-xs font-medium px-2.5 py-1 rounded-sm bg-brand-red/10 text-brand-red-light border border-brand-red/25"
                   >
                     {tag}
                   </span>
@@ -293,11 +292,11 @@ export default function RoomDetailsPage() {
             {/* Story */}
             {room.story && (
               <div className="mb-6">
-                <h3 className="flex items-center gap-2 text-lg font-semibold mb-3">
+                <h3 className="flex items-center gap-2 text-xl font-display font-bold text-brand-bone mb-3">
                   <BookOpen className="w-5 h-5 text-brand-red-light" />
                   {t('room.the_story')}
                 </h3>
-                <p className="text-brand-text-secondary leading-relaxed italic">
+                <p className="border-l-2 border-brand-red/60 pl-4 font-display text-lg text-brand-text leading-relaxed italic text-pretty">
                   &ldquo;{(room as any).storyTranslations?.[language] || room.story}&rdquo;
                 </p>
               </div>
@@ -306,8 +305,8 @@ export default function RoomDetailsPage() {
             {/* Description */}
             {room.description && (
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-3">{t('room.about')}</h3>
-                <p className="text-brand-text-secondary leading-relaxed">
+                <h3 className="text-xl font-display font-bold text-brand-bone mb-3">{t('room.about')}</h3>
+                <p className="text-brand-text-secondary leading-relaxed text-pretty max-w-[70ch]">
                   {(room as any).descriptionTranslations?.[language] || room.description}
                 </p>
               </div>
@@ -317,7 +316,7 @@ export default function RoomDetailsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-brand-border pt-6">
               <div>
                 <div className="text-sm text-brand-text-muted">{t('room.starting_from')}</div>
-                <div className="text-3xl font-display font-bold">
+                <div className="text-4xl font-display font-black text-brand-bone tabular-nums">
                   €{room.price}
                   <span className="text-base font-normal text-brand-text-muted">{t('featured.per_person')}</span>
                 </div>
@@ -329,7 +328,7 @@ export default function RoomDetailsPage() {
               </div>
               <Link
                 href={`/rooms/${roomId}/book`}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center justify-center gap-2 text-lg py-4! px-10!"
               >
                 {t('room.book_now')}
                 <DoorOpen className="w-5 h-5" />
@@ -344,7 +343,7 @@ export default function RoomDetailsPage() {
                   {room.pricePerGroup.map((pg: any) => (
                     <div
                       key={pg.players}
-                      className="bg-brand-surface rounded-lg p-3 text-center"
+                      className="bg-brand-dark border border-brand-border rounded-md p-3 text-center"
                     >
                       <div className="text-xs text-brand-text-muted">
                         {pg.players} {t('common.players')}
@@ -360,7 +359,7 @@ export default function RoomDetailsPage() {
           {/* ═══ Reviews Section ═══ */}
           <div className="card p-6 md:p-8 mt-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <h3 className="flex items-center gap-2 text-xl font-display font-bold text-brand-bone">
                 <MessageSquare className="w-5 h-5 text-brand-red-light" />
                 {t('reviews.title')}
                 {reviews && reviews.length > 0 && (

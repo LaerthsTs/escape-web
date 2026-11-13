@@ -26,11 +26,11 @@ export function ThemesSection() {
             <StaggerItem key={i} animation="scaleUp">
               <Link
                 href={`/discover?theme=${encodeURIComponent(theme.value)}`}
-                className="group relative block w-full overflow-hidden rounded-md border border-brand-border bg-black/70 p-6 md:p-8 transition-all duration-500 hover:-translate-y-1 hover:border-brand-red/60 hover:shadow-[0_20px_50px_-15px_rgba(200,16,27,0.6)]"
+                className="group relative block w-full overflow-hidden rounded-md border border-brand-border bg-brand-card/80 px-4 py-7 md:py-9 transition-all duration-500 hover:-translate-y-1 hover:border-brand-red/60 hover:shadow-[0_20px_50px_-15px_rgba(200,16,27,0.6)]"
               >
-                {/* Light rising from below on hover */}
+                {/* Each theme's own light: a glimmer at rest, rising on hover */}
                 <span
-                  className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-out"
+                  className="absolute inset-0 translate-y-[38%] opacity-80 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700 ease-out"
                   style={{ background: `radial-gradient(90% 80% at 50% 100%, ${theme.tint}, transparent 75%)` }}
                 />
                 {/* Crack that appears on hover */}
@@ -53,7 +53,7 @@ export function ThemesSection() {
 
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <theme.icon className="w-8 h-8 md:w-10 md:h-10 text-brand-text-secondary group-hover:text-brand-bone group-hover:animate-shake transition-colors duration-300 drop-shadow-[0_0_12px_rgba(200,16,27,0.0)] group-hover:drop-shadow-[0_0_14px_rgba(255,40,50,0.8)]" />
-                  <span className="font-display text-base md:text-lg font-bold text-brand-text-secondary group-hover:text-brand-bone transition-colors">
+                  <span className="font-display text-base md:text-lg font-bold text-brand-text group-hover:text-brand-bone transition-colors">
                     {t(theme.key)}
                   </span>
                 </div>

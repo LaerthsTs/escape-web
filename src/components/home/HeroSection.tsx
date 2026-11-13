@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Search, Skull, Eye } from 'lucide-react';
 import { useSafeQuery } from '@/lib/useSafeQuery';
@@ -79,6 +80,14 @@ export function HeroSection() {
   const spillScale = useTransform(scrollYProgress, [0, 0.6], [0.6, 1.4]);
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 140]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+  const onSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/discover?q=${encodeURIComponent(q)}` : '/discover');
+  };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     if (e.pointerType !== 'mouse') return;
@@ -231,10 +240,10 @@ export function HeroSection() {
       {/* ── Content ────────────────────────────────── */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-20"
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-28 pb-28 md:pb-32"
       >
         {/* Badge, typed out */}
-        <div className="inline-flex items-center gap-2 border border-brand-red/40 bg-black/60 rounded-sm px-4 py-1.5 mb-8 animate-fade-up shadow-[0_0_20px_rgba(200,16,27,0.25)]">
+        <div className="inline-flex items-center gap-2 border border-brand-red/40 bg-black/60 rounded-sm px-4 py-1.5 mb-6 animate-fade-up shadow-[0_0_20px_rgba(200,16,27,0.25)]">
           <Eye className="w-4 h-4 text-brand-red-light animate-pulse-soft" />
           <span
             className="font-type text-brand-red-light text-xs sm:text-sm tracking-[0.15em] whitespace-nowrap"
@@ -246,7 +255,7 @@ export function HeroSection() {
         </div>
 
         {/* Heading */}
-        <h1 className="font-display font-black tracking-tight leading-[1.02] mb-8 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
+        <h1 className="font-display font-black tracking-tight leading-[1.05] mb-6 text-balance text-4xl sm:text-5xl md:text-6xl xl:text-7xl">
           <span
             className="glitch text-brand-bone animate-fade-up animate-delay-100 [text-shadow:0_3px_0_#000,0_0_40px_rgba(0,0,0,0.9)]"
             data-text={title1}
@@ -261,27 +270,30 @@ export function HeroSection() {
         </h1>
 
         {/* Subheading */}
-        <p className="text-lg md:text-xl text-brand-text-secondary max-w-2xl mx-auto mb-10 animate-fade-up animate-delay-500 [text-shadow:0_2px_8px_#000]">
+        <p className="text-lg md:text-xl text-brand-text-secondary max-w-2xl mx-auto mb-8 text-pretty animate-fade-up animate-delay-500 [text-shadow:0_2px_8px_#000]">
           {t('hero.subtitle')}
         </p>
 
         {/* Search Bar */}
-        <div className="max-w-xl mx-auto mb-10 animate-fade-up animate-delay-600">
+        <form onSubmit={onSearch} role="search" className="max-w-xl mx-auto mb-8 animate-fade-up animate-delay-600">
           <div className="relative group">
-            <div className="absolute -inset-px rounded-md bg-linear-to-r from-brand-blood via-brand-red-light to-brand-blood opacity-60 blur-[2px] group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-500 animate-pulse-soft" />
+            <div className="absolute -inset-px rounded-md bg-linear-to-r from-brand-blood via-brand-red-light to-brand-blood opacity-50 blur-[2px] group-hover:opacity-90 group-focus-within:opacity-100 transition-opacity duration-500" />
             <div className="relative flex items-center bg-black/90 border border-brand-red/40 rounded-md overflow-hidden">
-              <Search className="w-5 h-5 text-brand-red/80 ml-5 shrink-0" />
+              <Search className="w-5 h-5 text-brand-red-light ml-5 shrink-0" />
               <input
-                type="text"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('hero.search_placeholder')}
-                className="w-full bg-transparent px-4 py-4 text-brand-bone placeholder-brand-text-muted focus:outline-hidden font-type tracking-wide"
+                aria-label={t('hero.search')}
+                className="w-full min-w-0 bg-transparent px-4 py-4 text-brand-bone placeholder-brand-text-secondary/80 focus:outline-hidden [&::-webkit-search-cancel-button]:hidden"
               />
-              <button className="btn-primary rounded-none! shrink-0 py-4! px-6!">
+              <button type="submit" className="btn-primary rounded-none! shrink-0 py-4! px-6!">
                 {t('hero.search')}
               </button>
             </div>
           </div>
-        </div>
+        </form>
 
         {/* Theme Quick Filters */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-fade-up animate-delay-700">
@@ -293,7 +305,7 @@ export function HeroSection() {
             >
               <span className="absolute inset-0 bg-linear-to-t from-brand-red/40 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
               <span className="relative z-10 flex items-center gap-1.5">
-                <theme.icon className="w-3.5 h-3.5 text-brand-text-muted group-hover:text-brand-red-light group-hover:animate-shake transition-colors" />
+                <theme.icon className="w-3.5 h-3.5 text-brand-red-light/70 group-hover:text-brand-red-light group-hover:animate-shake transition-colors" />
                 <span className="text-xs sm:text-sm font-medium text-brand-text-secondary group-hover:text-brand-bone transition-colors">
                   {t(theme.key)}
                 </span>
@@ -303,7 +315,7 @@ export function HeroSection() {
         </div>
 
         {/* Trust indicators */}
-        <div className="mt-14 flex items-center justify-center gap-4 sm:gap-8 text-brand-text-muted text-sm animate-fade-up animate-delay-800 font-type tracking-wide">
+        <div className="mt-10 flex items-center justify-center gap-4 sm:gap-8 text-brand-text-secondary text-sm animate-fade-up animate-delay-800 font-type tracking-wide">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {[...Array(4)].map((_, i) => (
@@ -330,7 +342,7 @@ export function HeroSection() {
       {/* Scroll cue */}
       <a
         href="#rooms"
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-brand-text-muted hover:text-brand-red-light transition-colors"
+        className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10 hidden [@media(min-height:1000px)]:flex flex-col items-center gap-2 text-brand-text-muted hover:text-brand-red-light transition-colors"
       >
         <span className="font-type text-[11px] tracking-[0.35em] uppercase">{t('horror.descend')}</span>
         <span className="relative block w-px h-12 bg-linear-to-b from-brand-red to-transparent overflow-visible">

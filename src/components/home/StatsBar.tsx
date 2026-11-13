@@ -62,27 +62,23 @@ export function StatsBar() {
             <div className="absolute -left-6 top-3 rotate-[-28deg] w-28 h-6 bg-[#d8ccb4]/15 border-y border-[#d8ccb4]/10" />
             {/* Label */}
             <div className="absolute top-3 right-4 horror-label">{t('horror.body_count')}</div>
-            {/* Tally marks scratched into the background */}
-            <svg aria-hidden viewBox="0 0 400 80" className="absolute inset-0 w-full h-full opacity-[0.05]" preserveAspectRatio="none" stroke="#fff" strokeWidth="2">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <line key={i} x1={8 + i * 13} y1={10} x2={6 + i * 13} y2={70} />
-              ))}
-            </svg>
+            {/* Light coming up from under the panel */}
+            <div aria-hidden className="absolute inset-0 bg-[radial-gradient(70%_120%_at_50%_120%,rgba(200,16,27,0.22),transparent_70%)]" />
 
-            <StaggerContainer stagger={0.12} className="relative grid grid-cols-2 md:grid-cols-4 gap-8">
+            <StaggerContainer stagger={0.12} className="relative grid grid-cols-2 md:grid-cols-4 gap-y-8 pt-4 md:pt-2">
               {stats.map((stat, i) => (
-                <StaggerItem key={i} animation="fadeUp">
-                  <div className="text-center group">
+                <StaggerItem key={i} animation="fadeUp" className={i > 0 ? 'md:border-l md:border-brand-border/70' : ''}>
+                  <div className="text-center group px-4">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-brand-red/40 bg-brand-red/10 mb-3 shadow-[0_0_20px_rgba(200,16,27,0.35)] group-hover:animate-shake">
                       <stat.icon className="w-6 h-6 text-brand-red-light" />
                     </div>
                     <div
-                      className="text-3xl md:text-4xl font-display font-black text-brand-bone text-blood-glow animate-flicker"
+                      className="text-4xl md:text-5xl font-display font-black tabular-nums text-brand-bone text-blood-glow animate-flicker"
                       style={{ animationDelay: `${i * 1.3}s` }}
                     >
                       {platformStats ? stat.value : '—'}
                     </div>
-                    <div className="font-type text-xs tracking-[0.18em] text-brand-text-muted mt-2">
+                    <div className="font-type text-[13px] tracking-[0.12em] text-brand-text-secondary mt-2">
                       {stat.label}
                     </div>
                   </div>
