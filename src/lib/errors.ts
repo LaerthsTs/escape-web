@@ -36,6 +36,15 @@ const KNOWN: Record<string, string> = {
   'This code is no longer active': 'cx.err.code_inactive',
   'This code has expired': 'cx.err.code_expired',
   'This code has been fully redeemed': 'cx.err.code_used_up',
+  // Reports (convex/reports.ts)
+  'This booking has already been reported': 'reports.err.already_reported',
+  'Reports can only be sent within 24 hours after the game': 'reports.err.company_window',
+  'You can report a player once the game has started': 'reports.err.not_started',
+  'You have already reported this game': 'reports.err.room_already',
+  'Reports can be sent up to 30 days after the game': 'reports.err.room_window',
+  'Please describe what happened': 'reports.err.describe',
+  'Photos must be images up to 10 MB': 'reports.err.photo',
+  'Up to 5 photos': 'reports.err.photo_count',
 };
 
 export function friendlyError(

@@ -38,6 +38,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { useBookingFlags, PlayerFlagCard, ReportPlayerSection, FlagIcon } from '@/components/company/PlayerReports';
 
 const VIEW_KEY = 'unlocked_bookings_view';
 
@@ -273,6 +274,7 @@ function SourcePill({ booking }: { booking: any }) {
 /** One day's bookings as cards (the "List" view). */
 function BookingList({ bookings, rooms, onOpen }: { bookings: any[] | undefined; rooms: any[]; onOpen: (b: any) => void }) {
   const { t } = useTranslation();
+  const flags = useBookingFlags(bookings);
   if (!bookings) {
     return <div className="text-center py-8 text-brand-text-secondary">{t('company.bookings.loading')}</div>;
   }
@@ -307,6 +309,7 @@ function BookingList({ bookings, rooms, onOpen }: { bookings: any[] | undefined;
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-brand-text-secondary">
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" /> {booking.playerName}
+                {flags.has(String(booking._id)) && <FlagIcon />}
               </span>
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" /> {booking.players} {t('company.bookings.players_count')}
@@ -349,6 +352,7 @@ function BookingDetailModal({
   const fresh = useCompanyQuery(api.companies.getBookingDetail, { bookingId: initial._id as any });
   const booking = { ...initial, ...(fresh || {}), playerName: fresh?.playerName || initial.playerName };
   const room = rooms.find((r) => r._id === booking.roomId);
+  const flag = useBookingFlags(fresh ? [fresh] : undefined).get(String(initial._id));
 
   const [editing, setEditing] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -398,6 +402,8 @@ function BookingDetailModal({
             <SourcePill booking={booking} />
             <StatusPill status={booking.status} />
           </div>
+
+          {flag && <PlayerFlagCard flag={flag} />}
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -525,6 +531,8 @@ function BookingDetailModal({
               </button>
             </div>
           )}
+
+          {fresh && <ReportPlayerSection booking={fresh} />}
         </div>
       </div>
     </div>

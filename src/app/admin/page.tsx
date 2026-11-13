@@ -36,14 +36,16 @@ import {
   Phone,
   CreditCard,
   Search,
+  Flag,
 } from 'lucide-react';
+import { AdminReports } from '@/components/admin/AdminReports';
 
 export default function AdminPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'bookings' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'bookings' | 'users' | 'reports'>('overview');
   const [companySearch, setCompanySearch] = useState('');
   const [expandedCompany, setExpandedCompany] = useState<string | null>(null);
 
@@ -125,6 +127,7 @@ export default function AdminPage() {
     { id: 'companies' as const, label: t('admin.tab_companies'), icon: Building2 },
     { id: 'bookings' as const, label: t('admin.tab_bookings'), icon: CalendarCheck },
     { id: 'users' as const, label: t('admin.tab_users'), icon: Users },
+    { id: 'reports' as const, label: t('admin.tab_reports'), icon: Flag },
   ];
 
   return (
@@ -492,6 +495,9 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* ══════════ REPORTS TAB ══════════ */}
+        {activeTab === 'reports' && adminEmail && <AdminReports adminEmail={adminEmail} />}
 
         {/* ══════════ USERS TAB ══════════ */}
         {activeTab === 'users' && (

@@ -27,7 +27,11 @@ import {
   CheckCircle,
   CreditCard,
   AlertCircle,
+  ShieldAlert,
 } from 'lucide-react';
+import { RoomReportModal } from '@/components/reports/RoomReportModal';
+import { slotStart } from '@/lib/slotTime';
+import { ROOM_REPORT_WINDOW_MS } from '../../../convex/reportRules';
 
 type TabType = 'upcoming' | 'past';
 
@@ -45,6 +49,13 @@ export default function TicketsPage() {
     api.bookings.getByUser,
     user?.id ? { userId: user.id as any } : 'skip'
   );
+
+  const myRoomReports = useQuery(
+    api.reports.myRoomReports,
+    user?.id ? { userId: user.id as any } : 'skip'
+  );
+  const [reporting, setReporting] = useState<any>(null);
+  const [reportSent, setReportSent] = useState(false);
 
   const cancelBooking = useMutation(api.bookings.cancel);
   const retryPayment = useAction(api.stripe.retryBookingPayment);
@@ -319,6 +330,28 @@ export default function TicketsPage() {
                             {t('tickets.write_review')}
                           </Link>
                         )}
+                        {booking.status === 'completed' && (() => {
+                          const sent = (myRoomReports ?? []).find((r) => r.bookingId === booking._id);
+                          if (sent) {
+                            return (
+                              <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/5 text-brand-text-secondary text-sm">
+                                <ShieldAlert className="w-4 h-4" />
+                                {t(`reports.room.status_${sent.status}`)}
+                              </span>
+                            );
+                          }
+                          const end = slotStart(booking.date, booking.time).getTime() + (booking.room?.duration || 60) * 60000;
+                          if (Date.now() > end + ROOM_REPORT_WINDOW_MS) return null;
+                          return (
+                            <button
+                              onClick={() => setReporting(booking)}
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-brand-text-secondary text-sm font-medium hover:text-white hover:bg-white/10 transition-all"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                              {t('reports.room.button')}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -465,6 +498,28 @@ export default function TicketsPage() {
               <Download className="w-4 h-4" /> {t('tickets.download')}
             </a>
           </div>
+        </div>
+      )}
+
+      {reporting && (
+        <RoomReportModal
+          userId={user.id}
+          booking={reporting}
+          onClose={() => setReporting(null)}
+          onSent={() => {
+            setReporting(null);
+            setReportSent(true);
+          }}
+        />
+      )}
+
+      {reportSent && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] max-w-[calc(100vw-32px)] glass bg-brand-surface border border-white/10 rounded-xl px-4 py-3 text-sm flex items-center gap-3 shadow-lg">
+          <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+          <span>{t('reports.room.sent')}</span>
+          <button onClick={() => setReportSent(false)} className="p-1 hover:bg-white/10 rounded-lg" aria-label={t('reports.close')}>
+            <XIcon className="w-4 h-4" />
+          </button>
         </div>
       )}
     </>

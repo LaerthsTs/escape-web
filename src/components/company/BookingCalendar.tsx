@@ -8,6 +8,7 @@ import { api } from '../../../convex/_generated/api';
 import { useCompanyQuery, useCompanyPath, localDateKey } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { slotSortKey, useNow } from '@/lib/slotTime';
+import { BookingFlagsProvider, useBookingFlag, FlagIcon } from './PlayerReports';
 import { useDaySlots, effectiveSlots, addDays, mondayOf, type Slot, type SlotState } from './SlotBoard';
 import { ChevronLeft, ChevronRight, X, Check, Clock, CheckCircle2, CalendarX, DoorOpen, Plus } from 'lucide-react';
 
@@ -321,6 +322,7 @@ export function BookingCalendarGrid({
   }
 
   return (
+    <BookingFlagsProvider bookings={bookingsByDay.flatMap((l) => l || [])}>
     <div>
       <div
         ref={scrollRef}
@@ -397,6 +399,7 @@ export function BookingCalendarGrid({
       </div>
       <CalendarLegend />
     </div>
+    </BookingFlagsProvider>
   );
 }
 
@@ -602,6 +605,7 @@ function BookingBlock({
   const name = booking.playerName || '';
   const source = kind === 'external' || kind === 'manual' ? bookingSourceLabel(booking, t) : '';
   const completed = booking.status === 'completed';
+  const flagged = !!useBookingFlag(booking._id);
   return (
     <button
       onClick={onClick}
@@ -615,6 +619,7 @@ function BookingBlock({
         {slotRange(booking.time, room)}
         {completed && <CheckCircle2 className="w-3 h-3 shrink-0" />}
         {kind === 'pending' && <Clock className="w-3 h-3 shrink-0" />}
+        {flagged && <FlagIcon className="w-3 h-3" />}
       </span>
       <span className="block max-w-full text-xs font-bold leading-tight truncate">
         {name}
