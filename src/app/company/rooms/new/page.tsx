@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath, uiLocale } from '@/lib/companyAuth';
 import dynamic from 'next/dynamic';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { RoomPaymentExtras } from '@/components/company/RoomPaymentExtras';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ import {
   Languages,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { ROOM_THEMES } from '@/lib/roomThemes';
 import { translateRoom } from '@/lib/translate';
 
 const LocationPicker = dynamic(
@@ -46,9 +48,7 @@ const LocationPicker = dynamic(
 
 import { roomLimitFor } from '@/lib/plans';
 import { friendlyError } from '@/lib/errors';
-import { uiLocale } from '@/lib/companyAuth';
 
-const THEMES = ['Horror', 'Adventure', 'Sci-Fi', 'Mystery', 'Fantasy', 'Historical', 'Comedy', 'Thriller'];
 const TAG_OPTIONS = ['Beginner Friendly', 'Team Building', 'Couples', 'Family', 'Intense', 'Immersive', 'Physical', 'Mental', 'Story Driven', 'Competitive'];
 
 const TERMS_TEMPLATES = [
@@ -78,15 +78,15 @@ export default function NewRoomPage() {
   const router = useRouter();
   const { company } = useCompanyAuth();
   const p = useCompanyPath();
-  const createRoom = useMutation(api.companies.createRoom);
+  const createRoom = useCompanyMutation(api.companies.createRoom);
   const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
-  const savePreset = useMutation(api.bookingPhotos.savePreset);
+  const savePreset = useCompanyMutation(api.bookingPhotos.savePreset);
   const photoPreset = useQuery(
     api.bookingPhotos.getPreset,
     company?.id ? { companyId: company.id as any } : 'skip'
   );
-  const stats = useQuery(
+  const stats = useCompanyQuery(
     api.companies.getDashboardStats,
     company?.id ? { companyId: company.id as any } : 'skip'
   );
@@ -115,6 +115,7 @@ export default function NewRoomPage() {
     description: '',
     story: '',
     paymentTerms: ['full'] as ('full' | 'deposit_20' | 'pay_on_arrival')[],
+    depositPercent: '',
     termsOfUse: '',
     isSubscriptionOnly: false,
     bookingMode: 'unlocked_primary' as 'unlocked_primary' | 'external_primary',
@@ -142,7 +143,7 @@ export default function NewRoomPage() {
   const [showTranslations, setShowTranslations] = useState(false);
 
   // Company data for auto-translate check
-  const companyData = useQuery(
+  const companyData = useCompanyQuery(
     api.companies.getById,
     company?.id ? { id: company.id as any } : 'skip'
   );
@@ -315,6 +316,7 @@ export default function NewRoomPage() {
         storyTranslations: Object.keys(storyTrans).length > 0 ? storyTrans as any : undefined,
         descriptionTranslations: Object.keys(descTrans).length > 0 ? descTrans as any : undefined,
         paymentTerms: form.paymentTerms,
+        depositPercent: form.depositPercent ? Number(form.depositPercent) : undefined,
         termsOfUse: form.termsOfUse || undefined,
         isSubscriptionOnly: form.isSubscriptionOnly || undefined,
         bookingMode: form.bookingMode || undefined,
@@ -419,8 +421,8 @@ export default function NewRoomPage() {
                 onChange={(e) => updateField('theme', e.target.value)}
                 className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               >
-                {THEMES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {ROOM_THEMES.map((th) => (
+                  <option key={th.value} value={th.value}>{t(th.key)}</option>
                 ))}
               </select>
             </div>
@@ -735,6 +737,12 @@ export default function NewRoomPage() {
               </button>
             ))}
           </div>
+          <RoomPaymentExtras
+            companyId={company?.id}
+            terms={form.paymentTerms}
+            depositPercent={form.depositPercent}
+            onDepositPercentChange={(value) => setForm((prev) => ({ ...prev, depositPercent: value }))}
+          />
         </Section>
 
         {/* Operating Days */}

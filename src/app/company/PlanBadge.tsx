@@ -1,7 +1,8 @@
 'use client';
 
-import { Rocket, Diamond, Crown, Gift } from 'lucide-react';
+import { Infinity as InfinityIcon, Receipt } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { asPlanId } from '@/lib/plans';
 
 export function PlanBadge({
   plan,
@@ -14,40 +15,25 @@ export function PlanBadge({
 }) {
   const { t } = useTranslation();
 
-  const PLAN_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: any }> = {
-    free: {
-      label: t('company.plan.free'),
-      color: 'text-slate-400',
-      bg: 'bg-slate-500/10',
-      border: 'border-slate-500/20',
-      Icon: Gift,
-    },
-    starter: {
-      label: t('company.plan.starter'),
+  const PLAN_CONFIG = {
+    payg: {
+      label: t('company.plan.payg'),
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20',
-      Icon: Rocket,
+      Icon: Receipt,
     },
-    pro: {
-      label: t('company.plan.pro'),
-      color: 'text-brand-red-light',
-      bg: 'bg-brand-red/10',
-      border: 'border-brand-red/20',
-      Icon: Diamond,
-    },
-    enterprise: {
-      label: t('company.plan.enterprise'),
+    unlimited: {
+      label: t('company.plan.unlimited'),
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
       border: 'border-purple-500/20',
-      Icon: Crown,
+      Icon: InfinityIcon,
     },
   };
 
-  const config = PLAN_CONFIG[plan];
-  if (!config) return null;
-  const { label, color, bg, border, Icon } = config;
+  if (!plan) return null;
+  const { label, color, bg, border, Icon } = PLAN_CONFIG[asPlanId(plan)];
 
   if (size === 'lg') {
     return (

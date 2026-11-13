@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   X,
   ExternalLink,
+  Wallet,
 } from 'lucide-react';
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
@@ -55,6 +56,7 @@ function CompanyShell({ children }: { children: React.ReactNode }) {
   ];
   const secondaryLinks: NavLink[] = [
     { href: photosUrl, label: t('company.nav.photos'), icon: Camera, external: true },
+    { href: p('/company/payments'), label: t('company.nav.payments'), icon: Wallet },
     { href: p('/company/billing'), label: t('company.nav.billing'), icon: CreditCard },
     { href: p('/company/settings'), label: t('company.nav.settings'), icon: Settings },
     { href: p('/company/docs'), label: t('company.nav.docs'), icon: BookOpen },

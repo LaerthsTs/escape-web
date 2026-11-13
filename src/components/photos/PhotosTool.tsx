@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
+import { useCompanyAction, useCompanyMutation, useCompanyQuery, useCompanyAuth } from '@/lib/companyAuth';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { useToast } from '@/components/company/Toast';
 import { friendlyError } from '@/lib/errors';
@@ -784,11 +784,11 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
   const companyId = company?.id;
 
   // ── Queries (room-scoped) ──
-  const photos = useQuery(
+  const photos = useCompanyQuery(
     api.standalonePhotos.listByRoom,
     companyId && roomId ? { roomId: roomId as any, companyId: companyId as any } : 'skip'
   );
-  const stats = useQuery(
+  const stats = useCompanyQuery(
     api.standalonePhotos.getStatsByRoom,
     companyId && roomId ? { roomId: roomId as any, companyId: companyId as any } : 'skip'
   );
@@ -806,12 +806,12 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
   // ── Mutations ──
   const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
-  const createPhoto = useMutation(api.standalonePhotos.create);
-  const saveProcessed = useMutation(api.standalonePhotos.saveProcessed);
-  const updateMeta = useMutation(api.standalonePhotos.updateMeta);
-  const deletePhotoMut = useMutation(api.standalonePhotos.deletePhoto);
-  const sendPhotoAction = useAction(api.standalonePhotos.sendPhotoToEmails);
-  const saveRoomPresetMut = useMutation(api.standalonePhotos.saveRoomPreset);
+  const createPhoto = useCompanyMutation(api.standalonePhotos.create);
+  const saveProcessed = useCompanyMutation(api.standalonePhotos.saveProcessed);
+  const updateMeta = useCompanyMutation(api.standalonePhotos.updateMeta);
+  const deletePhotoMut = useCompanyMutation(api.standalonePhotos.deletePhoto);
+  const sendPhotoAction = useCompanyAction(api.standalonePhotos.sendPhotoToEmails);
+  const saveRoomPresetMut = useCompanyMutation(api.standalonePhotos.saveRoomPreset);
 
   // ── UI State ──
   const [step, setStep] = useState<Step>('gallery');

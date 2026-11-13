@@ -7,7 +7,6 @@ import {
   BarChart2,
   Camera,
   MapPin,
-  QrCode,
   Globe,
   CheckCircle2,
   ArrowRight,
@@ -16,10 +15,12 @@ import {
   Users,
   Zap,
   Shield,
+  CreditCard,
 } from 'lucide-react';
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
+import { PLANS as PLAN_INFO, PAYG_FEE, UNLIMITED_PRICE } from '@/lib/plans';
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -55,33 +56,20 @@ export default function ForEscapeRoomsPage() {
     { icon: BarChart2, key: 'analytics' },
     { icon: Camera, key: 'photos' },
     { icon: MapPin, key: 'listing' },
-    { icon: QrCode, key: 'qr' },
+    { icon: CreditCard, key: 'payments' },
     { icon: Globe, key: 'website' },
   ];
 
   const plans = [
     {
-      id: 'free',
-      features: 6,
-      color: 'from-slate-500 to-slate-600',
-      border: 'border-slate-500/30',
+      id: 'payg' as const,
+      popular: false,
+      color: 'from-emerald-500 to-emerald-600',
+      border: 'border-emerald-500/30',
     },
     {
-      id: 'starter',
-      features: 6,
-      color: 'from-green-500 to-green-600',
-      border: 'border-green-500/30',
-    },
-    {
-      id: 'pro',
-      features: 6,
+      id: 'unlimited' as const,
       popular: true,
-      color: 'from-brand-red to-red-600',
-      border: 'border-brand-red/30',
-    },
-    {
-      id: 'enterprise',
-      features: 9,
       color: 'from-purple-500 to-purple-600',
       border: 'border-purple-500/30',
     },
@@ -193,7 +181,7 @@ export default function ForEscapeRoomsPage() {
               {t('fer.pricing_subtitle')}
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}
@@ -206,40 +194,39 @@ export default function ForEscapeRoomsPage() {
                 )}
                 <div className="mb-5">
                   <div className={`inline-block bg-linear-to-r ${plan.color} text-white text-xs font-bold px-3 py-1 rounded-full mb-3`}>
-                    {t(`fer.plan_${plan.id}`)}
+                    {t(`company.plan.${plan.id}`)}
                   </div>
-                  <p className="text-sm text-brand-text-secondary mb-3">{t(`fer.plan_${plan.id}_desc`)}</p>
+                  <p className="text-sm text-brand-text-secondary mb-3">{t(PLAN_INFO[plan.id].descKey)}</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">{t(`fer.plan_${plan.id}_price`)}</span>
+                    <span className="text-3xl font-bold">
+                      {plan.id === 'payg' ? `€${PAYG_FEE}` : `€${UNLIMITED_PRICE.monthly}/${t('billing.month')}`}
+                    </span>
                   </div>
-                  {plan.id !== 'free' && (
+                  {plan.id === 'unlimited' ? (
                     <p className="text-xs text-brand-text-muted mt-1">
-                      {t(`fer.plan_${plan.id}_price_year`)}
+                      {`€${UNLIMITED_PRICE.yearly}/${t('billing.year')}`} · {t('plans.yearly_save')}
                     </p>
-                  )}
-                  {plan.id === 'free' && (
-                    <p className="text-xs text-brand-gold mt-1">
-                      + €1.50 + VAT {t('fer.per_booking_note')}
-                    </p>
+                  ) : (
+                    <p className="text-xs text-brand-gold mt-1">{t('fer.per_booking_cap')}</p>
                   )}
                 </div>
                 <ul className="space-y-2.5 mb-6 flex-1">
-                  {Array.from({ length: plan.features }, (_, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
+                  {PLAN_INFO[plan.id].features.map((k) => (
+                    <li key={k} className="flex items-start gap-2 text-sm">
                       <CheckCircle2 className="w-4 h-4 text-brand-red-light mt-0.5 shrink-0" />
-                      <span>{t(`fer.plan_${plan.id}_f${i + 1}`)}</span>
+                      <span>{t(k)}</span>
                     </li>
                   ))}
                 </ul>
                 <Link
-                  href={plan.id === 'enterprise' ? '/contact' : '/company/register'}
+                  href="/company/register"
                   className={`w-full text-center py-2.5 rounded-xl font-medium transition-colors ${
                     plan.popular
                       ? 'bg-brand-red text-white hover:bg-brand-red/90'
                       : 'bg-brand-surface border border-white/10 hover:border-white/20'
                   }`}
                 >
-                  {plan.id === 'enterprise' ? t('fer.contact_sales') : t('fer.select_plan')}
+                  {t('fer.select_plan')}
                 </Link>
               </div>
             ))}

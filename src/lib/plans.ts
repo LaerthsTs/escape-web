@@ -1,85 +1,61 @@
 /**
  * Single source of truth for platform plans on the web side.
- * Prices mirror convex/stripe.ts (PLAN_PRICES, in euro) and room limits mirror
- * convex/companies.ts (PLAN_ROOM_LIMITS). When the server sends its own
- * roomLimit (getDashboardStats), prefer that.
+ * Mirrors convex/plans.ts: Unlimited (€198/mo or €1980/yr, Stripe
+ * subscription) and Pay as you go (€3 per booking, at most €250 a month,
+ * invoiced monthly). Both include every feature and unlimited rooms.
+ * Legacy values (free/starter/pro/enterprise) read as pay-as-you-go.
  */
-export type PlanId = 'free' | 'starter' | 'pro' | 'enterprise';
+export type PlanId = 'unlimited' | 'payg';
 
-export const PLAN_ORDER: PlanId[] = ['free', 'starter', 'pro', 'enterprise'];
+export const PLAN_ORDER: PlanId[] = ['payg', 'unlimited'];
+
+export const UNLIMITED_PRICE = { monthly: 198, yearly: 1980 } as const;
+export const PAYG_FEE = 3;
+export const PAYG_CAP = 250;
+
+/** Features both plans share (i18n keys). */
+export const SHARED_FEATURES = [
+  'plans.f_rooms',
+  'plans.f_widget',
+  'plans.f_payments',
+  'plans.f_analytics',
+  'plans.f_featured',
+  'plans.f_photos',
+];
 
 export const PLANS: Record<
   PlanId,
-  { monthly: number; yearly: number; roomLimit: number; color: string; features: string[] }
+  { color: string; priceKey: string; descKey: string; roomLimit: number; features: string[] }
 > = {
-  free: {
-    monthly: 0,
-    yearly: 0,
-    roomLimit: 1,
-    color: '#64748B',
-    features: [
-      'company.onboarding.free_f1',
-      'company.onboarding.free_f2',
-      'company.onboarding.free_f3',
-      'company.onboarding.free_f4',
-      'company.onboarding.free_f5',
-    ],
-  },
-  starter: {
-    monthly: 58,
-    yearly: 580,
-    roomLimit: 1,
-    color: '#4CAF50',
-    features: [
-      'company.onboarding.starter_f1',
-      'company.onboarding.starter_f2',
-      'company.onboarding.starter_f3',
-      'company.onboarding.starter_f4',
-      'company.onboarding.starter_f5',
-    ],
-  },
-  pro: {
-    monthly: 98,
-    yearly: 980,
-    roomLimit: 2,
-    color: '#E53E3E',
-    features: [
-      'company.onboarding.pro_f1',
-      'company.onboarding.pro_f2',
-      'company.onboarding.pro_f3',
-      'company.onboarding.pro_f4',
-      'company.onboarding.pro_f5',
-    ],
-  },
-  enterprise: {
-    monthly: 198,
-    yearly: 1980,
+  payg: {
+    color: '#10B981',
+    priceKey: 'plans.price_payg',
+    descKey: 'plans.payg_desc',
     roomLimit: Infinity,
+    // The €250 cap is shown next to the price, so it isn't repeated here.
+    features: ['plans.payg_f_nofixed', 'plans.payg_f_invoice', ...SHARED_FEATURES],
+  },
+  unlimited: {
     color: '#7C4DFF',
-    features: [
-      'company.onboarding.ent_f1',
-      'company.onboarding.ent_f2',
-      'company.onboarding.ent_f3',
-      'company.onboarding.ent_f4',
-      'company.onboarding.ent_f5',
-      'company.onboarding.ent_f6',
-      'company.onboarding.ent_f7',
-      'company.onboarding.ent_f8',
-      'company.onboarding.ent_f9',
-    ],
+    priceKey: 'plans.price_unlimited',
+    descKey: 'plans.unlimited_desc',
+    roomLimit: Infinity,
+    features: ['plans.unlimited_f_nofees', ...SHARED_FEATURES],
   },
 };
 
 export function asPlanId(plan: unknown): PlanId {
-  return plan === 'free' || plan === 'starter' || plan === 'pro' || plan === 'enterprise'
-    ? plan
-    : 'starter';
+  return plan === 'unlimited' ? 'unlimited' : 'payg';
 }
 
 /** Room limit for a plan, preferring the value the server reports. */
 export function roomLimitFor(plan: unknown, serverLimit?: unknown): number {
   if (typeof serverLimit === 'number' && serverLimit > 0) return serverLimit;
   return PLANS[asPlanId(plan)].roomLimit;
+}
+
+export function euros(cents: number): string {
+  return `€${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
 }
 
 export const SUPPORT_EMAIL = 'hello@unlocked.gr';

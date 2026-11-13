@@ -8,14 +8,13 @@ import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem, Floating } from '@/components/animations/AnimateIn';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   Ticket,
   Calendar,
   Clock,
   Users,
   MapPin,
-  QrCode,
+  Hash,
   X as XIcon,
   Navigation,
   DoorOpen,
@@ -37,7 +36,6 @@ export default function TicketsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('upcoming');
-  const [showQR, setShowQR] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [expandedPhotos, setExpandedPhotos] = useState<string | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
@@ -257,6 +255,12 @@ export default function TicketsPage() {
                             <Users className="w-4 h-4" />
                             {booking.players} {t('tickets.players')}
                           </div>
+                          {booking.bookingCode && (
+                            <div className="flex items-center gap-1.5" title={t('tickets.booking_code')}>
+                              <Hash className="w-4 h-4" />
+                              <span className="font-mono font-semibold tracking-wider text-brand-red-light">{booking.bookingCode}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -293,15 +297,6 @@ export default function TicketsPage() {
                         {booking.status === 'upcoming' && (
                           <>
                             <button
-                              onClick={() =>
-                                setShowQR(showQR === booking._id ? null : booking._id)
-                              }
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-surface border border-brand-border text-sm font-medium hover:border-brand-red/30 transition-all"
-                            >
-                              <QrCode className="w-4 h-4" />
-                              {t('tickets.qr')}
-                            </button>
-                            <button
                               disabled={cancelling === booking._id}
                               onClick={() => handleCancel(booking._id)}
                               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-900/20 border border-red-800/30 text-red-400 text-sm font-medium hover:bg-red-900/30 transition-all disabled:opacity-50"
@@ -327,34 +322,6 @@ export default function TicketsPage() {
                       </div>
                     </div>
 
-                    {/* QR Code section */}
-                    {showQR === booking._id && (
-                      <div className="mt-4 pt-4 border-t border-brand-border text-center">
-                        <div className="inline-block bg-white p-4 rounded-xl">
-                          <QRCodeSVG
-                            value={booking.bookingCode || 'UNLOCKED'}
-                            size={180}
-                            level="H"
-                            bgColor="#ffffff"
-                            fgColor="#000000"
-                            imageSettings={{
-                              src: '/favicon.svg',
-                              x: undefined,
-                              y: undefined,
-                              height: 36,
-                              width: 36,
-                              excavate: true,
-                            }}
-                          />
-                        </div>
-                        <div className="mt-3">
-                          <div className="text-xs text-brand-text-muted">{t('tickets.booking_code')}</div>
-                          <div className="text-lg font-mono font-bold tracking-wider text-brand-red-light">
-                            {booking.bookingCode}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                     </div>{/* end padding wrapper */}
                   </div>
                   </StaggerItem>

@@ -2,19 +2,17 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery } from 'convex/react';
+import { useCompanyAction, useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import {
   Building2,
   Check,
   Clock,
   XCircle,
-  Rocket,
-  Diamond,
-  Briefcase,
-  Gift,
+  Receipt,
+  Infinity as InfinityIcon,
   RefreshCw,
   LogOut,
   ChevronDown,
@@ -24,70 +22,27 @@ import {
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { friendlyError } from '@/lib/errors';
-import { PLANS as PLAN_DATA, SUPPORT_EMAIL, mailto } from '@/lib/plans';
+import { PLANS as PLAN_DATA, UNLIMITED_PRICE, PAYG_FEE, asPlanId, SUPPORT_EMAIL, mailto } from '@/lib/plans';
 
+// Pay as you go needs no checkout; Unlimited goes through Stripe.
 const PLANS = [
   {
-    id: 'free' as const,
-    icon: Gift,
-    color: '#64748B',
-    priceMonth: '€0',
-    priceYear: '€0',
-    free: true,
-    features: [
-      'company.onboarding.free_f1',
-      'company.onboarding.free_f2',
-      'company.onboarding.free_f3',
-      'company.onboarding.free_f4',
-      'company.onboarding.free_f5',
-    ],
+    id: 'payg' as const,
+    icon: Receipt,
+    color: PLAN_DATA.payg.color,
+    priceMonth: '',
+    priceYear: '',
+    popular: false,
+    features: PLAN_DATA.payg.features,
   },
   {
-    id: 'starter' as const,
-    icon: Rocket,
-    color: '#4CAF50',
-    priceMonth: `€${PLAN_DATA.starter.monthly}`,
-    priceYear: `€${PLAN_DATA.starter.yearly}`,
-    features: [
-      'company.onboarding.starter_f1',
-      'company.onboarding.starter_f2',
-      'company.onboarding.starter_f3',
-      'company.onboarding.starter_f4',
-      'company.onboarding.starter_f5',
-    ],
-  },
-  {
-    id: 'pro' as const,
-    icon: Diamond,
-    color: '#E53E3E',
-    priceMonth: `€${PLAN_DATA.pro.monthly}`,
-    priceYear: `€${PLAN_DATA.pro.yearly}`,
+    id: 'unlimited' as const,
+    icon: InfinityIcon,
+    color: PLAN_DATA.unlimited.color,
+    priceMonth: `€${UNLIMITED_PRICE.monthly}`,
+    priceYear: `€${UNLIMITED_PRICE.yearly}`,
     popular: true,
-    features: [
-      'company.onboarding.pro_f1',
-      'company.onboarding.pro_f2',
-      'company.onboarding.pro_f3',
-      'company.onboarding.pro_f4',
-      'company.onboarding.pro_f5',
-    ],
-  },
-  {
-    id: 'enterprise' as const,
-    icon: Briefcase,
-    color: '#7C4DFF',
-    priceMonth: `€${PLAN_DATA.enterprise.monthly}`,
-    priceYear: `€${PLAN_DATA.enterprise.yearly}`,
-    features: [
-      'company.onboarding.ent_f1',
-      'company.onboarding.ent_f2',
-      'company.onboarding.ent_f3',
-      'company.onboarding.ent_f4',
-      'company.onboarding.ent_f5',
-      'company.onboarding.ent_f6',
-      'company.onboarding.ent_f7',
-      'company.onboarding.ent_f8',
-      'company.onboarding.ent_f9',
-    ],
+    features: PLAN_DATA.unlimited.features,
   },
 ];
 
@@ -98,15 +53,15 @@ export default function CompanyOnboardingPage() {
   const p = useCompanyPath();
   const companyId = company?.id;
 
-  const companyData = useQuery(
+  const companyData = useCompanyQuery(
     api.companies.getById,
     companyId ? { id: companyId as any } : 'skip'
   );
 
-  const acceptTerms = useMutation(api.companies.acceptTerms);
-  const selectPlan = useMutation(api.companies.selectPlan);
-  const createCheckout = useAction(api.stripe.createCheckoutSession);
-  const resubmit = useMutation(api.companies.resubmitForReview);
+  const acceptTerms = useCompanyMutation(api.companies.acceptTerms);
+  const selectPlan = useCompanyMutation(api.companies.selectPlan);
+  const createCheckout = useCompanyAction(api.stripe.createCheckoutSession);
+  const resubmit = useCompanyMutation(api.companies.resubmitForReview);
 
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -345,15 +300,15 @@ export default function CompanyOnboardingPage() {
   //  STEP 2: Select Plan
   // ═══════════════════════════════════════════
   if (status === 'pending_plan') {
-    const handleSelectPlan = async (planId: 'free' | 'starter' | 'pro' | 'enterprise') => {
+    const handleSelectPlan = async (planId: 'payg' | 'unlimited') => {
       setSelectedPlanId(planId);
       setLoading(true);
       setActionError('');
       try {
-        // Free plan: skip Stripe, go straight to review
-        if (planId === 'free') {
-          await selectPlan({ companyId: companyId as any, plan: 'free' });
-          refreshCompany({ onboardingStatus: 'pending_review', platformPlan: 'free' });
+        // Pay as you go: no checkout, straight to review
+        if (planId === 'payg') {
+          await selectPlan({ companyId: companyId as any, plan: 'payg' });
+          refreshCompany({ onboardingStatus: 'pending_review', platformPlan: 'payg' });
           setLoading(false);
           return;
         }
@@ -442,9 +397,9 @@ export default function CompanyOnboardingPage() {
                     }
                     setDiscountChecking(true);
                     try {
-                      const plan = discountValidation.plan as 'starter' | 'pro' | 'enterprise';
+                      // Discount codes are free months of Unlimited; the server works out the trial.
+                      const plan = 'unlimited' as const;
                       const period = discountValidation.period as 'monthly' | 'yearly';
-                      const trialDays = (discountValidation.durationMonths || 12) * 30;
                       const origin = window.location.origin;
                       const successUrl = `${origin}${p('/company/onboarding/payment-success')}?plan=${plan}&period=${period}`;
                       const cancelUrl = `${origin}${p('/company/onboarding')}`;
@@ -455,7 +410,6 @@ export default function CompanyOnboardingPage() {
                         period,
                         successUrl,
                         cancelUrl,
-                        trialDays,
                         discountCode: discountCode.trim(),
                       });
 
@@ -487,7 +441,7 @@ export default function CompanyOnboardingPage() {
               {discountResult && discountResult.valid && (
                 <p className="text-xs text-emerald-400 mt-2">
                   {t('company.onboarding.discount_applied', {
-                    plan: discountResult.plan ? t(`company.onboarding.plan_${discountResult.plan}`) : '',
+                    plan: t('company.plan.unlimited'),
                     months: String(discountResult.durationMonths || 12),
                   })}
                 </p>
@@ -495,7 +449,7 @@ export default function CompanyOnboardingPage() {
               {discountValidation && discountValidation.valid && !discountResult && (
                 <p className="text-xs text-emerald-400/70 mt-2">
                   {t('company.onboarding.discount_valid_hint', {
-                    plan: t(`company.onboarding.plan_${discountValidation.plan}`),
+                    plan: t('company.plan.unlimited'),
                     months: String(discountValidation.durationMonths || 12),
                   })}
                 </p>
@@ -508,11 +462,11 @@ export default function CompanyOnboardingPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {PLANS.map((plan) => {
                 const Icon = plan.icon;
                 const isLoading = loading && selectedPlanId === plan.id;
-                const isFree = 'free' in plan && (plan as any).free;
+                const isFree = plan.id === 'payg';
                 return (
                   <div
                     key={plan.id}
@@ -536,16 +490,19 @@ export default function CompanyOnboardingPage() {
                     </div>
 
                     <h3 className="text-xl font-bold text-white">
-                      {t(`company.onboarding.plan_${plan.id}`)}
+                      {t(`company.plan.${plan.id}`)}
                     </h3>
 
                     {isFree ? (
                       <>
                         <p className="text-3xl font-bold text-white mt-2">
-                          {t('company.onboarding.free')}
+                          €{PAYG_FEE}
+                          <span className="text-sm font-normal text-brand-text-secondary">
+                            /{t('plans.per_booking')}
+                          </span>
                         </p>
                         <p className="text-sm text-brand-text-secondary mb-2">
-                          {t('company.onboarding.free_fee')}
+                          {t('plans.payg_f_cap')}
                         </p>
                       </>
                     ) : (
@@ -599,13 +556,13 @@ export default function CompanyOnboardingPage() {
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : isFree ? (
                         <>
-                          <Gift className="w-4 h-4" />
-                          {t('company.onboarding.start_free')}
+                          <Receipt className="w-4 h-4" />
+                          {t('plans.start_payg')}
                         </>
                       ) : (
                         <>
                           <CreditCard className="w-4 h-4" />
-                          {t('company.onboarding.subscribe')} {t(`company.onboarding.plan_${plan.id}`)}
+                          {t('company.onboarding.subscribe')} {t(`company.plan.${plan.id}`)}
                         </>
                       )}
                     </button>
@@ -710,12 +667,12 @@ export default function CompanyOnboardingPage() {
                     {t('company.onboarding.check_plan').replace(
                       '{{plan}}',
                       t(
-                        `company.onboarding.plan_${companyData?.platformPlan || 'starter'}`
+                        `company.plan.${asPlanId(companyData?.platformPlan)}`
                       )
                     )}
                   </span>
                 </div>
-                {companyData?.platformPlan !== 'free' && (
+                {companyData?.platformPlan === 'unlimited' && (
                   <div className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-green-400 shrink-0" />
                     <span className="text-sm text-brand-text-secondary">

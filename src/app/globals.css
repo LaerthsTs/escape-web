@@ -787,11 +787,6 @@
   }
 }
 
-/* First-visit intro is skipped once seen this session (flag set in layout <head>) */
-html[data-intro-seen] .horror-intro {
-  display: none;
-}
-
 /* Respect people who ask for less motion: keep the look, drop the movement */
 @media (prefers-reduced-motion: reduce) {
   *,

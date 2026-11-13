@@ -1,11 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery } from 'convex/react';
+import {
+  useCompanyAuth,
+  useCompanyQuery,
+  useCompanyPath,
+  uiLocale,
+  localDateKey,
+  isSessionExpired,
+} from '@/lib/companyAuth';
 import { api } from '../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
-import { useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { friendlyError } from '@/lib/errors';
 import { slotSortKey, isSlotPast, slotClosedReason, useNow } from '@/lib/slotTime';
 import { useToast } from './Toast';
@@ -90,6 +97,23 @@ export function toSave(next: Slot[], room: any): Slot[] {
 
 /** setSlots with an optimistic update, so a tap shows instantly. */
 export function useSetSlots() {
+  const { company, logout } = useCompanyAuth();
+  const token = company?.sessionToken;
+  const mutate = useSetSlotsOptimistic();
+  return useCallback(
+    async (args: { roomId: any; date: string; slots: Slot[] }) => {
+      try {
+        return await mutate({ ...args, sessionToken: token });
+      } catch (err) {
+        if (isSessionExpired(err)) logout();
+        throw err;
+      }
+    },
+    [mutate, token, logout]
+  );
+}
+
+function useSetSlotsOptimistic() {
   return useMutation(api.companies.setSlots).withOptimisticUpdate((store, args) => {
     store.setQuery(
       api.companies.getRoomSlots,
@@ -690,7 +714,7 @@ function useWeekBookings(companyId: string | undefined, days: string[]) {
   for (let i = 0; i < 7; i++) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     results.push(
-      useQuery(api.companies.getBookingsByDate, companyId ? { companyId: companyId as any, date: days[i] } : 'skip')
+      useCompanyQuery(api.companies.getBookingsByDate, companyId ? { companyId: companyId as any, date: days[i] } : 'skip')
     );
   }
   return results;

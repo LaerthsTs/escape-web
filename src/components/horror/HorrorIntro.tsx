@@ -4,30 +4,23 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '@/lib/i18n';
 
 /**
- * Once-per-session cold open. It is rendered on the server and fades itself out
- * with a CSS animation, so it never gets stuck if JS is slow. It sets a session
- * cookie that the root layout reads, so later page loads hide it from the server
- * HTML (html[data-intro-seen]). Click to skip.
+ * Cold open that plays on every full load of the homepage, refreshes included.
+ * It is rendered on the server and fades itself out with a CSS animation, so it
+ * never gets stuck if JS is slow. Click to skip.
  */
-// Set (client side only) once the intro has mounted, so returning to the homepage
-// through client-side navigation in the same page session never replays it.
-let startedThisPageSession = false;
+// Set (client side only) once the intro has mounted. It resets on every refresh,
+// but stops a replay when someone clicks back to the homepage inside the site.
+let startedThisPageLoad = false;
 
 export function HorrorIntro() {
   const { t } = useTranslation();
-  const [gone, setGone] = useState(() => startedThisPageSession);
+  const [gone, setGone] = useState(() => startedThisPageLoad);
 
   useEffect(() => {
-    startedThisPageSession = true;
-    document.cookie = 'unl-intro=1; path=/; SameSite=Lax';
+    startedThisPageLoad = true;
   }, []);
 
-  // Once it has played, hide it for the rest of the page session too, so coming
-  // back to the homepage via client-side navigation doesn't replay it.
-  const finish = () => {
-    document.documentElement.setAttribute('data-intro-seen', '');
-    setGone(true);
-  };
+  const finish = () => setGone(true);
 
   if (gone) return null;
 

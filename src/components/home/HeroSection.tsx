@@ -3,33 +3,15 @@
 import Link from 'next/link';
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import {
-  Search,
-  Skull,
-  Compass,
-  Landmark,
-  Cpu,
-  Microscope,
-  Ghost,
-  Swords,
-  Eye,
-} from 'lucide-react';
+import { Search, Skull, Eye } from 'lucide-react';
 import { useSafeQuery } from '@/lib/useSafeQuery';
 import { api } from '../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
+import { ROOM_THEMES } from '@/lib/roomThemes';
 import { BloodDrips } from '@/components/horror/BloodDrips';
 import { WatchingEyes } from '@/components/horror/WatchingEyes';
 
-const heroThemes = [
-  { key: 'theme.horror', value: 'Horror', icon: Skull },
-  { key: 'theme.adventure', value: 'Adventure', icon: Compass },
-  { key: 'theme.mystery', value: 'Mystery', icon: Search },
-  { key: 'theme.history', value: 'Historical', icon: Landmark },
-  { key: 'theme.scifi', value: 'Sci-Fi', icon: Cpu },
-  { key: 'theme.science', value: 'Science', icon: Microscope },
-  { key: 'theme.paranormal', value: 'Paranormal', icon: Ghost },
-  { key: 'theme.medieval', value: 'Medieval', icon: Swords },
-];
+const heroThemes = ROOM_THEMES.filter((th) => th.hero);
 
 /** Things written on the walls. Only the flashlight shows them. */
 const scrawls = [

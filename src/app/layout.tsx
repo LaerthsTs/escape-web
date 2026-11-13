@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
 import './globals.css';
 import { LayoutShell } from '@/components/layout/LayoutShell';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
@@ -63,7 +62,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -101,11 +100,8 @@ export default async function RootLayout({
     },
   };
 
-  const introSeen = (await cookies()).has('unl-intro');
-
   return (
-    // The horror intro plays once per browser session; HorrorIntro sets this session cookie
-    <html lang="en" className="dark" data-intro-seen={introSeen ? '' : undefined}>
+    <html lang="en" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

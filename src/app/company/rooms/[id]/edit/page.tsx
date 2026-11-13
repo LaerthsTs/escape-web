@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath, uiLocale } from '@/lib/companyAuth';
 import dynamic from 'next/dynamic';
 import { api } from '../../../../../../convex/_generated/api';
 import { Id } from '../../../../../../convex/_generated/dataModel';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { RoomPaymentExtras } from '@/components/company/RoomPaymentExtras';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -34,8 +35,8 @@ import {
   Languages,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { ROOM_THEMES } from '@/lib/roomThemes';
 import { friendlyError } from '@/lib/errors';
-import { uiLocale } from '@/lib/companyAuth';
 import { useToast } from '@/components/company/Toast';
 import { translateRoom } from '@/lib/translate';
 
@@ -48,7 +49,6 @@ const LocationPicker = dynamic(
   )}
 );
 
-const THEMES = ['Horror', 'Adventure', 'Sci-Fi', 'Mystery', 'Fantasy', 'Historical', 'Comedy', 'Thriller'];
 const TAG_OPTIONS = ['Beginner Friendly', 'Team Building', 'Couples', 'Family', 'Intense', 'Immersive', 'Physical', 'Mental', 'Story Driven', 'Competitive'];
 
 const TERMS_TEMPLATES = [
@@ -82,10 +82,10 @@ export default function EditRoomPage() {
   const roomId = params.id as string;
 
   const room = useQuery(api.rooms.getById, roomId ? { id: roomId as any } : 'skip');
-  const updateRoom = useMutation(api.companies.updateRoom);
+  const updateRoom = useCompanyMutation(api.companies.updateRoom);
   const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
-  const savePreset = useMutation(api.bookingPhotos.savePreset);
+  const savePreset = useCompanyMutation(api.bookingPhotos.savePreset);
   const photoPreset = useQuery(
     api.bookingPhotos.getPreset,
     company?.id ? { companyId: company.id as any } : 'skip'
@@ -109,6 +109,7 @@ export default function EditRoomPage() {
     description: '',
     story: '',
     paymentTerms: ['full'] as ('full' | 'deposit_20' | 'pay_on_arrival')[],
+    depositPercent: '',
     termsOfUse: '',
     isSubscriptionOnly: false,
     operatingDays: [1, 2, 3, 4, 5, 6] as number[],
@@ -138,7 +139,7 @@ export default function EditRoomPage() {
   const [showTranslations, setShowTranslations] = useState(false);
 
   // Company data for auto-translate check
-  const companyData = useQuery(
+  const companyData = useCompanyQuery(
     api.companies.getById,
     company?.id ? { id: company.id as any } : 'skip'
   );
@@ -213,6 +214,7 @@ export default function EditRoomPage() {
         description: room.description || '',
         story: room.story || '',
         paymentTerms: (room as any).paymentTerms || ['full'],
+        depositPercent: (room as any).depositPercent ? String((room as any).depositPercent) : '',
         termsOfUse: (room as any).termsOfUse || '',
         isSubscriptionOnly: (room as any).isSubscriptionOnly || false,
         operatingDays: (room as any).operatingDays || [1, 2, 3, 4, 5, 6],
@@ -293,6 +295,8 @@ export default function EditRoomPage() {
         storyTranslations: Object.keys(storyTrans).length > 0 ? storyTrans as any : undefined,
         descriptionTranslations: Object.keys(descTrans).length > 0 ? descTrans as any : undefined,
         paymentTerms: form.paymentTerms,
+        // 0 clears the room's own % so the company default applies
+        depositPercent: form.depositPercent ? Number(form.depositPercent) : 0,
         termsOfUse: form.termsOfUse || undefined,
         isSubscriptionOnly: form.isSubscriptionOnly || undefined,
         operatingDays: form.operatingDays,
@@ -381,7 +385,7 @@ export default function EditRoomPage() {
                 onChange={(e) => updateField('theme', e.target.value)}
                 className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               >
-                {THEMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {ROOM_THEMES.map((th) => <option key={th.value} value={th.value}>{t(th.key)}</option>)}
               </select>
             </div>
             <div>
@@ -643,6 +647,12 @@ export default function EditRoomPage() {
               </button>
             ))}
           </div>
+          <RoomPaymentExtras
+            companyId={company?.id}
+            terms={form.paymentTerms}
+            depositPercent={form.depositPercent}
+            onDepositPercentChange={(value) => setForm((prev) => ({ ...prev, depositPercent: value }))}
+          />
         </SectionCard>
 
         <SectionCard title={t('company.rooms.edit.operating_days')}>
@@ -1006,23 +1016,16 @@ export default function EditRoomPage() {
                 {t('company.rooms.edit.featured_desc')}
               </p>
             </div>
-            {(company?.platformPlan === 'pro' || company?.platformPlan === 'enterprise') ? (
-              <button
-                type="button"
-                onClick={() => updateField('isFeatured', !form.isFeatured)}
-              >
-                {form.isFeatured ? (
-                  <ToggleRight className="w-8 h-8 text-yellow-400" />
-                ) : (
-                  <ToggleLeft className="w-8 h-8 text-brand-text-secondary" />
-                )}
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-brand-text-secondary">
-                <Lock className="w-4 h-4" />
-                <span>{t('company.rooms.edit.pro_required')}</span>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => updateField('isFeatured', !form.isFeatured)}
+            >
+              {form.isFeatured ? (
+                <ToggleRight className="w-8 h-8 text-yellow-400" />
+              ) : (
+                <ToggleLeft className="w-8 h-8 text-brand-text-secondary" />
+              )}
+            </button>
           </div>
         </SectionCard>
 

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { useSearchParams } from 'next/navigation';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import Link from 'next/link';
 import { PLANS, asPlanId } from '@/lib/plans';
 import { WIDGET_COPIED, setFlag } from '@/lib/companyUi';
@@ -66,12 +65,12 @@ export default function CompanySettingsPage() {
   const toast = useToast();
   const companyId = company?.id;
 
-  const companyData = useQuery(
+  const companyData = useCompanyQuery(
     api.companies.getById,
     companyId ? { id: companyId as any } : 'skip'
   );
 
-  const updateProfile = useMutation(api.companies.updateProfile);
+  const updateProfile = useCompanyMutation(api.companies.updateProfile);
 
   // Profile form
   const [profile, setProfile] = useState({
@@ -259,10 +258,8 @@ export default function CompanySettingsPage() {
                 <div>
                   <p className="text-xs text-brand-text-secondary font-medium uppercase tracking-wide mb-0.5">{t('company.settings.current_plan')}</p>
                   <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="text-xl font-bold" style={{ color: pl.color }}>{t(`company.onboarding.plan_${id}`)}</span>
-                    <span className="text-sm text-brand-text-secondary">
-                      {id === 'free' ? t('company.onboarding.free') : `€${pl.monthly}/${t('billing.month')} · €${pl.yearly}/${t('billing.year')}`}
-                    </span>
+                    <span className="text-xl font-bold" style={{ color: pl.color }}>{t(`company.plan.${id}`)}</span>
+                    <span className="text-sm text-brand-text-secondary">{t(pl.priceKey)}</span>
                   </div>
                 </div>
               </div>

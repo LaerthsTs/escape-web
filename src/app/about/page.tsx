@@ -11,7 +11,6 @@ import {
   Building2,
   BarChart2,
   Calendar,
-  QrCode,
   ArrowRight,
 } from 'lucide-react';
 import { EyeKeyhole } from '@/components/brand/EyeKeyhole';

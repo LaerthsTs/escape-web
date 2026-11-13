@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
 import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
@@ -15,35 +13,23 @@ function PaymentSuccessContent() {
   const params = useSearchParams();
   const { company, refreshCompany } = useCompanyAuth();
   const p = useCompanyPath();
-  const selectPlan = useMutation(api.companies.selectPlan);
   const [countdown, setCountdown] = useState(5);
   const initialized = useRef(false);
   const mutationDone = useRef(false);
 
-  const plan = params.get('plan') || 'starter';
+  const plan = 'unlimited';
   const period = params.get('period') || 'monthly';
 
   // Update auth state AND server state once
   useEffect(() => {
     if (!initialized.current && company?.id) {
       initialized.current = true;
-      // Update server-side FIRST, then local state
-      selectPlan({
-        companyId: company.id as any,
-        plan: plan as any,
-      }).then(() => {
-        mutationDone.current = true;
-        refreshCompany({
-          onboardingStatus: 'pending_review',
-          platformPlan: plan as any,
-        });
-      }).catch(() => {
-        mutationDone.current = true;
-        // Still update local state even if mutation fails (webhook will handle it)
-        refreshCompany({
-          onboardingStatus: 'pending_review',
-          platformPlan: plan as any,
-        });
+      // The Stripe webhook sets the plan and status on the server; mirror
+      // that locally so the onboarding page doesn't flash back to plan choice.
+      mutationDone.current = true;
+      refreshCompany({
+        onboardingStatus: 'pending_review',
+        platformPlan: plan as any,
       });
     }
   }, [company?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -69,11 +55,6 @@ function PaymentSuccessContent() {
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const planNames: Record<string, string> = {
-    starter: 'Starter',
-    pro: 'Pro',
-    enterprise: 'Enterprise',
-  };
 
   return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4">
@@ -87,7 +68,7 @@ function PaymentSuccessContent() {
         </h1>
 
         <p className="text-brand-text-secondary mb-2">
-          {t('stripe.subscribed_to')} <span className="font-bold text-white">{planNames[plan]}</span>
+          {t('stripe.subscribed_to')} <span className="font-bold text-white">{t('company.plan.unlimited')}</span>
         </p>
         <p className="text-sm text-brand-text-secondary mb-8">
           {period === 'monthly' ? t('stripe.billed_monthly') : t('stripe.billed_yearly')}

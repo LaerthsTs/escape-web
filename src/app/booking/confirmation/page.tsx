@@ -1,13 +1,12 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   CheckCircle,
   Calendar,
@@ -36,12 +35,44 @@ function ConfirmationContent() {
   const total = searchParams.get('total') || '0';
   const paymentStatus = searchParams.get('paymentStatus') || '';
   const sessionId = searchParams.get('session_id') || '';
+  // Set by our own Stripe success URL and by the Viva return page
+  const bookingParam = searchParams.get('booking') || '';
 
   // If returning from Stripe, fetch booking by session ID
-  const stripeBooking = useQuery(
+  const sessionBooking = useQuery(
     api.bookings.getByStripeSession,
     sessionId ? { stripeSessionId: sessionId } : 'skip'
   );
+  const trackedBooking = useQuery(
+    api.companyPaymentsData.getPaymentState,
+    bookingParam && !sessionId ? { bookingId: bookingParam as any } : 'skip'
+  );
+  // undefined = loading, null = not found
+  const stripeBooking: any = sessionId
+    ? sessionBooking
+    : trackedBooking
+      ? { ...trackedBooking, _id: trackedBooking.bookingId }
+      : trackedBooking;
+  const awaitingReturn = !!(sessionId || bookingParam);
+
+  // Ask the server to check the payment with the escape room's Stripe/Viva
+  // account. Retries a few times: card payments can take a moment to settle.
+  const confirmReturn = useAction(api.companyPayments.confirmReturn);
+  const [checksDone, setChecksDone] = useState(0);
+  const pendingId = stripeBooking?.status === 'pending_payment' ? (stripeBooking._id as string) : '';
+  useEffect(() => {
+    if (!pendingId || checksDone >= 6) return;
+    const timer = setTimeout(
+      () => {
+        confirmReturn({ bookingId: pendingId as any })
+          .catch(() => {})
+          .finally(() => setChecksDone((n) => n + 1));
+      },
+      checksDone === 0 ? 0 : 4000
+    );
+    return () => clearTimeout(timer);
+  }, [pendingId, checksDone, confirmReturn]);
+  const paymentNotSeen = !!pendingId && checksDone >= 6;
 
   // Determine values — Stripe return takes priority over URL params
   const finalBookingCode = stripeBooking?.bookingCode || bookingCode;
@@ -53,10 +84,11 @@ function ConfirmationContent() {
   const finalPaymentStatus =
     stripeBooking?.paymentStatus ||
     paymentStatus ||
-    (sessionId ? 'unpaid' : 'paid');
+    (awaitingReturn ? 'unpaid' : 'paid');
 
   // Check if booking is still pending payment (Stripe webhook hasn't fired yet)
-  const isPaymentPending = sessionId && stripeBooking?.status === 'pending_payment';
+  const isPaymentPending = awaitingReturn && stripeBooking?.status === 'pending_payment';
+  const isCancelled = awaitingReturn && stripeBooking?.status === 'cancelled' && !stripeBooking?.paymentStatus?.match(/paid|deposit/);
 
   const room = useQuery(
     api.rooms.getById,
@@ -107,11 +139,26 @@ function ConfirmationContent() {
   const badge = paymentBadge[finalPaymentStatus] || paymentBadge.paid;
 
   // Show loading if we're waiting for Stripe booking data
-  if (sessionId && !stripeBooking) {
+  if (awaitingReturn && stripeBooking === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand-red/30 border-t-brand-red rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // The payment window closed without a payment
+  if (isCancelled || (awaitingReturn && stripeBooking === null)) {
+    return (
+      <section className="pt-28 pb-20">
+        <div className="max-w-xl mx-auto px-4 text-center">
+          <h1 className="text-3xl font-display font-bold mb-3">{t('confirmation.payment_expired_title')}</h1>
+          <p className="text-brand-text-secondary mb-8">{t('confirmation.payment_expired_desc')}</p>
+          <Link href={finalRoomId ? `/rooms/${finalRoomId}/book` : '/escape-rooms'} className="btn-primary inline-flex">
+            {t('confirmation.book_again')}
+          </Link>
+        </div>
+      </section>
     );
   }
 
@@ -126,7 +173,7 @@ function ConfirmationContent() {
             </div>
             <h1 className="text-3xl font-display font-bold mb-2">{t('confirmation.processing_title') || 'Processing Payment...'}</h1>
             <p className="text-brand-text-secondary">
-              {t('confirmation.processing_subtitle') || 'We\'re confirming your payment with Stripe. This usually takes a few seconds.'}
+              {paymentNotSeen ? t('confirmation.payment_not_seen') : t('confirmation.processing_subtitle')}
             </p>
           </div>
 
@@ -162,9 +209,15 @@ function ConfirmationContent() {
             </div>
           </div>
 
-          <p className="text-sm text-brand-text-muted animate-pulse">
-            {t('confirmation.please_wait') || 'Please wait, do not close this page...'}
-          </p>
+          {paymentNotSeen ? (
+            <Link href="/tickets" className="btn-outline inline-flex">
+              {t('confirmation.go_to_tickets')}
+            </Link>
+          ) : (
+            <p className="text-sm text-brand-text-muted animate-pulse">
+              {t('confirmation.please_wait') || 'Please wait, do not close this page...'}
+            </p>
+          )}
         </div>
       </section>
     );
@@ -228,25 +281,8 @@ function ConfirmationContent() {
             </div>
           </div>
 
-          {/* Booking Code + QR */}
+          {/* Booking Code */}
           <div className="bg-brand-dark rounded-xl p-6 text-center border border-brand-border">
-            <div className="inline-block bg-white p-4 rounded-xl mb-4">
-              <QRCodeSVG
-                value={finalBookingCode || 'UNLOCKED'}
-                size={180}
-                level="H"
-                bgColor="#ffffff"
-                fgColor="#000000"
-                imageSettings={{
-                  src: '/favicon.svg',
-                  x: undefined,
-                  y: undefined,
-                  height: 36,
-                  width: 36,
-                  excavate: true,
-                }}
-              />
-            </div>
             <div className="text-xs text-brand-text-muted mb-1">{t('confirmation.booking_code')}</div>
             <div className="text-2xl font-mono font-bold tracking-wider text-brand-red-light">
               {finalBookingCode}

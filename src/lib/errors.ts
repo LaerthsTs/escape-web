@@ -5,6 +5,9 @@
  * and in production hides the message entirely ("… Server Error").
  */
 export function cleanError(err: unknown): string {
+  // ConvexError keeps its message in production (plain Error does not)
+  const data = (err as any)?.data;
+  if (typeof data === 'string' && data.trim()) return data.trim();
   const raw =
     err instanceof Error ? err.message : typeof err === 'string' ? err : (err as any)?.message || '';
   const uncaught = raw.match(/Uncaught (?:Error|ConvexError):\s*([\s\S]*?)(?:\s+at\s+\S+\s*\(|\n\s+at |$)/);
@@ -45,7 +48,7 @@ export function friendlyError(
   if (/^Room limit reached/i.test(msg)) return t('cx.err.room_limit');
   if (
     !msg ||
-    /Server Error|Request ID|ArgumentValidationError|Validator|Failed to fetch|NetworkError|network/i.test(msg)
+    /Server Error|Called by client|Request ID|ArgumentValidationError|Validator|Failed to fetch|NetworkError|network/i.test(msg)
   ) {
     return t(fallbackKey);
   }

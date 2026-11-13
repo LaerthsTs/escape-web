@@ -1,30 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Skull,
-  Compass,
-  Search as SearchIcon,
-  Landmark,
-  Cpu,
-  Microscope,
-  Ghost,
-  Swords,
-} from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { ROOM_THEMES } from '@/lib/roomThemes';
 import { StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
 import { HorrorHeading } from '@/components/horror/HorrorHeading';
 
-const themes = [
-  { key: 'theme.horror', value: 'Horror', icon: Skull, tint: 'rgba(200,16,27,0.55)' },
-  { key: 'theme.adventure', value: 'Adventure', icon: Compass, tint: 'rgba(180,90,20,0.5)' },
-  { key: 'theme.mystery', value: 'Mystery', icon: SearchIcon, tint: 'rgba(110,40,140,0.5)' },
-  { key: 'theme.history', value: 'Historical', icon: Landmark, tint: 'rgba(150,110,30,0.5)' },
-  { key: 'theme.scifi', value: 'Sci-Fi', icon: Cpu, tint: 'rgba(20,130,140,0.5)' },
-  { key: 'theme.science', value: 'Science', icon: Microscope, tint: 'rgba(40,130,60,0.5)' },
-  { key: 'theme.paranormal', value: 'Paranormal', icon: Ghost, tint: 'rgba(70,60,160,0.5)' },
-  { key: 'theme.medieval', value: 'Medieval', icon: Swords, tint: 'rgba(160,60,20,0.5)' },
-];
+const themes = ROOM_THEMES.filter((th) => th.home);
 
 export function ThemesSection() {
   const { t } = useTranslation();

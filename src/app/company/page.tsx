@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useCompanyQuery, useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { api } from '../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { roomLimitFor } from '@/lib/plans';
 import Link from 'next/link';
 import {
@@ -43,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
-import { SlotWeekCalendar } from '@/components/company/SlotBoard';
+import { DashboardBookingCalendar } from '@/components/company/BookingCalendar';
 import { statusLabel, WIDGET_COPIED, readFlag } from '@/lib/companyUi';
 
 function getGreeting(t: (key: string) => string) {
@@ -63,23 +62,23 @@ export default function CompanyDashboardPage() {
 
   const today = localDateKey();
 
-  const stats = useQuery(
+  const stats = useCompanyQuery(
     api.companies.getDashboardStats,
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const todayStats = useQuery(
+  const todayStats = useCompanyQuery(
     api.companies.getTodayStats,
     companyId ? { companyId: companyId as any, date: today } : 'skip'
   );
 
-  const todayBookings = useQuery(
+  const todayBookings = useCompanyQuery(
     api.companies.getBookingsByDate,
     companyId ? { companyId: companyId as any, date: today } : 'skip'
   );
 
-  const rooms = useQuery(api.companies.getRooms, companyId ? { companyId: companyId as any } : 'skip');
-  const companyData = useQuery(api.companies.getById, companyId ? { id: companyId as any } : 'skip');
+  const rooms = useCompanyQuery(api.companies.getRooms, companyId ? { companyId: companyId as any } : 'skip');
+  const companyData = useCompanyQuery(api.companies.getById, companyId ? { id: companyId as any } : 'skip');
 
   const [checklistDismissed, setChecklistDismissed] = useState(true);
   const [widgetCopied, setWidgetCopied] = useState(false);
@@ -264,18 +263,18 @@ export default function CompanyDashboardPage() {
         </div>
       )}
 
-      {/* ── Slot calendar: the week at a glance, tap a time to open/close it ── */}
+      {/* ── Bookings calendar: rooms side by side, tap a time to book it ── */}
       {bookableRooms.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-brand-red-light" /> {t('cx.cal.title')}
+              <CalendarDays className="w-4 h-4 text-brand-red-light" /> {t('cx.bcal.dash_title')}
             </h2>
-            <Link href={p('/company/slots')} className="text-xs text-brand-red-light hover:underline flex items-center gap-1">
-              {t('cx.cal.full_view')} <ArrowRight className="w-3 h-3" />
+            <Link href={p('/company/bookings')} className="text-xs text-brand-red-light hover:underline flex items-center gap-1">
+              {t('cx.bcal.open_bookings')} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <SlotWeekCalendar rooms={bookableRooms} companyId={companyId} />
+          <DashboardBookingCalendar rooms={rooms || []} companyId={companyId} />
         </div>
       )}
 
@@ -563,27 +562,6 @@ export default function CompanyDashboardPage() {
         </div>
         );
       })()}
-
-      {/* ── Analytics Upsell (Starter) ── */}
-      {plan === 'starter' && stats && (
-        <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-brand-surface to-brand-red/5 border border-white/5 p-6">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-            <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center shrink-0">
-              <Sparkles className="w-6 h-6 text-brand-red-light" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold">{t('company.dashboard.unlock_analytics')}</h3>
-              <p className="text-sm text-brand-text-secondary mt-0.5">
-                {t('company.dashboard.unlock_analytics_desc')}
-              </p>
-            </div>
-            <Link href={p('/company/billing')} className="btn-primary text-sm shrink-0 flex items-center gap-1.5">
-              {t('company.dashboard.upgrade')} <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* ── Quick Actions ── */}
       <div>

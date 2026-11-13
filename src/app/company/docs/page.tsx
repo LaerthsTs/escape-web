@@ -8,7 +8,7 @@ import {
   CreditCard,
   Star,
   Camera,
-  QrCode,
+  Ticket,
   Code2,
   Trophy,
   Bell,
@@ -381,25 +381,25 @@ export default function DocsPage() {
           </div>
         </Section>
 
-        {/* ─── 5. QR Code Verification ─── */}
-        <Section icon={QrCode} title={isGreek ? 'QR Code Επαλήθευσης' : 'QR Code Verification'}>
+        {/* ─── 5. Booking Codes ─── */}
+        <Section icon={Ticket} title={isGreek ? 'Κωδικός Κράτησης' : 'Booking Codes'}>
           <p>
             {isGreek
-              ? 'Κάθε κράτηση δημιουργεί αυτόματα QR code από τον μοναδικό κωδικό κράτησης (π.χ. UNL-A1B2C3).'
-              : 'Every booking automatically generates a QR code from the unique booking code (e.g., UNL-A1B2C3).'}
+              ? 'Κάθε κράτηση παίρνει αυτόματα έναν μοναδικό κωδικό κράτησης (π.χ. UNL-A1B2C3).'
+              : 'Every booking automatically gets a unique booking code (e.g., UNL-A1B2C3).'}
           </p>
 
           <div className="bg-white/5 rounded-xl p-4 space-y-3">
             <div className="flex gap-3 items-start">
-              <QrCode className="w-5 h-5 text-brand-red-light shrink-0 mt-0.5" />
+              <Ticket className="w-5 h-5 text-brand-red-light shrink-0 mt-0.5" />
               <div>
                 <p className="text-white font-medium">
                   {isGreek ? 'Πώς λειτουργεί' : 'How it works'}
                 </p>
                 <p className="mt-1">
                   {isGreek
-                    ? 'Σαρώστε το QR code του πελάτη στην πόρτα για instant επαλήθευση κράτησης — χωρίς χαρτιά. Το σύστημα εμφανίζει τα στοιχεία κράτησης, δωμάτιο και όνομα παίκτη.'
-                    : 'Scan the customer\'s QR code at the door for instant booking verification — no paperwork needed. The system shows booking details, room info, and player name.'}
+                    ? 'Ο παίκτης βλέπει τον κωδικό στην επιβεβαίωση και στα εισιτήριά του. Ο ίδιος κωδικός εμφανίζεται δίπλα σε κάθε κράτηση στη σελίδα Κρατήσεις, ώστε να τον συγκρίνετε στην είσοδο χωρίς χαρτιά.'
+                    : 'The player sees the code on their confirmation and in their tickets. The same code is shown next to each booking on your Bookings page, so you can match it at the door with no paperwork.'}
                 </p>
               </div>
             </div>

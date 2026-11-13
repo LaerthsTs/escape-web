@@ -18,10 +18,11 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { ROOM_THEME_VALUES, themeLabel as roomThemeLabel } from '@/lib/roomThemes';
 import { useAuth } from '@/lib/auth';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
 
-const themes = ['All', 'Horror', 'Sci-Fi', 'Mystery', 'Historical', 'Fantasy', 'Adventure', 'Science', 'Paranormal', 'Medieval'];
+const themes = ['All', ...ROOM_THEME_VALUES];
 
 export default function DiscoverPage() {
   const searchParams = useSearchParams();
@@ -55,21 +56,8 @@ export default function DiscoverPage() {
     5: t('difficulty.extreme'),
   };
 
-  const themeLabel = (theme: string): string => {
-    const map: Record<string, string> = {
-      'All': t('discover.filter_all'),
-      'Horror': t('theme.horror'),
-      'Adventure': t('theme.adventure'),
-      'Mystery': t('theme.mystery'),
-      'Sci-Fi': t('theme.scifi'),
-      'Historical': t('discover.theme_historical'),
-      'Fantasy': t('discover.theme_fantasy'),
-      'Science': t('theme.science'),
-      'Paranormal': t('theme.paranormal'),
-      'Medieval': t('theme.medieval'),
-    };
-    return map[theme] || theme;
-  };
+  const themeLabel = (theme: string): string =>
+    theme === 'All' ? t('discover.filter_all') : roomThemeLabel(t, theme);
 
   const allRooms = useQuery(api.rooms.list);
 

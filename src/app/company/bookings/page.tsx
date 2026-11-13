@@ -1,23 +1,28 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth, localDateKey } from '@/lib/companyAuth';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { friendlyError } from '@/lib/errors';
 import { statusLabel } from '@/lib/companyUi';
 import { useToast } from '@/components/company/Toast';
 import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
+  CalendarToolbar,
+  BookingCalendarGrid,
+  viewDays,
+  slotRange,
+  bookingKind,
+  bookingSourceLabel,
+  CAL_VIEWS,
+  type CalView,
+  type FreeSlotClick,
+} from '@/components/company/BookingCalendar';
+import {
   X,
   Users,
-  Clock,
   DollarSign,
   AlertCircle,
-  Ban,
-  FileText,
   Award,
   CheckCircle2,
   XCircle,
@@ -29,121 +34,118 @@ import {
   Pencil,
   Phone,
   Mail,
+  Plus,
+  Ban,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 
+const VIEW_KEY = 'unlocked_bookings_view';
+
+type SlotPrefill = { roomId: string; time: string; date: string; price?: number; pricePerGroup?: { players: number; price: number }[] };
+
 export default function CompanyBookingsPage() {
   const { company } = useCompanyAuth();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const toast = useToast();
-  const DAYS = [
-    t('common.day_sun'), t('common.day_mon'), t('common.day_tue'),
-    t('common.day_wed'), t('common.day_thu'), t('common.day_fri'), t('common.day_sat')
-  ];
-  const MONTHS = [
-    t('common.month_1'), t('common.month_2'), t('common.month_3'),
-    t('common.month_4'), t('common.month_5'), t('common.month_6'),
-    t('common.month_7'), t('common.month_8'), t('common.month_9'),
-    t('common.month_10'), t('common.month_11'), t('common.month_12')
-  ];
   const companyId = company?.id;
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(localDateKey());
 
-  // Deep links from the dashboard / slot board: /bookings?date=YYYY-MM-DD
+  const [anchor, setAnchor] = useState(localDateKey());
+  const [view, setViewState] = useState<CalView>('day');
+
+  // Deep links from the dashboard / slot board: /bookings?date=YYYY-MM-DD[&view=week]
   useEffect(() => {
-    const d = new URLSearchParams(window.location.search).get('date');
-    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
-      setSelectedDate(d);
-      setCurrentDate(new Date(d + 'T12:00:00'));
+    const params = new URLSearchParams(window.location.search);
+    const d = params.get('date');
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setAnchor(d);
+    const v = params.get('view') as CalView | null;
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem(VIEW_KEY);
+    } catch {}
+    const pick = (v && CAL_VIEWS.includes(v) ? v : null) || (saved && CAL_VIEWS.includes(saved as CalView) ? (saved as CalView) : null);
+    if (pick) setViewState(pick);
+
+    // From the dashboard calendar: open the booking, or a new booking for a free time.
+    const day = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : localDateKey();
+    const bookingId = params.get('booking');
+    const roomId = params.get('room');
+    const time = params.get('time');
+    if (bookingId) {
+      setSelected({ _id: bookingId });
+    } else if (roomId && time && /^\d{2}:\d{2}$/.test(time)) {
+      const price = Number(params.get('price'));
+      setCreateFor({ roomId, time, date: day, price: Number.isFinite(price) && params.get('price') ? price : undefined });
     }
+    if (bookingId || roomId) {
+      // Drop the one-off params so a reload doesn't reopen the form.
+      const clean = new URLSearchParams();
+      if (d) clean.set('date', d);
+      window.history.replaceState(null, '', `${window.location.pathname}${clean.toString() ? `?${clean}` : ''}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showExternalModal, setShowExternalModal] = useState(false);
+
+  const setView = (v: CalView) => {
+    setViewState(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
+
+  const [createFor, setCreateFor] = useState<SlotPrefill | null>(null);
+  const [blockFor, setBlockFor] = useState<SlotPrefill | null>(null);
   const [showCompleteModal, setShowCompleteModal] = useState<any>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState<any>(null);
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState('');
-  const [savingNote, setSavingNote] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
 
-  const bookings = useQuery(
-    api.companies.getBookingsByDate,
-    companyId ? { companyId: companyId as any, date: selectedDate } : 'skip'
-  );
-
-  const rooms = useQuery(
+  const rooms = useCompanyQuery(
     api.companies.getRooms,
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const cancelBooking = useMutation(api.companies.adminCancelBooking);
-  const completeBooking = useMutation(api.companies.adminCompleteBooking);
-  const rescheduleBooking = useMutation(api.companies.adminRescheduleBooking);
-  const submitPerformance = useMutation(api.badges.submitPerformance);
-  const updateNotes = useMutation(api.companies.updateBookingNotes);
+  // The list view shows one day; the calendar views load their own days.
+  const listBookings = useCompanyQuery(
+    api.companies.getBookingsByDate,
+    companyId && view === 'list' ? { companyId: companyId as any, date: anchor } : 'skip'
+  );
 
-  // Calendar logic
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cancelBooking = useCompanyMutation(api.companies.adminCancelBooking);
+  const completeBooking = useCompanyMutation(api.companies.adminCompleteBooking);
+  const rescheduleBooking = useCompanyMutation(api.companies.adminRescheduleBooking);
+  const submitPerformance = useCompanyMutation(api.badges.submitPerformance);
 
-  const calendarDays = useMemo(() => {
-    const days: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    return days;
-  }, [firstDay, daysInMonth]);
-
-  const handlePrevMonth = () =>
-    setCurrentDate(new Date(year, month - 1, 1));
-  const handleNextMonth = () =>
-    setCurrentDate(new Date(year, month + 1, 1));
-
-  const handleSelectDay = (day: number) => {
-    const d = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setSelectedDate(d);
-  };
-
-  const selectedDayNum = parseInt(selectedDate.split('-')[2]);
-  const isSelectedMonth =
-    selectedDate.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`);
+  const days = useMemo(() => viewDays(view, anchor), [view, anchor]);
 
   const handleCancel = async (bookingId: string) => {
-    if (!confirm(t('company.bookings.confirm_cancel'))) return;
+    if (!confirm(t('company.bookings.confirm_cancel'))) return false;
     try {
       await cancelBooking({ companyId: companyId as any, bookingId: bookingId as any });
       toast({ kind: 'success', message: t('cx.bookings.cancelled') });
+      return true;
     } catch (err) {
       toast({ kind: 'error', message: friendlyError(err, t) });
+      return false;
     }
   };
 
-  const paymentLabel = (status?: string) => {
-    if (!status) return t('company.bookings.na');
-    const key = `cx.payment.${status}`;
-    const tr = t(key);
-    return tr === key ? status : tr;
-  };
+  const onFreeSlot = ({ room, date, slot }: FreeSlotClick) =>
+    setCreateFor({ roomId: room._id, time: slot.time, date, price: slot.price, pricePerGroup: slot.pricePerGroup || room.pricePerGroup });
 
-  const handleComplete = (booking: any) => {
-    setShowCompleteModal(booking);
-  };
+  const activeRooms = (rooms || []).filter((r: any) => r.isActive !== false);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 md:mb-8">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 md:mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">{t('company.bookings.title')}</h1>
         <div className="grid grid-cols-2 sm:flex gap-2">
           <button
-            onClick={() => setShowExternalModal(true)}
+            onClick={() => setBlockFor({ roomId: activeRooms[0]?._id || '', time: '', date: anchor })}
             className="btn-ghost text-sm flex items-center justify-center gap-1.5"
           >
             <Ban className="w-4 h-4" /> {t('company.bookings.block_slot')}
           </button>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setCreateFor({ roomId: activeRooms[0]?._id || '', time: '', date: anchor })}
             className="btn-primary text-sm flex items-center justify-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> {t('company.bookings.new_booking')}
@@ -151,309 +153,66 @@ export default function CompanyBookingsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <div className="bg-brand-surface rounded-2xl border border-white/5 p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={handlePrevMonth} aria-label={t('cx.common.prev_month')} className="p-1 hover:bg-white/5 rounded-lg">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <h2 className="font-semibold">
-              {MONTHS[month]} {year}
-            </h2>
-            <button onClick={handleNextMonth} aria-label={t('cx.common.next_month')} className="p-1 hover:bg-white/5 rounded-lg">
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="bg-brand-surface rounded-2xl border border-white/5 p-3 md:p-5">
+        <CalendarToolbar view={view} onView={setView} anchor={anchor} onAnchor={setAnchor} />
 
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {DAYS.map((d) => (
-              <div
-                key={d}
-                className="text-center text-xs text-brand-text-secondary py-1"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day, i) => {
-              if (!day) return <div key={i} />;
-              const isSelected = isSelectedMonth && day === selectedDayNum;
-              const isToday =
-                localDateKey() ===
-                `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleSelectDay(day)}
-                  className={`aspect-square rounded-lg text-sm font-medium transition-all ${
-                    isSelected
-                      ? 'bg-brand-red text-white'
-                      : isToday
-                      ? 'bg-brand-red/20 text-brand-red-light'
-                      : 'hover:bg-white/5 text-brand-text-secondary'
-                  }`}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bookings List */}
-        <div className="lg:col-span-2">
-          <div className="bg-brand-surface rounded-2xl border border-white/5 p-4 md:p-6">
-            <h2 className="font-semibold mb-4 capitalize">
-              {new Date(selectedDate + 'T00:00:00').toLocaleDateString(uiLocale(language), {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </h2>
-
-            {!bookings ? (
-              <div className="text-center py-8 text-brand-text-secondary">
-                {t('company.bookings.loading')}
-              </div>
-            ) : bookings.length === 0 ? (
-              <div className="text-center py-12 text-brand-text-secondary">
-                <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>{t('company.bookings.no_bookings')}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {bookings.map((booking: any) => (
-                  <div
-                    key={booking._id}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer hover:border-brand-red/30 ${
-                      selectedBooking?._id === booking._id
-                        ? 'bg-brand-red/5 border-brand-red/30'
-                        : 'bg-brand-bg border-white/5'
-                    }`}
-                    onClick={() =>
-                      setSelectedBooking(
-                        selectedBooking?._id === booking._id ? null : booking
-                      )
-                    }
-                  >
-                    {/* Room image header */}
-                    {booking.roomImage && (
-                      <div className="-mx-4 -mt-4 mb-3 h-28 rounded-t-xl overflow-hidden">
-                        <img
-                          src={booking.roomImage}
-                          alt={booking.roomTitle}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-lg font-bold text-brand-red-light">
-                          {booking.time}
-                        </span>
-                        <span className="font-semibold truncate">{booking.roomTitle}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            booking.source === 'external'
-                              ? 'bg-orange-500/10 text-orange-400'
-                              : 'bg-brand-red/10 text-brand-red-light'
-                          }`}
-                        >
-                          {booking.source === 'external' ? t('company.bookings.external') : t('company.bookings.unlocked_source')}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            booking.status === 'cancelled'
-                              ? 'bg-red-500/10 text-red-400'
-                              : booking.status === 'completed'
-                              ? 'bg-green-500/10 text-green-400'
-                              : booking.status === 'pending_payment'
-                              ? 'bg-yellow-500/10 text-yellow-400'
-                              : 'bg-blue-500/10 text-blue-400'
-                          }`}
-                        >
-                          {statusLabel(t, booking.status)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-brand-text-secondary">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5" /> {booking.playerName}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5" /> {booking.players} {t('company.bookings.players_count')}
-                      </span>
-                      {booking.total > 0 && (
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3.5 h-3.5" /> €{booking.total}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Expanded Detail */}
-                    {selectedBooking?._id === booking._id && (
-                      <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <span className="text-brand-text-secondary">{t('company.bookings.booking_code')}</span>
-                            <p className="font-mono font-semibold">{booking.bookingCode}</p>
-                          </div>
-                          <div>
-                            <span className="text-brand-text-secondary">{t('company.bookings.payment')}</span>
-                            <p className="font-semibold">{paymentLabel(booking.paymentStatus)}</p>
-                          </div>
-                        </div>
-                        {(booking.playerPhone || booking.playerContact) && (
-                          <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                            {booking.playerPhone && (
-                              <a
-                                href={`tel:${booking.playerPhone}`}
-                                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10"
-                              >
-                                <Phone className="w-3.5 h-3.5" /> {booking.playerPhone}
-                              </a>
-                            )}
-                            {booking.playerContact && String(booking.playerContact).includes('@') && (
-                              <a
-                                href={`mailto:${booking.playerContact}`}
-                                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 max-w-full truncate"
-                              >
-                                <Mail className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{booking.playerContact}</span>
-                              </a>
-                            )}
-                          </div>
-                        )}
-                        {/* Internal Note */}
-                        <div className="text-sm">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <MessageSquare className="w-3.5 h-3.5 text-brand-text-secondary" />
-                            <span className="text-brand-text-secondary">{t('company.bookings.internal_note')}</span>
-                            {editingNoteId !== booking._id && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingNoteId(booking._id);
-                                  setNoteText(booking.notes || '');
-                                }}
-                                className="ml-auto p-1.5 -m-1.5 text-brand-text-muted hover:text-white transition-colors"
-                                aria-label={t('cx.bookings.edit_note')}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                          {editingNoteId === booking._id ? (
-                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                              <textarea
-                                value={noteText}
-                                onChange={(e) => setNoteText(e.target.value)}
-                                rows={2}
-                                className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
-                                placeholder={t('company.bookings.note_placeholder')}
-                                autoFocus
-                              />
-                              <div className="flex flex-col gap-1">
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setSavingNote(true);
-                                    try {
-                                      await updateNotes({ companyId: companyId as any, bookingId: booking._id as any, notes: noteText });
-                                      setEditingNoteId(null);
-                                      toast({ kind: 'success', message: t('cx.bookings.note_saved') });
-                                    } catch (err) {
-                                      toast({ kind: 'error', message: friendlyError(err, t) });
-                                    }
-                                    setSavingNote(false);
-                                  }}
-                                  disabled={savingNote}
-                                  className="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                                >
-                                  <Save className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setEditingNoteId(null); }}
-                                  className="p-2 rounded-lg bg-white/5 text-brand-text-secondary hover:bg-white/10 transition-colors"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className={booking.notes ? 'text-white' : 'text-brand-text-muted italic'}>
-                              {booking.notes || t('company.bookings.no_note')}
-                            </p>
-                          )}
-                        </div>
-
-                        {booking.status === 'upcoming' && (
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleComplete(booking);
-                              }}
-                              className="text-sm px-4 py-2 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                            >
-                              {t('company.bookings.complete')}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowRescheduleModal(booking);
-                              }}
-                              className="text-sm px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center gap-1.5"
-                            >
-                              <CalendarClock className="w-3.5 h-3.5" />
-                              {t('company.bookings.reschedule')}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancel(booking._id);
-                              }}
-                              className="text-sm px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                            >
-                              {t('company.bookings.cancel')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        {rooms === undefined ? (
+          <div className="h-[50vh] rounded-xl bg-white/5 animate-pulse" />
+        ) : view === 'list' ? (
+          <BookingList bookings={listBookings} rooms={rooms} onOpen={setSelected} />
+        ) : (
+          <BookingCalendarGrid
+            rooms={rooms}
+            companyId={companyId}
+            days={days}
+            onFreeSlot={onFreeSlot}
+            onBooking={setSelected}
+          />
+        )}
       </div>
 
-      {/* Create Admin Booking Modal */}
-      {showCreateModal && (
+      {selected && (
+        <BookingDetailModal
+          companyId={companyId!}
+          initial={selected}
+          rooms={rooms || []}
+          onClose={() => setSelected(null)}
+          onComplete={(b) => {
+            setSelected(null);
+            setShowCompleteModal(b);
+          }}
+          onReschedule={(b) => {
+            setSelected(null);
+            setShowRescheduleModal(b);
+          }}
+          onCancel={async (b) => {
+            if (await handleCancel(b._id)) setSelected(null);
+          }}
+        />
+      )}
+
+      {createFor && rooms && (
         <CreateBookingModal
           companyId={companyId!}
           rooms={rooms || []}
-          date={selectedDate}
-          onClose={() => setShowCreateModal(false)}
+          prefill={createFor}
+          onClose={() => setCreateFor(null)}
+          onBlockInstead={() => {
+            setBlockFor(createFor);
+            setCreateFor(null);
+          }}
         />
       )}
 
-      {/* External Block Modal */}
-      {showExternalModal && (
+      {blockFor && rooms && (
         <ExternalBlockModal
           companyId={companyId!}
           rooms={rooms || []}
-          date={selectedDate}
-          onClose={() => setShowExternalModal(false)}
+          prefill={blockFor}
+          onClose={() => setBlockFor(null)}
         />
       )}
 
-      {/* Reschedule Booking Modal */}
       {showRescheduleModal && (
         <RescheduleBookingModal
           companyId={companyId!}
@@ -464,7 +223,6 @@ export default function CompanyBookingsPage() {
         />
       )}
 
-      {/* Complete Booking + Badge Modal */}
       {showCompleteModal && (
         <CompleteBookingModal
           companyId={companyId!}
@@ -474,6 +232,301 @@ export default function CompanyBookingsPage() {
           submitPerformance={submitPerformance}
         />
       )}
+    </div>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const { t } = useTranslation();
+  return (
+    <span
+      className={`text-xs px-2 py-1 rounded-full font-medium ${
+        status === 'cancelled'
+          ? 'bg-red-500/10 text-red-400'
+          : status === 'completed'
+          ? 'bg-green-500/10 text-green-400'
+          : status === 'pending_payment'
+          ? 'bg-yellow-500/10 text-yellow-400'
+          : 'bg-blue-500/10 text-blue-400'
+      }`}
+    >
+      {statusLabel(t, status)}
+    </span>
+  );
+}
+
+function SourcePill({ booking }: { booking: any }) {
+  const { t } = useTranslation();
+  const kind = bookingKind(booking);
+  const label = kind === 'external' || kind === 'manual' ? bookingSourceLabel(booking, t) : booking.source === 'external' ? bookingSourceLabel(booking, t) : t('company.bookings.unlocked_source');
+  return (
+    <span
+      className={`text-xs px-2 py-1 rounded-full font-medium ${
+        kind === 'external' || kind === 'manual' ? 'bg-sky-500/10 text-sky-300' : 'bg-brand-red/10 text-brand-red-light'
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** One day's bookings as cards (the "List" view). */
+function BookingList({ bookings, rooms, onOpen }: { bookings: any[] | undefined; rooms: any[]; onOpen: (b: any) => void }) {
+  const { t } = useTranslation();
+  if (!bookings) {
+    return <div className="text-center py-8 text-brand-text-secondary">{t('company.bookings.loading')}</div>;
+  }
+  if (bookings.length === 0) {
+    return (
+      <div className="text-center py-12 text-brand-text-secondary">
+        <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p>{t('company.bookings.no_bookings')}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {bookings.map((booking: any) => {
+        const room = rooms.find((r) => r._id === booking.roomId);
+        return (
+          <button
+            key={booking._id}
+            onClick={() => onOpen(booking)}
+            className="w-full text-left p-4 rounded-xl border bg-brand-bg border-white/5 hover:border-brand-red/30 transition-all"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-lg font-bold text-brand-red-light">{room ? slotRange(booking.time, room) : booking.time}</span>
+                <span className="font-semibold truncate">{booking.roomTitle}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <SourcePill booking={booking} />
+                <StatusPill status={booking.status} />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-brand-text-secondary">
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" /> {booking.playerName}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" /> {booking.players} {t('company.bookings.players_count')}
+              </span>
+              {booking.total > 0 && (
+                <span className="flex items-center gap-1">
+                  <DollarSign className="w-3.5 h-3.5" /> €{booking.total}
+                </span>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Booking details with notes and the complete / reschedule / cancel actions. */
+function BookingDetailModal({
+  companyId,
+  initial,
+  rooms,
+  onClose,
+  onComplete,
+  onReschedule,
+  onCancel,
+}: {
+  companyId: string;
+  initial: any;
+  rooms: any[];
+  onClose: () => void;
+  onComplete: (b: any) => void;
+  onReschedule: (b: any) => void;
+  onCancel: (b: any) => void;
+}) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const updateNotes = useCompanyMutation(api.companies.updateBookingNotes);
+  // Live copy, so a saved note or a status change shows straight away.
+  const fresh = useCompanyQuery(api.companies.getBookingDetail, { bookingId: initial._id as any });
+  const booking = { ...initial, ...(fresh || {}), playerName: fresh?.playerName || initial.playerName };
+  const room = rooms.find((r) => r._id === booking.roomId);
+
+  const [editing, setEditing] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const paymentLabel = (status?: string) => {
+    if (!status) return t('company.bookings.na');
+    const key = `cx.payment.${status}`;
+    const tr = t(key);
+    return tr === key ? status : tr;
+  };
+
+  const date = new Date(booking.date + 'T12:00:00');
+  const dateLabel = `${date.getDate()} ${t(`common.month_${date.getMonth() + 1}`)} ${date.getFullYear()}`;
+
+  // Opened from a link with only the id: wait for the booking to load.
+  if (!initial.date && !fresh) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4" onClick={onClose}>
+      <div
+        className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {booking.roomImage && (
+          <div className="h-24 overflow-hidden rounded-t-2xl">
+            <img src={booking.roomImage} alt="" className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-brand-text-secondary">{t('cx.bcal.details_title')}</p>
+              <h2 className="text-lg font-bold truncate">{booking.playerName}</h2>
+              <p className="text-sm text-brand-text-secondary">
+                {booking.roomTitle} · {dateLabel} · {room ? slotRange(booking.time, room) : booking.time}
+              </p>
+            </div>
+            <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg shrink-0" aria-label={t('cx.common.close')}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <SourcePill booking={booking} />
+            <StatusPill status={booking.status} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-brand-text-secondary">{t('company.bookings.booking_code')}</span>
+              <p className="font-mono font-semibold">{booking.bookingCode}</p>
+            </div>
+            <div>
+              <span className="text-brand-text-secondary">{t('company.bookings.payment')}</span>
+              <p className="font-semibold">{paymentLabel(booking.paymentStatus)}</p>
+            </div>
+            <div>
+              <span className="text-brand-text-secondary">{t('company.bookings.players')}</span>
+              <p className="font-semibold">{booking.players || 0}</p>
+            </div>
+            <div>
+              <span className="text-brand-text-secondary">{t('company.bookings.total_eur')}</span>
+              <p className="font-semibold">€{booking.total || 0}</p>
+            </div>
+          </div>
+
+          {(booking.playerPhone || booking.playerContact) && (
+            <div className="flex flex-wrap gap-2">
+              {booking.playerPhone && (
+                <a
+                  href={`tel:${booking.playerPhone}`}
+                  className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10"
+                >
+                  <Phone className="w-3.5 h-3.5" /> {booking.playerPhone}
+                </a>
+              )}
+              {booking.playerContact && String(booking.playerContact).includes('@') && (
+                <a
+                  href={`mailto:${booking.playerContact}`}
+                  className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 max-w-full truncate"
+                >
+                  <Mail className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{booking.playerContact}</span>
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Internal note */}
+          <div className="text-sm">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare className="w-3.5 h-3.5 text-brand-text-secondary" />
+              <span className="text-brand-text-secondary">{t('company.bookings.internal_note')}</span>
+              {!editing && (
+                <button
+                  onClick={() => {
+                    setEditing(true);
+                    setNoteText(booking.notes || '');
+                  }}
+                  className="ml-auto p-1.5 -m-1.5 text-brand-text-muted hover:text-white transition-colors"
+                  aria-label={t('cx.bookings.edit_note')}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {editing ? (
+              <div className="flex gap-2">
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={2}
+                  className="flex-1 bg-brand-bg border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-brand-text-secondary/50 focus:border-brand-red focus:outline-hidden resize-none"
+                  placeholder={t('company.bookings.note_placeholder')}
+                  autoFocus
+                />
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={async () => {
+                      setSavingNote(true);
+                      try {
+                        await updateNotes({ companyId: companyId as any, bookingId: booking._id as any, notes: noteText });
+                        setEditing(false);
+                        toast({ kind: 'success', message: t('cx.bookings.note_saved') });
+                      } catch (err) {
+                        toast({ kind: 'error', message: friendlyError(err, t) });
+                      }
+                      setSavingNote(false);
+                    }}
+                    disabled={savingNote}
+                    className="p-2 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+                    aria-label={t('cx.slots.extra_save')}
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="p-2 rounded-lg bg-white/5 text-brand-text-secondary hover:bg-white/10 transition-colors"
+                    aria-label={t('cx.common.cancel')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className={booking.notes ? 'text-white' : 'text-brand-text-muted italic'}>
+                {booking.notes || t('company.bookings.no_note')}
+              </p>
+            )}
+          </div>
+
+          {booking.status === 'upcoming' && (
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <button
+                onClick={() => onComplete(booking)}
+                className="text-sm px-3 py-2.5 rounded-xl bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+              >
+                {t('company.bookings.complete')}
+              </button>
+              <button
+                onClick={() => onReschedule(booking)}
+                className="text-sm px-3 py-2.5 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <CalendarClock className="w-3.5 h-3.5 shrink-0" />
+                {t('company.bookings.reschedule')}
+              </button>
+              <button
+                onClick={() => onCancel(booking)}
+                className="text-sm px-3 py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+              >
+                {t('company.bookings.cancel')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -851,31 +904,48 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+/** Price for a group: the slot's (or room's) group price when set, else per person. */
+function suggestTotal(prefill: SlotPrefill, room: any, players: number) {
+  const groups = prefill.pricePerGroup || room?.pricePerGroup;
+  const match = Array.isArray(groups) ? groups.find((g: any) => g.players === players) : null;
+  if (match) return match.price;
+  const each = prefill.price ?? room?.price ?? 0;
+  return Math.round(each * players * 100) / 100;
+}
+
 function CreateBookingModal({
   companyId,
   rooms,
-  date,
+  prefill,
   onClose,
+  onBlockInstead,
 }: {
   companyId: string;
   rooms: any[];
-  date: string;
+  prefill: SlotPrefill;
   onClose: () => void;
+  onBlockInstead: () => void;
 }) {
-  const createBooking = useMutation(api.companies.createAdminBooking);
+  const createBooking = useCompanyMutation(api.companies.createAdminBooking);
   const { t } = useTranslation();
+  const date = prefill.date;
+  const prefRoom = rooms.find((r) => r._id === prefill.roomId);
   const [form, setForm] = useState({
-    roomId: rooms[0]?._id || '',
-    time: '',
+    roomId: prefill.roomId || rooms[0]?._id || '',
+    time: prefill.time,
     players: 2,
     playerName: '',
     playerContact: '',
     playerPhone: '',
     notes: '',
-    total: 0,
+    total: prefill.time ? suggestTotal(prefill, prefRoom, 2) : 0,
   });
+  const [totalTouched, setTotalTouched] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const fromSlot = !!(prefill.roomId && prefill.time);
+  const dt = new Date(date + 'T12:00:00');
+  const dateLabel = `${dt.getDate()} ${t(`common.month_${dt.getMonth() + 1}`)} ${dt.getFullYear()}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -908,9 +978,12 @@ function CreateBookingModal({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold">{t('company.bookings.new_booking')}</h2>
-            <p className="text-xs text-brand-text-secondary">{date}</p>
+            <p className="text-xs text-brand-text-secondary">
+              {dateLabel}
+              {fromSlot && prefRoom ? ` · ${prefRoom.title} · ${slotRange(prefill.time, prefRoom)}` : ''}
+            </p>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg">
+          <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg" aria-label={t('cx.common.close')}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -926,7 +999,14 @@ function CreateBookingModal({
             <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.bookings.room')}</label>
             <select
               value={form.roomId}
-              onChange={(e) => setForm({ ...form, roomId: e.target.value })}
+              onChange={(e) => {
+                const room = rooms.find((r) => r._id === e.target.value);
+                setForm({
+                  ...form,
+                  roomId: e.target.value,
+                  total: totalTouched ? form.total : suggestTotal({ ...prefill, price: undefined, pricePerGroup: undefined }, room, form.players),
+                });
+              }}
               className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
               required
             >
@@ -955,7 +1035,12 @@ function CreateBookingModal({
                 type="number"
                 min="1"
                 value={form.players}
-                onChange={(e) => setForm({ ...form, players: parseInt(e.target.value) || 1 })}
+                onChange={(e) => {
+                  const players = parseInt(e.target.value) || 1;
+                  const room = rooms.find((r) => r._id === form.roomId);
+                  const pf = form.roomId === prefill.roomId ? prefill : { ...prefill, price: undefined, pricePerGroup: undefined };
+                  setForm({ ...form, players, total: totalTouched ? form.total : suggestTotal(pf, room, players) });
+                }}
                 className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 required
               />
@@ -967,7 +1052,10 @@ function CreateBookingModal({
                 min="0"
                 step="0.01"
                 value={form.total}
-                onChange={(e) => setForm({ ...form, total: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => {
+                  setTotalTouched(true);
+                  setForm({ ...form, total: parseFloat(e.target.value) || 0 });
+                }}
                 className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
                 required
               />
@@ -1032,6 +1120,13 @@ function CreateBookingModal({
               t('company.bookings.create_booking')
             )}
           </button>
+          <button
+            type="button"
+            onClick={onBlockInstead}
+            className="w-full text-sm text-brand-text-secondary hover:text-white flex items-center justify-center gap-1.5 py-1"
+          >
+            <Ban className="w-3.5 h-3.5" /> {t('cx.bcal.block_instead')}
+          </button>
         </form>
       </div>
     </div>
@@ -1041,20 +1136,23 @@ function CreateBookingModal({
 function ExternalBlockModal({
   companyId,
   rooms,
-  date,
+  prefill,
   onClose,
 }: {
   companyId: string;
   rooms: any[];
-  date: string;
+  prefill: SlotPrefill;
   onClose: () => void;
 }) {
-  const createBlock = useMutation(api.companies.createExternalBlock);
+  const createBlock = useCompanyMutation(api.companies.createExternalBlock);
   const { t } = useTranslation();
+  const date = prefill.date;
+  const dt = new Date(date + 'T12:00:00');
+  const dateLabel = `${dt.getDate()} ${t(`common.month_${dt.getMonth() + 1}`)} ${dt.getFullYear()}`;
   const [form, setForm] = useState({
-    roomId: rooms[0]?._id || '',
-    time: '',
-    externalSource: 'escapeall',
+    roomId: prefill.roomId || rooms[0]?._id || '',
+    time: prefill.time,
+    externalSource: 'phone',
     playerName: '',
     players: 0,
     notes: '',
@@ -1124,7 +1222,7 @@ function ExternalBlockModal({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold">{t('company.bookings.block_external')}</h2>
-            <p className="text-xs text-brand-text-secondary">{date}</p>
+            <p className="text-xs text-brand-text-secondary">{dateLabel}</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg">
             <X className="w-5 h-5" />
@@ -1205,7 +1303,6 @@ function ExternalBlockModal({
               onChange={(e) => setForm({ ...form, externalSource: e.target.value })}
               className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-red focus:outline-hidden"
             >
-              <option value="escapeall">{t('company.bookings.source_escapeall')}</option>
               <option value="phone">{t('company.bookings.source_phone')}</option>
               <option value="walkin">{t('company.bookings.source_walkin')}</option>
               <option value="private_event">{t('company.bookings.source_private')}</option>

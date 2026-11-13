@@ -6,13 +6,20 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
+  useRef,
   ReactNode,
 } from 'react';
-import { useMutation, useQuery } from 'convex/react';
+import { useAction, useMutation, useQueries } from 'convex/react';
+import { getFunctionName } from 'convex/server';
+import type { FunctionArgs, FunctionReference, FunctionReturnType } from 'convex/server';
 import { api } from '../../convex/_generated/api';
+import { cleanError } from './errors';
 
 export interface CompanyUser {
   id: string;
+  /** Server session (see convex/companySession.ts). Sent on every company call. */
+  sessionToken: string;
   name: string;
   email: string;
   onboardingStatus: string;
@@ -76,19 +83,37 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const loginMutation = useMutation(api.companies.loginCompany);
+  const resumeMutation = useMutation(api.companies.resumeSession);
+  const logoutMutation = useMutation(api.companies.logoutCompany);
+
+  const clearSession = useCallback(() => {
+    setCompany(null);
+    localStorage.removeItem(SESSION_KEY);
+    writeSharedSession(null);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem(SESSION_KEY) || readSharedSession();
     if (stored) {
       try {
-        setCompany(JSON.parse(stored));
+        const parsed = JSON.parse(stored) as CompanyUser;
+        if (!parsed.sessionToken) throw new Error('pre-session login'); // log in again
+        setCompany(parsed);
         localStorage.setItem(SESSION_KEY, stored);
+        // Check the token is still live (and slide its expiry) in the background.
+        resumeMutation({ sessionToken: parsed.sessionToken })
+          .then((r) => {
+            if (!r) clearSession();
+          })
+          .catch(() => {
+            /* offline etc.: keep the stored session, calls will re-check */
+          });
       } catch {
-        localStorage.removeItem(SESSION_KEY);
-        writeSharedSession(null);
+        clearSession();
       }
     }
     setIsLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const persistCompany = useCallback((c: CompanyUser) => {
@@ -100,9 +125,10 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const result = await loginMutation({ email, password });
+      const result = await loginMutation({ email, password, client: 'web' });
       const companyUser: CompanyUser = {
         id: result._id as string,
+        sessionToken: result.sessionToken,
         name: result.name,
         email: email.toLowerCase(),
         onboardingStatus: result.onboardingStatus || 'approved',
@@ -118,10 +144,10 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    setCompany(null);
-    localStorage.removeItem(SESSION_KEY);
-    writeSharedSession(null);
-  }, []);
+    const token = company?.sessionToken;
+    if (token) logoutMutation({ sessionToken: token }).catch(() => {});
+    clearSession();
+  }, [company?.sessionToken, logoutMutation, clearSession]);
 
   const refreshCompany = useCallback(
     (data: Partial<CompanyUser>) => {
@@ -151,6 +177,78 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
 
 export function useCompanyAuth() {
   return useContext(CompanyAuthContext);
+}
+
+// ── Session-aware Convex hooks ──
+// Use these instead of useQuery/useMutation/useAction for company-scoped
+// functions: they add the session token, and an expired session logs out
+// (the shells then redirect to the login page) instead of crashing the page.
+
+/** Must match SESSION_EXPIRED in convex/companySession.ts. */
+const SESSION_EXPIRED = 'Your session has expired. Please log in again.';
+
+export function isSessionExpired(err: unknown): boolean {
+  return cleanError(err) === SESSION_EXPIRED;
+}
+
+type WithoutToken<F extends FunctionReference<any>> = Omit<FunctionArgs<F>, 'sessionToken'>;
+
+export function useCompanyQuery<Q extends FunctionReference<'query'>>(
+  query: Q,
+  args: WithoutToken<Q> | 'skip'
+): FunctionReturnType<Q> | undefined {
+  const { company, logout } = useCompanyAuth();
+  const token = company?.sessionToken;
+  const argsKey = args === 'skip' ? 'skip' : JSON.stringify(args);
+  // `api.x.y` is a new Proxy on every render; its name is stable. Keying the
+  // memo on `query` itself re-subscribed every render (React error #301).
+  const queryName = getFunctionName(query);
+  const queries = useMemo(
+    (): Record<string, { query: Q; args: FunctionArgs<Q> }> =>
+      args === 'skip' || !token
+        ? {}
+        : { q: { query, args: { ...(args as object), sessionToken: token } as FunctionArgs<Q> } },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [queryName, argsKey, token]
+  );
+  const result = useQueries(queries).q;
+  const expired = result instanceof Error && isSessionExpired(result);
+  const logoutRef = useRef(logout);
+  logoutRef.current = logout;
+  useEffect(() => {
+    if (expired) logoutRef.current();
+  }, [expired]);
+  if (result instanceof Error) {
+    if (expired) return undefined;
+    throw result;
+  }
+  return result as FunctionReturnType<Q> | undefined;
+}
+
+function useWithToken<F extends FunctionReference<'mutation' | 'action'>>(
+  call: (args: FunctionArgs<F>) => Promise<FunctionReturnType<F>>
+) {
+  const { company, logout } = useCompanyAuth();
+  const token = company?.sessionToken;
+  return useCallback(
+    async (args: WithoutToken<F>): Promise<FunctionReturnType<F>> => {
+      try {
+        return await call({ ...(args as object), sessionToken: token } as FunctionArgs<F>);
+      } catch (err) {
+        if (isSessionExpired(err)) logout();
+        throw err;
+      }
+    },
+    [call, token, logout]
+  );
+}
+
+export function useCompanyMutation<M extends FunctionReference<'mutation'>>(mutation: M) {
+  return useWithToken<M>(useMutation(mutation) as any);
+}
+
+export function useCompanyAction<A extends FunctionReference<'action'>>(action: A) {
+  return useWithToken<A>(useAction(action) as any);
 }
 
 // Returns a function that maps company paths for the current domain.

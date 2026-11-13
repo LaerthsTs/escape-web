@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth } from '@/lib/companyAuth';
 import { api } from '../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/i18n';
 import { friendlyError } from '@/lib/errors';
@@ -27,17 +26,17 @@ export default function PhotosRoomsDashboard() {
   const router = useRouter();
   const companyId = company?.id;
 
-  const rooms = useQuery(
+  const rooms = useCompanyQuery(
     api.companies.getRooms,
     companyId ? { companyId: companyId as any } : 'skip'
   );
-  const stats = useQuery(
+  const stats = useCompanyQuery(
     api.standalonePhotos.getStats,
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const createRoom = useMutation(api.standalonePhotos.createSimpleRoom);
-  const deleteRoom = useMutation(api.standalonePhotos.deleteSimpleRoom);
+  const createRoom = useCompanyMutation(api.standalonePhotos.createSimpleRoom);
+  const deleteRoom = useCompanyMutation(api.standalonePhotos.deleteSimpleRoom);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');

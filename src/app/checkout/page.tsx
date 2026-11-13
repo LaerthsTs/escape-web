@@ -7,71 +7,87 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
+import { cleanError } from '@/lib/errors';
 import {
   CreditCard,
   Shield,
   Lock,
   ArrowLeft,
   DoorOpen,
-  CheckCircle,
   Tag,
   AlertTriangle,
+  FileText,
 } from 'lucide-react';
+
+type Terms = 'full' | 'deposit_20' | 'pay_on_arrival';
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
 
   const roomId = searchParams.get('roomId') || '';
   const date = searchParams.get('date') || '';
   const time = searchParams.get('time') || '';
   const players = parseInt(searchParams.get('players') || '2');
-  const total = parseFloat(searchParams.get('total') || '0');
+  const urlTotal = parseFloat(searchParams.get('total') || '0');
 
   const room = useQuery(api.rooms.getById, roomId ? { id: roomId as any } : 'skip');
+  // Price, deposit % and booking fee come from the server. Online options only
+  // appear when the escape room has connected its own Stripe or Viva account.
+  const options = useQuery(
+    api.companyPaymentsData.getCheckoutOptions,
+    roomId ? { roomId: roomId as any, players } : 'skip'
+  );
   const createBooking = useMutation(api.bookings.create);
-  const createBookingCheckout = useAction(api.stripe.createBookingCheckout);
+  const startCheckout = useAction(api.companyPayments.startCheckout);
 
-  const [paymentTerms, setPaymentTerms] = useState<'full' | 'deposit_20' | 'pay_on_arrival'>('pay_on_arrival');
+  const [paymentTerms, setPaymentTerms] = useState<Terms>('pay_on_arrival');
   const [promoCode, setPromoCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // TEST MODE: force pay_on_arrival to disable Stripe payments
-  const isTestMode = true;
+  const companyTerms = (room?.termsOfUse || '').trim();
+  const mustAcceptTerms = companyTerms.length > 0;
 
-  const serviceFee = paymentTerms === 'pay_on_arrival' ? 0 : 3.99;
-  const deposit = paymentTerms === 'deposit_20' ? Math.round(total * 0.2 * 100) / 100 : 0;
-  const payNow =
-    paymentTerms === 'full'
-      ? total + serviceFee
-      : paymentTerms === 'deposit_20'
-      ? deposit + serviceFee
-      : 0;
+  const total = options?.total ?? urlTotal;
+  const bookingFee = options?.bookingFee ?? 0;
+  const depositPercent = options?.depositPercent ?? 20;
+  const depositAmount = options?.depositAmount ?? 0;
+  const availableTerms: Terms[] = (options?.terms as Terms[] | undefined) ?? ['pay_on_arrival'];
+  const feeNow = paymentTerms === 'pay_on_arrival' ? 0 : bookingFee;
+  const partNow = paymentTerms === 'full' ? total : paymentTerms === 'deposit_20' ? depositAmount : 0;
+  const payNow = partNow + feeNow;
+  const remaining = Math.max(0, Math.round((total - partNow) * 100) / 100);
 
+  // Wait for the saved session to load: a full page load (e.g. coming back
+  // from the payment page) would otherwise bounce a signed-in player to /login.
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router]);
+
+  // Select the first option the room offers (online options come first)
+  useEffect(() => {
+    if (availableTerms.length && !availableTerms.includes(paymentTerms)) {
+      setPaymentTerms(availableTerms[0]);
+    }
+  }, [availableTerms.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
     if (!user || !roomId || !date || !time) return;
+    if (mustAcceptTerms && !termsAccepted) {
+      setError(t('checkout.terms_required'));
+      return;
+    }
     setIsLoading(true);
     setError('');
 
-    // TEST MODE: block any Stripe payments
-    if (isTestMode && paymentTerms !== 'pay_on_arrival') {
-      setError(t('room.test_mode_error'));
-      setIsLoading(false);
-      return;
-    }
-
     try {
       if (paymentTerms === 'pay_on_arrival') {
-        // No Stripe needed — create booking directly
         const result = await createBooking({
           userId: user.id as any,
           roomId: roomId as any,
@@ -93,40 +109,30 @@ function CheckoutContent() {
         });
         router.push(`/booking/confirmation?${params.toString()}`);
       } else {
-        // Stripe checkout for full or deposit_20
+        // Pay online into the escape room's own Stripe / Viva account
         const baseUrl = window.location.origin;
-        const confirmParams = new URLSearchParams({
-          roomId,
-          date,
-          time,
-          players: String(players),
-          total: String(total),
-        });
-        const successUrl = `${baseUrl}/booking/confirmation?${confirmParams.toString()}&session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = `${baseUrl}/checkout?${new URLSearchParams({ roomId, date, time, players: String(players), total: String(total) }).toString()}`;
-
-        const { url } = await createBookingCheckout({
+        const back = new URLSearchParams({ roomId, date, time, players: String(players), total: String(total) });
+        const { url } = await startCheckout({
           userId: user.id as any,
           roomId: roomId as any,
           date,
           time,
           players,
-          total,
           paymentTerms,
-          successUrl,
-          cancelUrl,
+          // The server fills in {BOOKING_ID}; Stripe fills in {CHECKOUT_SESSION_ID}
+          successUrl: `${baseUrl}/booking/confirmation?booking={BOOKING_ID}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${baseUrl}/checkout?${back.toString()}`,
         });
-
-        // Redirect to Stripe Checkout
         window.location.href = url;
       }
-    } catch (err: any) {
-      setError(err?.message || t('checkout.error'));
+    } catch (err) {
+      const msg = cleanError(err);
+      setError(msg && !/Server Error|Called by client|Request ID/i.test(msg) ? msg : t('checkout.error'));
       setIsLoading(false);
     }
   };
 
-  if (!room) {
+  if (!room || options === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-brand-red/30 border-t-brand-red rounded-full animate-spin" />
@@ -134,25 +140,10 @@ function CheckoutContent() {
     );
   }
 
-  // Determine available payment terms from room
-  const roomPaymentTerms = room.paymentTerms;
-  const availableTerms = Array.isArray(roomPaymentTerms)
-    ? roomPaymentTerms
-    : roomPaymentTerms
-    ? [roomPaymentTerms]
-    : ['full', 'deposit_20', 'pay_on_arrival'];
-
-  // Auto-select first available term if default isn't available
-  useEffect(() => {
-    // TEST MODE: always force pay_on_arrival
-    if (isTestMode) {
-      setPaymentTerms('pay_on_arrival');
-      return;
-    }
-    if (availableTerms.length && !availableTerms.includes(paymentTerms)) {
-      setPaymentTerms(availableTerms[0] as any);
-    }
-  }, [availableTerms.join(','), isTestMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  const optionClass = (term: Terms) =>
+    `flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+      paymentTerms === term ? 'border-brand-red bg-brand-red/5' : 'border-brand-border hover:border-brand-red/30'
+    }`;
 
   return (
     <section className="pt-28 pb-20">
@@ -216,21 +207,10 @@ function CheckoutContent() {
               </div>
             </div>
 
-            {/* Test Mode Banner */}
-            {isTestMode && (
-              <div className="card p-5 border-yellow-500/30 bg-yellow-500/5 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-yellow-400 text-sm">{t('room.test_mode_title')}</h3>
-                    <p className="text-xs text-yellow-300/70 mt-0.5">{t('room.test_mode_desc')}</p>
-                  </div>
-                </div>
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                  <p className="text-xs text-red-300">{t('room.test_popup_disclaimer')}</p>
-                </div>
+            {options?.testMode && (
+              <div className="card p-4 border-yellow-500/30 bg-yellow-500/5 flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0" />
+                <p className="text-sm text-yellow-300">{t('checkout.test_payments')}</p>
               </div>
             )}
 
@@ -241,14 +221,8 @@ function CheckoutContent() {
                 {t('checkout.payment_option')}
               </h3>
               <div className="space-y-3">
-                {!isTestMode && (availableTerms as string[]).includes('full') && (
-                  <label
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                      paymentTerms === 'full'
-                        ? 'border-brand-red bg-brand-red/5'
-                        : 'border-brand-border hover:border-brand-red/30'
-                    }`}
-                  >
+                {availableTerms.includes('full') && (
+                  <label className={optionClass('full')}>
                     <input
                       type="radio"
                       name="paymentTerms"
@@ -260,17 +234,11 @@ function CheckoutContent() {
                       <div className="font-medium">{t('checkout.pay_full')}</div>
                       <div className="text-xs text-brand-text-muted">{t('checkout.pay_full_desc')}</div>
                     </div>
-                    <span className="font-bold">€{(total + 3.99).toFixed(2)}</span>
+                    <span className="font-bold">€{(total + bookingFee).toFixed(2)}</span>
                   </label>
                 )}
-                {!isTestMode && (availableTerms as string[]).includes('deposit_20') && (
-                  <label
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                      paymentTerms === 'deposit_20'
-                        ? 'border-brand-red bg-brand-red/5'
-                        : 'border-brand-border hover:border-brand-red/30'
-                    }`}
-                  >
+                {availableTerms.includes('deposit_20') && (
+                  <label className={optionClass('deposit_20')}>
                     <input
                       type="radio"
                       name="paymentTerms"
@@ -279,20 +247,14 @@ function CheckoutContent() {
                       className="accent-brand-red"
                     />
                     <div className="flex-1">
-                      <div className="font-medium">{t('checkout.pay_deposit')}</div>
+                      <div className="font-medium">{t('checkout.pay_deposit', { percent: String(depositPercent) })}</div>
                       <div className="text-xs text-brand-text-muted">{t('checkout.pay_deposit_desc')}</div>
                     </div>
-                    <span className="font-bold">€{(Math.round(total * 0.2 * 100) / 100 + 3.99).toFixed(2)}</span>
+                    <span className="font-bold">€{(depositAmount + bookingFee).toFixed(2)}</span>
                   </label>
                 )}
-                {(availableTerms as string[]).includes('pay_on_arrival') && (
-                  <label
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                      paymentTerms === 'pay_on_arrival'
-                        ? 'border-brand-red bg-brand-red/5'
-                        : 'border-brand-border hover:border-brand-red/30'
-                    }`}
-                  >
+                {availableTerms.includes('pay_on_arrival') && (
+                  <label className={optionClass('pay_on_arrival')}>
                     <input
                       type="radio"
                       name="paymentTerms"
@@ -309,6 +271,39 @@ function CheckoutContent() {
                 )}
               </div>
             </div>
+
+            {/* The escape room's own terms & conditions */}
+            {mustAcceptTerms && (
+              <div className="card p-6">
+                <h3 className="font-semibold mb-1 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-brand-red-light" />
+                  {t('checkout.terms_title')}
+                </h3>
+                {room.companyName && (
+                  <p className="text-xs text-brand-text-muted mb-4">
+                    {t('checkout.terms_from', { company: room.companyName })}
+                  </p>
+                )}
+                <div
+                  tabIndex={0}
+                  className="max-h-56 overflow-y-auto rounded-xl border border-brand-border bg-black/30 p-4 text-sm text-brand-text-secondary whitespace-pre-line wrap-break-word leading-relaxed"
+                >
+                  {companyTerms}
+                </div>
+                <label className="flex items-start gap-3 mt-4 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => {
+                      setTermsAccepted(e.target.checked);
+                      if (e.target.checked) setError('');
+                    }}
+                    className="accent-brand-red mt-0.5 w-4 h-4 shrink-0"
+                  />
+                  <span>{t('checkout.terms_accept')}</span>
+                </label>
+              </div>
+            )}
 
             {/* Promo Code */}
             <div className="card p-6">
@@ -341,16 +336,16 @@ function CheckoutContent() {
                   </span>
                   <span>€{total.toFixed(2)}</span>
                 </div>
-                {serviceFee > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-brand-text-muted">{t('checkout.service_fee')}</span>
-                    <span>€{serviceFee.toFixed(2)}</span>
-                  </div>
-                )}
                 {paymentTerms === 'deposit_20' && (
                   <div className="flex justify-between text-brand-text-muted">
-                    <span>{t('checkout.deposit_label')}</span>
-                    <span>€{deposit.toFixed(2)}</span>
+                    <span>{t('checkout.deposit_label', { percent: String(depositPercent) })}</span>
+                    <span>€{depositAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {feeNow > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-brand-text-muted">{t('checkout.booking_fee')}</span>
+                    <span>€{feeNow.toFixed(2)}</span>
                   </div>
                 )}
               </div>
@@ -365,7 +360,7 @@ function CheckoutContent() {
                 {paymentTerms !== 'full' && (
                   <div className="flex justify-between text-xs text-brand-text-muted">
                     <span>{t('checkout.remaining')}</span>
-                    <span>€{(total + serviceFee - payNow).toFixed(2)} {t('checkout.on_arrival')}</span>
+                    <span>€{remaining.toFixed(2)} {t('checkout.on_arrival')}</span>
                   </div>
                 )}
               </div>
@@ -386,14 +381,16 @@ function CheckoutContent() {
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
-                    {t('checkout.confirm_pay')}
+                    {paymentTerms === 'pay_on_arrival' ? t('checkout.confirm_booking') : t('checkout.confirm_pay')}
                   </>
                 )}
               </button>
 
-              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-brand-text-muted">
-                <Shield className="w-3.5 h-3.5" />
-                {t('checkout.secure_payment')}
+              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-brand-text-muted text-center">
+                <Shield className="w-3.5 h-3.5 shrink-0" />
+                {paymentTerms !== 'pay_on_arrival' && options?.provider
+                  ? t('checkout.secure_payment_via', { provider: options.provider === 'viva' ? 'Viva' : 'Stripe' })
+                  : t('checkout.secure_payment')}
               </div>
             </div>
           </div>

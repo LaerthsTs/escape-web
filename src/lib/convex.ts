@@ -80,7 +80,7 @@ export interface Company {
   description: string;
   verified: boolean;
   onboardingStatus?: 'pending_terms' | 'pending_plan' | 'pending_review' | 'approved' | 'declined';
-  platformPlan?: 'starter' | 'pro' | 'enterprise';
+  platformPlan?: 'unlimited' | 'payg' | 'free' | 'starter' | 'pro' | 'enterprise';
 }
 
 export interface Booking {

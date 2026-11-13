@@ -1,9 +1,8 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from 'convex/react';
+import { useCompanyQuery, useCompanyAuth } from '@/lib/companyAuth';
 import { api } from '../../../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
 import { Loader2 } from 'lucide-react';
 import PhotosTool from '@/components/photos/PhotosTool';
 import { useTranslation } from '@/lib/i18n';
@@ -16,7 +15,7 @@ export default function RoomPhotosPage() {
   const roomId = params.id as string;
   const companyId = company?.id;
 
-  const rooms = useQuery(
+  const rooms = useCompanyQuery(
     api.companies.getRooms,
     companyId ? { companyId: companyId as any } : 'skip'
   );

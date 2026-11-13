@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useConvex, useQuery } from 'convex/react';
+import { useConvex } from 'convex/react';
+import { useCompanyQuery, useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath, uiLocale, localDateKey } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { friendlyError } from '@/lib/errors';
 import { useToast } from '@/components/company/Toast';
@@ -92,8 +92,8 @@ function SlotsBoard() {
     if (v) setViewState(v);
   }, [searchParams, today]);
 
-  const rooms = useQuery(api.companies.getRooms, companyId ? { companyId: companyId as any } : 'skip');
-  const bookings = useQuery(
+  const rooms = useCompanyQuery(api.companies.getRooms, companyId ? { companyId: companyId as any } : 'skip');
+  const bookings = useCompanyQuery(
     api.companies.getBookingsByDate,
     companyId ? { companyId: companyId as any, date } : 'skip'
   );

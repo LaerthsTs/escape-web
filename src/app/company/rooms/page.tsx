@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import Link from 'next/link';
 import {
   Plus,
@@ -43,18 +42,18 @@ export default function CompanyRoomsPage() {
     setCreatedId(new URLSearchParams(window.location.search).get('created'));
   }, []);
 
-  const rooms = useQuery(
+  const rooms = useCompanyQuery(
     api.companies.getRooms,
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const stats = useQuery(
+  const stats = useCompanyQuery(
     api.companies.getDashboardStats,
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const updateRoom = useMutation(api.companies.updateRoom);
-  const deleteRoom = useMutation(api.companies.deleteRoom);
+  const updateRoom = useCompanyMutation(api.companies.updateRoom);
+  const deleteRoom = useCompanyMutation(api.companies.deleteRoom);
 
   const plan = (stats as any)?.plan || company?.platformPlan || 'starter';
   const roomLimit = roomLimitFor(plan, (stats as any)?.roomLimit);

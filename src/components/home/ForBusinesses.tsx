@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, BarChart2, Calendar, QrCode, ArrowRight, Globe } from 'lucide-react';
+import { Building2, BarChart2, Calendar, Ticket, ArrowRight, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
@@ -15,7 +15,7 @@ export function ForBusinesses() {
       desc: t('business.feature1.desc'),
     },
     {
-      icon: QrCode,
+      icon: Ticket,
       title: t('business.feature2.title'),
       desc: t('business.feature2.desc'),
     },
