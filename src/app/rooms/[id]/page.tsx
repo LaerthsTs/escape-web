@@ -98,35 +98,47 @@ export default function RoomDetailsPage() {
     <>
       {/* Test Room Popup */}
       {showTestPopup && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-brand-card border border-yellow-500/30 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-yellow-400" />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="test-room-title"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4"
+        >
+          <div className="panel relative border-brand-gold/40! p-6 md:p-8 max-w-md w-full shadow-[0_0_60px_-10px_rgba(201,154,46,0.35),0_30px_80px_rgba(0,0,0,0.8)] animate-scale-in">
+            {/* Hazard stripe along the top edge */}
+            <div
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-1.5 rounded-t-lg opacity-80 bg-[repeating-linear-gradient(-45deg,#c99a2e_0_10px,#110909_10px_20px)]"
+            />
+            <div className="flex items-start justify-between mb-4 mt-1">
+              <div className="w-12 h-12 rounded-md border border-brand-gold/40 bg-brand-gold/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-brand-gold" />
               </div>
               <button
                 onClick={() => setShowTestPopup(false)}
-                className="p-1.5 rounded-lg hover:bg-brand-surface transition-colors text-brand-text-muted hover:text-white"
+                aria-label="Close"
+                className="p-1.5 rounded-md hover:bg-brand-surface transition-colors text-brand-text-muted hover:text-brand-bone"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <h2 className="text-xl font-display font-bold mb-2 text-yellow-400">{t('room.test_popup_title')}</h2>
+            <h2 id="test-room-title" className="text-2xl font-display font-bold mb-2 text-brand-gold">{t('room.test_popup_title')}</h2>
             <p className="text-brand-text-secondary text-sm leading-relaxed mb-4" dangerouslySetInnerHTML={{ __html: t('room.test_popup_desc') }} />
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-3">
-              <p className="text-xs text-yellow-300 flex items-center gap-2">
+            <div className="bg-brand-gold/10 border border-brand-gold/25 rounded-md p-3 mb-3">
+              <p className="text-xs leading-relaxed text-brand-gold flex items-center gap-2">
                 <Shield className="w-4 h-4 shrink-0" />
                 {t('room.test_popup_notice')}
               </p>
             </div>
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-6">
-              <p className="text-xs text-red-300">
+            <div className="bg-brand-red/10 border border-brand-red/30 rounded-md p-3 mb-6">
+              <p className="text-xs leading-relaxed text-brand-text">
                 {t('room.test_popup_disclaimer')}
               </p>
             </div>
             <button
               onClick={() => setShowTestPopup(false)}
-              className="w-full py-3 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 font-semibold rounded-xl border border-yellow-500/30 transition-colors"
+              autoFocus
+              className="w-full py-3 rounded-md border border-brand-gold/50 bg-brand-gold/15 font-semibold tracking-wide text-brand-gold hover:bg-brand-gold hover:text-black transition-colors"
             >
               {t('room.test_popup_button')}
             </button>
@@ -204,7 +216,7 @@ export default function RoomDetailsPage() {
             </div>
           )}
 
-          <div className="card p-6 md:p-10 hover:border-brand-border! hover:shadow-[inset_0_0_40px_rgba(0,0,0,0.6)]!">
+          <div className="panel p-6 md:p-10">
             {/* Title & location */}
             <div className="mb-6">
               <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -357,13 +369,13 @@ export default function RoomDetailsPage() {
           </div>
 
           {/* ═══ Reviews Section ═══ */}
-          <div className="card p-6 md:p-8 mt-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="panel p-6 md:p-10 mt-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <h3 className="flex items-center gap-2 text-xl font-display font-bold text-brand-bone">
                 <MessageSquare className="w-5 h-5 text-brand-red-light" />
                 {t('reviews.title')}
                 {reviews && reviews.length > 0 && (
-                  <span className="text-sm font-normal text-brand-text-muted">
+                  <span className="font-sans text-sm font-normal text-brand-text-muted tabular-nums">
                     ({reviews.length})
                   </span>
                 )}
@@ -380,8 +392,8 @@ export default function RoomDetailsPage() {
 
             {/* Review Form */}
             {showReviewForm && canReviewData?.canReview && !reviewSuccess && (
-              <div className="mb-8 p-5 bg-brand-surface rounded-2xl border border-white/5">
-                <h4 className="font-semibold mb-4">{t('reviews.write_review')}</h4>
+              <div className="mb-8 p-5 bg-brand-dark rounded-md border border-brand-border">
+                <h4 className="font-display text-lg font-bold text-brand-bone mb-4">{t('reviews.write_review')}</h4>
 
                 {/* Star Rating */}
                 <div className="mb-4">
@@ -395,12 +407,14 @@ export default function RoomDetailsPage() {
                         onMouseEnter={() => setReviewHover(star)}
                         onMouseLeave={() => setReviewHover(0)}
                         onClick={() => setReviewRating(star)}
+                        aria-label={`${star}/5`}
+                        aria-pressed={reviewRating === star}
                         className="p-0.5 transition-transform hover:scale-110"
                       >
                         <Star
                           className={`w-8 h-8 transition-colors ${
                             star <= (reviewHover || reviewRating)
-                              ? 'text-brand-gold fill-brand-gold'
+                              ? 'text-brand-gold fill-brand-gold drop-shadow-[0_0_6px_rgba(201,154,46,0.6)]'
                               : 'text-brand-border'
                           }`}
                         />
@@ -416,7 +430,7 @@ export default function RoomDetailsPage() {
                     onChange={(e) => setReviewText(e.target.value)}
                     placeholder={t('reviews.your_review')}
                     rows={3}
-                    className="w-full bg-brand-bg border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-brand-text-muted focus:border-brand-red focus:outline-hidden resize-none"
+                    className="input-field resize-none"
                   />
                 </div>
 
@@ -456,9 +470,9 @@ export default function RoomDetailsPage() {
 
             {/* Success Message */}
             {reviewSuccess && (
-              <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
-                <span className="text-green-400 font-medium">{t('reviews.success')}</span>
+              <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/25 rounded-md flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span className="text-emerald-400 font-medium">{t('reviews.success')}</span>
               </div>
             )}
 
@@ -468,12 +482,13 @@ export default function RoomDetailsPage() {
                 <div className="w-6 h-6 border-2 border-brand-red/30 border-t-brand-red rounded-full animate-spin mx-auto" />
               </div>
             ) : reviews.length === 0 ? (
-              <p className="text-center text-brand-text-muted py-8">
-                {t('reviews.no_reviews')}
-              </p>
+              <div className="rounded-md border border-dashed border-brand-border py-10 px-4 text-center">
+                <MessageSquare className="w-8 h-8 text-brand-border mx-auto mb-3" />
+                <p className="text-brand-text-secondary">{t('reviews.no_reviews')}</p>
+              </div>
             ) : (
               <>
-                <div className="space-y-4">
+                <div className="divide-y divide-brand-border/70 border-y border-brand-border/70">
                   {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review: any) => {
                     const timeAgo = (() => {
                       const diff = Date.now() - review.createdAt;
@@ -489,36 +504,36 @@ export default function RoomDetailsPage() {
                     return (
                       <div
                         key={review._id}
-                        className="p-4 bg-brand-surface rounded-xl border border-white/5"
+                        className="py-5"
                       >
                         <div className="flex items-center gap-3 mb-2">
                           {review.user.avatar ? (
                             <img
                               src={review.user.avatar}
                               alt=""
-                              className="w-9 h-9 rounded-full object-cover"
+                              className="w-10 h-10 rounded-full object-cover border border-brand-border"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-brand-red/20 flex items-center justify-center text-sm font-bold text-brand-red-light">
+                            <div className="w-10 h-10 rounded-full border border-brand-red/40 bg-brand-red/15 flex items-center justify-center font-display text-base font-bold text-brand-red-light">
                               {review.user.name?.charAt(0) || '?'}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm truncate">
+                              <span className="font-semibold text-sm text-brand-bone truncate">
                                 {review.user.name}
                               </span>
-                              <span className="flex items-center gap-0.5 text-[10px] text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded-full">
-                                <CheckCircle className="w-2.5 h-2.5" />
+                              <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 rounded-sm">
+                                <CheckCircle className="w-3 h-3" />
                                 {t('reviews.verified')}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <div className="flex gap-0.5">
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex gap-0.5" role="img" aria-label={`${review.rating}/5`}>
                                 {[1, 2, 3, 4, 5].map((s) => (
                                   <Star
                                     key={s}
-                                    className={`w-3 h-3 ${
+                                    className={`w-3.5 h-3.5 ${
                                       s <= review.rating
                                         ? 'text-brand-gold fill-brand-gold'
                                         : 'text-brand-border'
@@ -526,14 +541,14 @@ export default function RoomDetailsPage() {
                                   />
                                 ))}
                               </div>
-                              <span className="text-[11px] text-brand-text-muted">
+                              <span className="text-xs text-brand-text-muted">
                                 {timeAgo}
                               </span>
                             </div>
                           </div>
                         </div>
                         {review.text && (
-                          <p className="text-sm text-brand-text-secondary leading-relaxed mt-2 pl-12">
+                          <p className="text-[15px] text-brand-text leading-relaxed mt-3 sm:pl-[52px] text-pretty">
                             {review.text}
                           </p>
                         )}
@@ -546,7 +561,7 @@ export default function RoomDetailsPage() {
                 {reviews.length > 3 && (
                   <button
                     onClick={() => setShowAllReviews(!showAllReviews)}
-                    className="mt-4 w-full py-2.5 text-sm font-medium text-brand-text-secondary hover:text-white bg-brand-surface rounded-xl border border-white/5 hover:border-white/10 transition-all flex items-center justify-center gap-1.5"
+                    className="mt-5 w-full py-2.5 text-sm font-medium text-brand-text-secondary hover:text-brand-bone bg-black/30 rounded-md border border-brand-border hover:border-brand-red/60 hover:bg-brand-red/10 transition-all flex items-center justify-center gap-1.5"
                   >
                     {showAllReviews ? (
                       <>
