@@ -15,13 +15,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Discover & Book Escape Rooms in Greece | UNLOCKED',
+  title: 'Discover & Book Escape Rooms Worldwide | UNLOCKED',
   description:
     'Find and book the best escape rooms near you. Browse by theme, difficulty & location. Instant online booking, player reviews & team leaderboards on UNLOCKED.',
   keywords: [
     'escape room',
     'book escape room',
-    'escape room Greece',
+    'escape rooms worldwide',
     'escape game',
     'team building activities',
     'puzzle rooms',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     canonical: 'https://unlocked.gr',
   },
   openGraph: {
-    title: 'Discover & Book Escape Rooms in Greece | UNLOCKED',
+    title: 'Discover & Book Escape Rooms Worldwide | UNLOCKED',
     description:
       'Find and book the best escape rooms near you. Browse by theme, difficulty & location. Instant booking & player reviews.',
     type: 'website',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Discover & Book Escape Rooms in Greece | UNLOCKED',
+    title: 'Discover & Book Escape Rooms Worldwide | UNLOCKED',
     description:
       'Find and book the best escape rooms near you. Browse by theme, difficulty & location on UNLOCKED.',
   },
@@ -73,7 +73,7 @@ export default function RootLayout({
     name: 'UNLOCKED',
     url: 'https://unlocked.gr',
     description:
-      'Discover and book the best escape rooms in Greece. Browse rooms by theme, difficulty and location with instant online booking.',
+      'Discover and book the best escape rooms around the world. Browse rooms by theme, difficulty and location with instant online booking.',
     applicationCategory: 'EntertainmentApplication',
     operatingSystem: 'Web',
     offers: {
