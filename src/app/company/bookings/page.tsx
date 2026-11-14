@@ -38,6 +38,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { GameQr } from '@/components/company/GameQr';
 import { useBookingFlags, PlayerFlagCard, ReportPlayerSection, FlagIcon } from '@/components/company/PlayerReports';
 
 const VIEW_KEY = 'unlocked_bookings_view';
@@ -556,8 +557,30 @@ function CompleteBookingModal({
   const [escaped, setEscaped] = useState(true);
   const [escapeTime, setEscapeTime] = useState('');
   const [hintsUsed, setHintsUsed] = useState('');
+    const [actualPlayers, setActualPlayers] = useState(String(booking.players ?? 1));
+  const [done, setDone] = useState(false);
+  const completeGame = useCompanyMutation(api.games.completeGame);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  if (done) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 sm:px-4">
+        <div className="bg-brand-surface rounded-t-2xl sm:rounded-2xl border border-white/5 p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-bold">Το QR της παρέας</h2>
+            <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-sm text-brand-text-muted mb-5">
+            Δείξε το στους παίκτες για να μπει το παιχνίδι στο προφίλ τους. Ισχύει για 30 λεπτά.
+          </p>
+          <GameQr bookingId={booking._id} />
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -575,10 +598,18 @@ function CompleteBookingModal({
         bookingId: booking._id as any,
         escaped,
         escapeTimeMinutes: escapeTime ? parseInt(escapeTime) : undefined,
-        hintsUsed: hintsUsed !== '' ? parseInt(hintsUsed) : undefined,
+          hintsUsed: hintsUsed !== '' ? parseInt(hintsUsed) : undefined,
       });
 
-      onClose();
+      // 3. Create the end-of-game QR for the players
+      await completeGame({
+        bookingId: booking._id as any,
+        actualPlayers: Math.max(1, parseInt(actualPlayers) || 1),
+        escaped,
+        hintsUsed: hintsUsed !== '' ? parseInt(hintsUsed) : undefined,
+        escapeSeconds: escapeTime ? parseInt(escapeTime) * 60 : undefined,
+      } as any);
+      setDone(true);
     } catch (err: any) {
       setError(friendlyError(err, t, 'cx.bookings.complete_failed'));
     } finally {

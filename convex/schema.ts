@@ -725,4 +725,39 @@ export default defineSchema({
     .index("by_company_month", ["companyId", "month"])
     .index("by_month", ["month"])
     .index("by_stripeInvoiceId", ["stripeInvoiceId"]),
+      // ─── Finished games & the end-of-game QR ───
+  // The room marks a booking as played (with the real head-count) and gets a
+  // QR token that is valid for 30 minutes. Every player who scans it gets the
+  // game in their own profile, up to `seatsTotal` people.
+  gameSessions: defineTable({
+    bookingId: v.id("bookings"),
+    roomId: v.id("rooms"),
+    companyId: v.optional(v.id("companies")),
+    completedAt: v.number(),
+    seatsTotal: v.number(),            // real number of players, set by the room
+    seatsClaimed: v.number(),
+    hintsUsed: v.optional(v.number()),
+    escapeSeconds: v.optional(v.number()),
+    escaped: v.optional(v.boolean()),
+    claimToken: v.string(),
+    claimExpiresAt: v.number(),        // ms since epoch, completedAt + 30 min
+  })
+    .index("by_booking", ["bookingId"])
+    .index("by_claimToken", ["claimToken"])
+    .index("by_room", ["roomId"])
+    .index("by_company", ["companyId"]),
+
+  // One row per player per game. "confirmed" = scanned the room's QR (or is the
+  // booker); "declared" is reserved for games a player adds by hand elsewhere.
+  gameParticipants: defineTable({
+    gameId: v.id("gameSessions"),
+    userId: v.id("users"),
+    roomId: v.id("rooms"),
+    companyId: v.optional(v.id("companies")),
+    status: v.union(v.literal("confirmed"), v.literal("declared")),
+    joinedAt: v.number(),
+  })
+    .index("by_game", ["gameId"])
+    .index("by_user", ["userId"])
+    .index("by_game_user", ["gameId", "userId"]),
 });
