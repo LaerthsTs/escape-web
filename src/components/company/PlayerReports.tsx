@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useMemo, useState } from 'react';
-import { AlertTriangle, Flag, Check, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Flag, Check, ShieldAlert, CalendarX } from 'lucide-react';
+import { LATE_CANCEL_LOOKBACK_DAYS } from '../../../convex/cancelRules';
 import { api } from '../../../convex/_generated/api';
 import { useCompanyMutation, useCompanyQuery } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
@@ -24,6 +25,8 @@ export type BookingFlag = {
   categories: Partial<Record<PlayerReportCategory, number>>;
   replies: string[];
   gamesRemaining: number;
+  /** Set when the player is over the late-cancellation threshold (cancellations.ts). */
+  lateCancels?: { count: number; reasons: Partial<Record<string, number>> };
 };
 
 /** Flags for a set of bookings (only upcoming bookings by UNLOCKED players are sent). */
@@ -37,7 +40,16 @@ export function useBookingFlags(bookings: any[] | undefined): Map<string, Bookin
     [bookings]
   );
   const flags = useCompanyQuery(api.reports.flagsForBookings, ids.length ? { bookingIds: ids as any } : 'skip');
-  return useMemo(() => new Map((flags || []).map((f) => [String(f.bookingId), f as BookingFlag])), [flags]);
+  const cancelFlags = useCompanyQuery(api.cancellations.flagsForBookings, ids.length ? { bookingIds: ids as any } : 'skip');
+  return useMemo(() => {
+    const map = new Map<string, BookingFlag>((flags || []).map((f) => [String(f.bookingId), f as BookingFlag]));
+    for (const c of cancelFlags || []) {
+      const key = String(c.bookingId);
+      const base = map.get(key) ?? { bookingId: key, count: 0, categories: {}, replies: [], gamesRemaining: 0 };
+      map.set(key, { ...base, lateCancels: { count: c.count, reasons: c.reasons } });
+    }
+    return map;
+  }, [flags, cancelFlags]);
 }
 
 const FlagContext = createContext<Map<string, BookingFlag>>(new Map());
@@ -57,8 +69,42 @@ export function FlagIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) 
   return <AlertTriangle className={`${className} text-amber-400 shrink-0`} aria-label={t('reports.flag.short')} />;
 }
 
-/** Warning card shown on an upcoming booking whose player has active reports. */
+/** Warning card shown on an upcoming booking whose player has active reports or late cancellations. */
 export function PlayerFlagCard({ flag }: { flag: BookingFlag }) {
+  if (flag.count === 0) return flag.lateCancels ? <LateCancelFlagCard lateCancels={flag.lateCancels} /> : null;
+  return (
+    <>
+      <ReportsFlagCard flag={flag} />
+      {flag.lateCancels && <LateCancelFlagCard lateCancels={flag.lateCancels} />}
+    </>
+  );
+}
+
+function LateCancelFlagCard({ lateCancels }: { lateCancels: NonNullable<BookingFlag['lateCancels']> }) {
+  const { t } = useTranslation();
+  const reasons = Object.entries(lateCancels.reasons).filter(([, n]) => n);
+  return (
+    <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-3 text-sm space-y-2">
+      <div className="flex items-center gap-2 font-semibold text-orange-300">
+        <CalendarX className="w-4 h-4 shrink-0" />
+        {t('cancel.flag.title', { count: String(lateCancels.count), days: String(LATE_CANCEL_LOOKBACK_DAYS) })}
+      </div>
+      {reasons.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {reasons.map(([r, n]) => (
+            <li key={r} className="text-xs px-2 py-1 rounded-full bg-orange-500/15 text-orange-200">
+              {t(r === 'none' ? 'cancel.reason.none' : `cancel.reason.${r}`)}
+              {n! > 1 ? ` ×${n}` : ''}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-[11px] text-brand-text-muted">{t('cancel.flag.note')}</p>
+    </div>
+  );
+}
+
+function ReportsFlagCard({ flag }: { flag: BookingFlag }) {
   const { t } = useTranslation();
   const cats = PLAYER_REPORT_CATEGORIES.filter((c) => flag.categories[c]);
   return (
