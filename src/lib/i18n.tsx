@@ -52,6 +52,15 @@ const translations: Record<Language, Record<string, string>> = {
     'horror.clock': 'The clock is already running',
 
     // ── Hero ──
+    'ariadne.eyebrow': 'FOLLOW THE THREAD',
+    'ariadne.title': 'Every room is a labyrinth',
+    'ariadne.subtitle': 'Find the way in, follow the thread, and make it out alive.',
+    'ariadne.step1.title': 'Find your labyrinth',
+    'ariadne.step1.text': 'Browse rooms by theme, difficulty and honest escape rates.',
+    'ariadne.step2.title': 'Follow the thread',
+    'ariadne.step2.text': 'Book a slot in seconds and bring your team.',
+    'ariadne.step3.title': 'Make it out',
+    'ariadne.step3.text': 'Scan the room\'s QR code at the end and the game joins your profile.',
     'hero.badge': 'Book your next escape room',
     'hero.title1': 'Find & Book the Best',
     'hero.title2': 'Escape Rooms Near You',
@@ -2088,6 +2097,15 @@ const translations: Record<Language, Record<string, string>> = {
     'horror.clock': 'Το ρολόι ήδη μετράει',
 
     // ── Hero ──
+    'ariadne.eyebrow': 'ΑΚΟΛΟΥΘΗΣΕ ΤΟ ΝΗΜΑ',
+    'ariadne.title': 'Κάθε δωμάτιο είναι ένας λαβύρινθος',
+    'ariadne.subtitle': 'Βρες την είσοδο, ακολούθησε το νήμα και βγες ζωντανός.',
+    'ariadne.step1.title': 'Βρες τον λαβύρινθό σου',
+    'ariadne.step1.text': 'Διάλεξε δωμάτιο με βάση το θέμα, τη δυσκολία και τα πραγματικά ποσοστά απόδρασης.',
+    'ariadne.step2.title': 'Ακολούθησε το νήμα',
+    'ariadne.step2.text': 'Κλείσε slot σε δευτερόλεπτα και φέρε την παρέα σου.',
+    'ariadne.step3.title': 'Βγες από εκεί',
+    'ariadne.step3.text': 'Σκάναρε το QR του δωματίου στο τέλος και το παιχνίδι μπαίνει στο προφίλ σου.',
     'hero.badge': 'Κλείσε το επόμενο escape room σου',
     'hero.title1': 'Βρες & Κλείσε τα Καλύτερα',
     'hero.title2': 'Escape Rooms Κοντά Σου',
@@ -4288,6 +4306,15 @@ const translations: Record<Language, Record<string, string>> = {
     'cookie.learn_more': 'Meer informatie',
 
     // ── Hero ──
+    'ariadne.eyebrow': 'VOLG DE DRAAD',
+    'ariadne.title': 'Elke kamer is een labyrint',
+    'ariadne.subtitle': 'Vind de ingang, volg de draad en kom levend naar buiten.',
+    'ariadne.step1.title': 'Vind je labyrint',
+    'ariadne.step1.text': 'Kies een kamer op thema, moeilijkheid en echte ontsnappingspercentages.',
+    'ariadne.step2.title': 'Volg de draad',
+    'ariadne.step2.text': 'Boek in een paar seconden een tijdslot en neem je team mee.',
+    'ariadne.step3.title': 'Kom eruit',
+    'ariadne.step3.text': 'Scan aan het einde de QR-code van de kamer en het spel komt in je profiel.',
     'hero.badge': 'Boek je volgende escape room',
     'hero.title1': 'Vind & Boek de Beste',
     'hero.title2': 'Escape Rooms bij Jou in de Buurt',

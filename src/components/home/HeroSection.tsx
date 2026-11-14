@@ -7,6 +7,7 @@ import { Search } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { BloodDrips } from '@/components/horror/BloodDrips';
 import { WatchingEyes } from '@/components/horror/WatchingEyes';
+import { AriadneThread, MinotaurMark } from '@/components/horror/AriadneThread';
 
 /** Things written on the walls. Only the flashlight shows them. */
 const scrawls = [
@@ -217,11 +218,16 @@ export function HeroSection() {
         />
       </div>
 
+      {/* Ariadne's thread winding down to the door */}
+      <AriadneThread />
+
       {/* ── Content ────────────────────────────────── */}
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
         className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-28 pb-24"
       >
+        <MinotaurMark className="mx-auto mb-5 animate-fade-up" />
+
         {/* Heading */}
         <h1 className="font-display font-black tracking-tight leading-[1.05] mb-7 text-balance text-4xl sm:text-5xl md:text-6xl xl:text-7xl">
           <span

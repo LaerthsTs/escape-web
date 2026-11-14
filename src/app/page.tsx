@@ -1,6 +1,7 @@
 import { HeroSection } from '@/components/home/HeroSection';
 import { FeaturedRooms } from '@/components/home/FeaturedRooms';
 import { HowItWorks } from '@/components/home/HowItWorks';
+import { LabyrinthSection } from '@/components/home/LabyrinthSection';
 import { ThemesSection } from '@/components/home/ThemesSection';
 import { DownloadCTA } from '@/components/home/DownloadCTA';
 import { SEOContent } from '@/components/home/SEOContent';
@@ -11,6 +12,7 @@ export default function Home() {
     <>
       <SafeConvex><HeroSection /></SafeConvex>
       <SafeConvex><FeaturedRooms /></SafeConvex>
+      <LabyrinthSection />
       <ThemesSection />
       <HowItWorks />
       <DownloadCTA />
