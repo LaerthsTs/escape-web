@@ -4,11 +4,12 @@ import { useTranslation } from '@/lib/i18n';
 import {
   BookOpen,
   CalendarDays,
+  CalendarRange,
   Clock,
   CreditCard,
+  Wallet,
   Star,
   Camera,
-  Ticket,
   Code2,
   Trophy,
   Bell,
@@ -19,9 +20,9 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   BadgeCheck,
   Sparkles,
+  Rocket,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -63,10 +64,21 @@ function Section({
   );
 }
 
+function Card({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white/5 rounded-xl p-4 space-y-2">
+      {title && (
+        <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">{title}</p>
+      )}
+      {children}
+    </div>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2">
-      <span className="text-brand-text-secondary/60 min-w-[140px]">{label}:</span>
+    <div className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-2">
+      <span className="text-brand-text-secondary/60 sm:min-w-[140px]">{label}:</span>
       <span className="text-white font-medium">{value}</span>
     </div>
   );
@@ -79,452 +91,572 @@ function Badge({ children, color = 'red' }: { children: React.ReactNode; color?:
     amber: 'bg-amber-500/10 text-amber-400',
     blue: 'bg-blue-500/10 text-blue-400',
     purple: 'bg-purple-500/10 text-purple-400',
+    gray: 'bg-white/10 text-brand-text-secondary',
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${colors[color]}`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 ${colors[color]}`}>
       {children}
     </span>
   );
 }
 
+function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <div className="flex gap-3">
+      <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">
+        {n}
+      </div>
+      <div>
+        <p className="text-white font-medium">{title}</p>
+        <p className="text-xs mt-1">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function DocsPage() {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const isGreek = language === 'el';
+  const g = (el: string, en: string) => (isGreek ? el : en);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-brand-red/10 flex items-center justify-center shrink-0">
             <BookOpen className="w-6 h-6 text-brand-red-light" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold">
-              {isGreek ? 'Τεκμηρίωση Πλατφόρμας' : 'Platform Documentation'}
+              {g('Οδηγός Πλατφόρμας', 'Platform Guide')}
             </h1>
             <p className="text-brand-text-secondary text-sm">
-              {isGreek
-                ? 'Οδηγός για όλες τις λειτουργίες της πλατφόρμας UNLOCKED'
-                : 'A guide to every feature of the UNLOCKED platform'}
+              {g(
+                'Όλα όσα χρειάζεστε για να δέχεστε κρατήσεις με το UNLOCKED',
+                'Everything you need to take bookings with UNLOCKED'
+              )}
             </p>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
-        {/* ─── 1. Booking System ─── */}
-        <Section icon={CalendarDays} title={isGreek ? 'Σύστημα Κρατήσεων' : 'Booking System'} defaultOpen>
+        {/* ─── 1. Getting started ─── */}
+        <Section icon={Rocket} title={g('Ξεκινώντας', 'Getting Started')} defaultOpen>
+          <Card>
+            <div className="space-y-4">
+              <Step
+                n={1}
+                title={g('Αποδοχή όρων', 'Accept the terms')}
+                desc={g(
+                  'Αποδεχτείτε τους όρους χρήσης και την πολιτική απορρήτου.',
+                  'Accept the terms of service and the privacy policy.'
+                )}
+              />
+              <Step
+                n={2}
+                title={g('Επιλογή πλάνου', 'Choose a plan')}
+                desc={g(
+                  'Ξεκινήστε με Pay as you go χωρίς να πληρώσετε τίποτα τώρα, ή επιλέξτε Απεριόριστο και πληρώστε μέσω Stripe.',
+                  'Start on pay as you go without paying anything now, or pick Unlimited and pay through Stripe.'
+                )}
+              />
+              <Step
+                n={3}
+                title={g('Έλεγχος στοιχείων', 'Account review')}
+                desc={g(
+                  'Ελέγχουμε τα στοιχεία σας, συνήθως μέσα σε 1 με 2 εργάσιμες. Θα λάβετε email μόλις εγκριθεί ο λογαριασμός σας.',
+                  'We check your details, usually within 1 to 2 working days. You get an email as soon as your account is approved.'
+                )}
+              />
+              <Step
+                n={4}
+                title={g('Λίστα εκκίνησης', 'Getting-started checklist')}
+                desc={g(
+                  'Μόλις συνδεθείτε, μια σύντομη λίστα στον πίνακα ελέγχου σας οδηγεί: προφίλ εταιρείας, πρώτο δωμάτιο, φωτογραφία δωματίου, εβδομαδιαίες ώρες και widget στην ιστοσελίδα σας.',
+                  'Once you sign in, a short checklist on your dashboard walks you through it: company profile, first room, a room photo, weekly times and the widget on your website.'
+                )}
+              />
+            </div>
+          </Card>
+        </Section>
+
+        {/* ─── 2. Plans & Pricing ─── */}
+        <Section icon={CreditCard} title={g('Πλάνα & Τιμολόγηση', 'Plans & Pricing')}>
           <p>
-            {isGreek
-              ? 'Οι παίκτες επιλέγουν δωμάτιο, ημερομηνία, ώρα και αριθμό παικτών. Κάθε κράτηση λαμβάνει μοναδικό κωδικό κράτησης.'
-              : 'Players select a room, date, time, and number of players. Each booking receives a unique booking code.'}
+            {g(
+              'Υπάρχουν δύο πλάνα. Και τα δύο περιλαμβάνουν όλες τις λειτουργίες και απεριόριστα δωμάτια. Διαφέρουν μόνο στον τρόπο που πληρώνετε.',
+              'There are two plans. Both include every feature and unlimited rooms. They only differ in how you pay.'
+            )}
           </p>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Κωδικοί Κράτησης' : 'Booking Codes'}
-            </p>
-            <InfoRow
-              label={isGreek ? 'Πλατφόρμα' : 'Platform'}
-              value={`UNL-XXXXXX (${isGreek ? 'κρατήσεις μέσω UNLOCKED' : 'bookings via UNLOCKED'})`}
-            />
-            <InfoRow
-              label="Widget"
-              value={`WEB-XXXXXX (${isGreek ? 'κρατήσεις μέσω widget' : 'bookings via widget'})`}
-            />
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Καταστάσεις Κράτησης' : 'Booking Statuses'}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Badge color="blue">{isGreek ? 'Προσεχής' : 'Upcoming'}</Badge>
-              <Badge color="green">{isGreek ? 'Ολοκληρωμένη' : 'Completed'}</Badge>
-              <Badge color="red">{isGreek ? 'Ακυρωμένη' : 'Cancelled'}</Badge>
-              <Badge color="amber">{isGreek ? 'Εκκρεμεί Πληρωμή' : 'Pending Payment'}</Badge>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <Badge color="green">Pay as you go</Badge>
+              <p className="text-white text-xl font-bold">
+                €3 <span className="text-sm font-normal text-brand-text-secondary">/ {g('κράτηση', 'booking')}</span>
+              </p>
+              <ul className="space-y-1.5 list-disc pl-5 text-xs">
+                <li>{g('Χωρίς μηνιαία συνδρομή', 'No monthly fee')}</li>
+                <li>{g('Ποτέ πάνω από €250 τον μήνα', 'Never more than €250 a month')}</li>
+                <li>{g('Τιμολόγιο με email την 1η κάθε μήνα για τον προηγούμενο', 'Invoiced by email on the 1st for the previous month')}</li>
+              </ul>
+            </div>
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <Badge color="purple">{g('Απεριόριστο', 'Unlimited')}</Badge>
+              <p className="text-white text-xl font-bold">
+                €198 <span className="text-sm font-normal text-brand-text-secondary">/ {g('μήνα', 'month')}</span>
+              </p>
+              <ul className="space-y-1.5 list-disc pl-5 text-xs">
+                <li>{g('Χωρίς χρεώσεις ανά κράτηση', 'No per-booking fees')}</li>
+                <li>{g('Ετήσια: €1980 (2 μήνες δωρεάν)', 'Yearly: €1980 (2 months free)')}</li>
+                <li>{g('Συμφέρει από 66 κρατήσεις τον μήνα', 'Worth it from 66 bookings a month')}</li>
+              </ul>
             </div>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Όροι Πληρωμής' : 'Payment Terms'}
-            </p>
+          <Card title={g('Ποιες κρατήσεις χρεώνονται', 'Which bookings count')}>
             <p>
-              {isGreek
-                ? 'Κάθε δωμάτιο μπορεί να ρυθμιστεί με έναν από τους παρακάτω τρόπους πληρωμής:'
-                : 'Each room can be configured with one of the following payment terms:'}
+              {g(
+                'Στο Pay as you go μετράνε οι κρατήσεις που κάνουν παίκτες στην εφαρμογή, στην ιστοσελίδα UNLOCKED ή στο widget της ιστοσελίδας σας. Ακυρωμένες κρατήσεις και κρατήσεις που περιμένουν πληρωμή δεν μετράνε. Όσες προσθέτετε εσείς (τηλέφωνο, walk-in, ιδιωτικές εκδηλώσεις, άλλες πλατφόρμες) είναι δωρεάν.',
+                'On pay as you go, bookings players make in the app, on the UNLOCKED website or through your website widget count. Cancelled bookings and bookings still waiting for payment don\'t. Bookings you add yourself (phone, walk-in, private events, other platforms) are free.'
+              )}
+            </p>
+          </Card>
+
+          <Card title={g('Αλλαγή πλάνου', 'Changing plan')}>
+            <p>
+              {g(
+                'Στη σελίδα Χρεώσεων βλέπετε πόσες κρατήσεις έχετε αυτόν τον μήνα και τα τιμολόγιά σας. Από εκεί μπορείτε να περάσετε στο Απεριόριστο. Για να επιστρέψετε στο Pay as you go, ακυρώστε τη συνδρομή στο Stripe: η αλλαγή γίνεται όταν λήξει η περίοδος που έχετε πληρώσει.',
+                'The Billing page shows this month\'s bookings so far and your invoices. You can switch to Unlimited from there. To go back to pay as you go, cancel the subscription in Stripe: you switch when the paid period ends.'
+              )}
+            </p>
+          </Card>
+        </Section>
+
+        {/* ─── 3. Booking System ─── */}
+        <Section icon={CalendarDays} title={g('Σύστημα Κρατήσεων', 'Booking System')}>
+          <p>
+            {g(
+              'Οι παίκτες επιλέγουν δωμάτιο, ημερομηνία, ώρα και αριθμό παικτών. Κάθε κράτηση παίρνει έναν μοναδικό κωδικό, που ο παίκτης βλέπει στην επιβεβαίωση και στα εισιτήριά του. Ο ίδιος κωδικός εμφανίζεται στη σελίδα Κρατήσεις, ώστε να τον συγκρίνετε στην είσοδο.',
+              'Players pick a room, date, time and number of players. Every booking gets a unique code, which the player sees on the confirmation and in their tickets. The same code is shown on your Bookings page, so you can match it at the door.'
+            )}
+          </p>
+
+          <Card title={g('Κωδικοί κράτησης', 'Booking codes')}>
+            <InfoRow label={g('Εφαρμογή & ιστοσελίδα', 'App & website')} value="UNL-XXXXXX" />
+            <InfoRow label="Widget" value="WEB-XXXXXX" />
+          </Card>
+
+          <Card title={g('Καταστάσεις κράτησης', 'Booking statuses')}>
+            <div className="flex flex-wrap gap-2">
+              <Badge color="blue">{g('Προσεχής', 'Upcoming')}</Badge>
+              <Badge color="green">{g('Ολοκληρωμένη', 'Completed')}</Badge>
+              <Badge color="red">{g('Ακυρωμένη', 'Cancelled')}</Badge>
+              <Badge color="amber">{g('Αναμονή πληρωμής', 'Awaiting payment')}</Badge>
+            </div>
+          </Card>
+
+          <Card title={g('Επιλογές πληρωμής ανά δωμάτιο', 'Payment options per room')}>
+            <p>
+              {g(
+                'Στις ρυθμίσεις κάθε δωματίου επιλέγετε ποιες επιλογές βλέπουν οι παίκτες. Μπορείτε να ενεργοποιήσετε μία ή περισσότερες:',
+                'In each room\'s settings you choose which options players see. You can turn on one or more:'
+              )}
             </p>
             <div className="space-y-3 mt-2">
               <div className="flex gap-3">
-                <Badge color="green">Full</Badge>
+                <Badge color="green">{g('Πλήρης', 'Full')}</Badge>
+                <span>{g('Ο παίκτης πληρώνει όλο το ποσό online.', 'The player pays the whole amount online.')}</span>
+              </div>
+              <div className="flex gap-3">
+                <Badge color="amber">{g('Προκαταβολή', 'Deposit')}</Badge>
                 <span>
-                  {isGreek
-                    ? '100% του συνόλου + €3.99 χρέωση υπηρεσίας μέσω Stripe'
-                    : '100% of booking total + €3.99 service fee via Stripe'}
+                  {g(
+                    'Ο παίκτης πληρώνει ένα ποσοστό online (προεπιλογή 20%) και το υπόλοιπο στον χώρο.',
+                    'The player pays a share online (20% by default) and the rest at the venue.'
+                  )}
                 </span>
               </div>
               <div className="flex gap-3">
-                <Badge color="amber">Deposit 20%</Badge>
-                <span>
-                  {isGreek
-                    ? '20% του συνόλου + €3.99 χρέωση υπηρεσίας μέσω Stripe · υπόλοιπο στην άφιξη'
-                    : '20% of booking total + €3.99 service fee via Stripe — remainder due on arrival'}
-                </span>
-              </div>
-              <div className="flex gap-3">
-                <Badge color="blue">Pay on Arrival</Badge>
-                <span>
-                  {isGreek
-                    ? 'Χωρίς χρέωση Stripe · η κράτηση δημιουργείται απευθείας'
-                    : 'No Stripe charge — booking created directly'}
-                </span>
+                <Badge color="blue">{g('Στον χώρο', 'At the venue')}</Badge>
+                <span>{g('Καμία online πληρωμή. Η κράτηση επιβεβαιώνεται αμέσως.', 'No online payment. The booking is confirmed right away.')}</span>
               </div>
             </div>
-          </div>
+            <p className="mt-2">
+              {g(
+                'Οι online επιλογές εμφανίζονται μόνο αφού συνδέσετε λογαριασμό Stripe ή Viva (δείτε Online Πληρωμές).',
+                'The online options only appear once you connect a Stripe or Viva account (see Online Payments).'
+              )}
+            </p>
+          </Card>
 
           <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-4 flex items-start gap-3">
             <Timer className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white font-semibold text-sm">
-                {isGreek ? 'Αυτόματη ακύρωση μετά από 30 λεπτά' : 'Auto-cancellation after 30 minutes'}
+                {g('Μη πληρωμένες κρατήσεις λήγουν σε 30 λεπτά', 'Unpaid bookings expire after 30 minutes')}
               </p>
               <p className="mt-1">
-                {isGreek
-                  ? 'Αν ο παίκτης ξεκινήσει την πληρωμή Stripe αλλά δεν ολοκληρώσει, η κράτηση ακυρώνεται αυτόματα μετά από 30 λεπτά και το slot ξεκλειδώνει. Ο παίκτης μπορεί να επαναλάβει την πληρωμή αν η κράτηση εξακολουθεί σε κατάσταση "Εκκρεμεί Πληρωμή".'
-                  : 'If a player starts the Stripe checkout but doesn\'t complete it, the booking is automatically cancelled after 30 minutes and the slot is freed. The player can retry the payment as long as the booking is still in "Pending Payment" status.'}
+                {g(
+                  'Η ώρα κρατιέται για τον παίκτη όσο πληρώνει. Αν δεν ολοκληρώσει την πληρωμή μέσα σε 30 λεπτά, η κράτηση ακυρώνεται και η ώρα ανοίγει ξανά.',
+                  'The time is held for the player while they pay. If they don\'t finish paying within 30 minutes, the booking is cancelled and the time opens again.'
+                )}
               </p>
             </div>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Χρέωση Υπηρεσίας' : 'Service Fee'}
-            </p>
+          <Card title={g('Χωρίς διπλές κρατήσεις', 'No double bookings')}>
             <p>
-              {isGreek
-                ? 'Σε κάθε πληρωμή Stripe προστίθεται χρέωση υπηρεσίας €3.99. Αυτή η χρέωση καλύπτει τη λειτουργία της πλατφόρμας και χρεώνεται στον παίκτη, όχι στην εταιρεία.'
-                : 'A €3.99 service fee is added to every Stripe payment. This fee covers platform operations and is charged to the player, not to the company.'}
+              {g(
+                'Πριν από κάθε κράτηση, το σύστημα ελέγχει αν υπάρχει ήδη ενεργή κράτηση στο ίδιο δωμάτιο, ημερομηνία και ώρα. Αν υπάρχει, η νέα κράτηση απορρίπτεται.',
+                'Before every booking, the system checks for an active booking at the same room, date and time. If there is one, the new booking is rejected.'
+              )}
             </p>
-          </div>
+          </Card>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Αποτροπή Διπλών Κρατήσεων' : 'Double-Booking Prevention'}
-            </p>
+          <Card title={g('Email επιβεβαίωσης', 'Confirmation emails')}>
             <p>
-              {isGreek
-                ? 'Πριν από κάθε κράτηση, το σύστημα ελέγχει αν υπάρχει ήδη ενεργή κράτηση στο ίδιο δωμάτιο + ημερομηνία + ώρα. Αν ναι, η κράτηση απορρίπτεται.'
-                : 'Before creating any booking, the system checks for an existing active booking at the same room + date + time. If one exists, the booking is rejected.'}
+              {g(
+                'Μόλις δημιουργηθεί η κράτηση (ή επιβεβαιωθεί η πληρωμή), στέλνεται αυτόματα email επιβεβαίωσης στον παίκτη και σε εσάς.',
+                'As soon as a booking is made (or its payment is confirmed), a confirmation email goes to the player and to you automatically.'
+              )}
             </p>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-3">
-              {isGreek ? 'Email Επιβεβαίωσης' : 'Confirmation Emails'}
-            </p>
-            <p>
-              {isGreek
-                ? 'Μετά τη δημιουργία κράτησης (ή μετά την επιβεβαίωση πληρωμής), αποστέλλονται αυτόματα emails επιβεβαίωσης τόσο στον παίκτη όσο και στην εταιρεία. Επιπλέον, η Stripe αποστέλλει απόδειξη πληρωμής στον παίκτη.'
-                : 'After booking creation (or payment confirmation), confirmation emails are automatically sent to both the player and the company. Additionally, Stripe sends a payment receipt to the player.'}
-            </p>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 2. Reviews ─── */}
-        <Section icon={Star} title={isGreek ? 'Σύστημα Αξιολογήσεων' : 'Review System'}>
+        {/* ─── 4. Online Payments ─── */}
+        <Section icon={Wallet} title={g('Online Πληρωμές', 'Online Payments')}>
           <p>
-            {isGreek
-              ? 'Μόνο παίκτες με ολοκληρωμένη κράτηση μπορούν να αξιολογήσουν ένα δωμάτιο.'
-              : 'Only players with a completed booking can review a room.'}
+            {g(
+              'Οι παίκτες πληρώνουν απευθείας στον δικό σας λογαριασμό Stripe ή Viva. Το UNLOCKED δεν κρατάει ποτέ τα χρήματα. Η σύνδεση γίνεται από τη σελίδα Πληρωμές.',
+              'Players pay straight into your own Stripe or Viva account. UNLOCKED never holds the money. You connect your account on the Payments page.'
+            )}
           </p>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <div className="flex gap-3 items-center">
-              <Star className="w-4 h-4 text-amber-400" />
-              <span>
-                {isGreek
-                  ? 'Βαθμολογία 1-5 αστέρια — υποχρεωτική'
-                  : 'Rating 1-5 stars — required'}
-              </span>
-            </div>
-            <div className="flex gap-3 items-center">
-              <BadgeCheck className="w-4 h-4 text-emerald-400" />
-              <span>
-                {isGreek
-                  ? 'Κάθε αξιολόγηση είναι επιβεβαιωμένη (Verified) — συνδεδεμένη με πραγματική κράτηση'
-                  : 'Every review is verified — linked to a real booking'}
-              </span>
-            </div>
-            <div className="flex gap-3 items-center">
-              <ShieldCheck className="w-4 h-4 text-blue-400" />
-              <span>
-                {isGreek
-                  ? 'Μία αξιολόγηση ανά κράτηση — δεν επιτρέπονται διπλότυπα'
-                  : 'One review per booking — duplicates are prevented'}
-              </span>
-            </div>
-          </div>
+          <Card title={g('Σύνδεση λογαριασμού', 'Connecting an account')}>
+            <InfoRow label="Stripe" value={g('Επικολλήστε το Secret key από Developers → API keys', 'Paste your Secret key from Developers → API keys')} />
+            <InfoRow
+              label="Viva"
+              value={g(
+                'Merchant ID, API Key, Smart Checkout credentials και τον κωδικό πηγής πληρωμής',
+                'Merchant ID, API Key, Smart Checkout credentials and the payment source code'
+              )}
+            />
+            <p className="pt-2">
+              {g(
+                'Ελέγχουμε τα κλειδιά με τον πάροχο πριν τα αποθηκεύσουμε, τα κρατάμε κρυπτογραφημένα και δεν τα εμφανίζουμε ξανά. Για κάθε αλλαγή στα στοιχεία πληρωμής ζητάμε τον κωδικό σας, ώστε κανείς άλλος να μη μπορεί να ανακατευθύνει τα χρήματά σας.',
+                'We check the keys with the provider before saving them, store them encrypted and never show them again. Every change to payment details asks for your password, so nobody else can redirect your money.'
+              )}
+            </p>
+          </Card>
 
-          <p>
-            {isGreek
-              ? 'Η μέση βαθμολογία και ο αριθμός αξιολογήσεων ενημερώνονται αυτόματα στο δωμάτιο μετά από κάθε νέα αξιολόγηση.'
-              : 'The average rating and review count are automatically updated on the room after every new review.'}
-          </p>
+          <Card title={g('Δοκιμαστική λειτουργία', 'Test mode')}>
+            <p>
+              {g(
+                'Με κλειδιά δοκιμής (sk_test_ ή λογαριασμό Viva Demo) οι παίκτες βλέπουν δοκιμαστική σελίδα πληρωμής και δεν χρεώνονται πραγματικά χρήματα. Συνδέστε τα live κλειδιά όταν είστε έτοιμοι.',
+                'With test keys (sk_test_ or a Viva demo account) players see a test checkout and no real money is charged. Connect your live keys when you\'re ready.'
+              )}
+            </p>
+          </Card>
+
+          <Card title={g('Προκαταβολή & χρέωση κράτησης', 'Deposit & booking fee')}>
+            <ul className="space-y-2 list-disc pl-5">
+              <li>
+                {g(
+                  'Ορίστε το προεπιλεγμένο ποσοστό προκαταβολής (1 έως 99%) και, αν θέλετε, διαφορετικό ποσοστό ανά δωμάτιο.',
+                  'Set your default deposit (1 to 99%) and, if you like, a different % per room.'
+                )}
+              </li>
+              <li>
+                {g(
+                  'Προαιρετικά προσθέστε χρέωση κράτησης έως €20 στις online πληρωμές. Ο παίκτης τη βλέπει πριν πληρώσει και πηγαίνει σε εσάς μαζί με την κράτηση.',
+                  'Optionally add a booking fee of up to €20 to online payments. The player sees it before paying and it goes to you with the booking.'
+                )}
+              </li>
+            </ul>
+          </Card>
+
+          <Card title={g('Επιβεβαίωση & επιστροφές', 'Confirmation & refunds')}>
+            <p>
+              {g(
+                'Η κράτηση επιβεβαιώνεται μόνο αφού ο πάροχος επιβεβαιώσει ότι η πληρωμή πέτυχε για το σωστό ποσό. Οι επιστροφές χρημάτων γίνονται από το dashboard του Stripe ή της Viva. Αν αποσυνδέσετε τον λογαριασμό, οι παίκτες πληρώνουν μόνο στον χώρο και όσες κρατήσεις έχουν ήδη πληρωθεί μένουν πληρωμένες.',
+                'A booking is confirmed only after the provider confirms the payment succeeded for the right amount. Refunds are made from your Stripe or Viva dashboard. If you disconnect your account, players can only pay at the venue, and bookings already paid stay paid.'
+              )}
+            </p>
+          </Card>
         </Section>
 
-        {/* ─── 3. Time Slots & Availability ─── */}
-        <Section icon={Clock} title={isGreek ? 'Χρονικά Slots & Διαθεσιμότητα' : 'Time Slots & Availability'}>
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ημέρες Λειτουργίας' : 'Operating Days'}
-            </p>
-            <p>
-              {isGreek
-                ? 'Κάθε δωμάτιο έχει ρυθμισμένες ημέρες λειτουργίας. Αν ο παίκτης αναζητήσει ημέρα εκτός λειτουργίας, εμφανίζεται ως κλειστό.'
-                : 'Each room has configured operating days. If a player searches for a non-operating day, the room is shown as closed.'}
-            </p>
-          </div>
+        {/* ─── 5. Bookings Calendar ─── */}
+        <Section icon={CalendarRange} title={g('Ημερολόγιο Κρατήσεων', 'Bookings Calendar')}>
+          <p>
+            {g(
+              'Η σελίδα Κρατήσεις δείχνει όλα τα δωμάτιά σας σε ημερολόγιο. Επιλέξτε προβολή Ημέρα, 2 ημέρες, 3 ημέρες, Εβδομάδα ή Λίστα.',
+              'The Bookings page shows all your rooms on a calendar. Pick the Day, 2 days, 3 days, Week or List view.'
+            )}
+          </p>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Προεπιλεγμένα Slots' : 'Default Slots'}
-            </p>
-            <p>
-              {isGreek
-                ? 'Ορίστε ώρες και τιμές ως προεπιλεγμένο πρόγραμμα. Αυτές χρησιμοποιούνται αυτόματα αν δεν υπάρχουν ειδικές ρυθμίσεις για μια ημερομηνία.'
-                : 'Set times and prices as a default schedule. These are used automatically when no custom slots exist for a given date.'}
-            </p>
-          </div>
+          <Card title={g('Χρώματα', 'Colours')}>
+            <div className="flex flex-wrap gap-2">
+              <Badge color="green">{g('Ελεύθερη', 'Free')}</Badge>
+              <Badge color="blue">{g('Κλεισμένη', 'Booked')}</Badge>
+              <Badge color="purple">{g('Εξωτερική ή χειροκίνητη', 'External or manual')}</Badge>
+              <Badge color="amber">{g('Αναμονή πληρωμής', 'Awaiting payment')}</Badge>
+              <Badge color="red">{g('Κλειστή', 'Closed')}</Badge>
+              <Badge color="gray">{g('Παρελθούσα', 'Past')}</Badge>
+            </div>
+          </Card>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ειδικά Slots ανά Ημερομηνία' : 'Custom Slots per Date'}
-            </p>
+          <Card title={g('Προσθήκη κράτησης', 'Adding a booking')}>
             <p>
-              {isGreek
-                ? 'Μπορείτε να ορίσετε ειδικές ώρες, τιμές ή να κλείσετε μεμονωμένα slots σε συγκεκριμένες ημερομηνίες.'
-                : 'You can set custom times, prices, or close individual slots on specific dates.'}
+              {g(
+                'Πατήστε μια πράσινη ώρα για να προσθέσετε κράτηση με τα στοιχεία του πελάτη, ή μπλοκάρετε την ώρα ως εξωτερική κράτηση με πηγή Τηλέφωνο, Walk-in, Ιδιωτική εκδήλωση ή Άλλο. Οι κρατήσεις που προσθέτετε εσείς δεν χρεώνονται στο Pay as you go.',
+                'Tap a green time to add a booking with the customer\'s details, or block it as an external booking with the source Phone, Walk-in, Private event or Other. Bookings you add yourself are never charged on pay as you go.'
+              )}
             </p>
-          </div>
+          </Card>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Overflow Slot' : 'Overflow Slot'}
-            </p>
+          <Card title={g('Λεπτομέρειες κράτησης', 'Booking details')}>
             <p>
-              {isGreek
-                ? 'Ένα bonus slot που εμφανίζεται μόνο όταν ΟΛΑ τα κανονικά slots είναι κλεισμένα. Ρυθμίζεται ανά δωμάτιο με ώρα, τιμή και ποιες μέρες είναι ενεργό.'
-                : 'A bonus slot that only appears when ALL regular slots are booked. Configured per room with time, price, and which days it\'s active.'}
+              {g(
+                'Πατήστε μια κράτηση για να δείτε τον κωδικό, τα στοιχεία επικοινωνίας και την κατάσταση πληρωμής, να προσθέσετε σημείωση, να την ολοκληρώσετε ή να την ακυρώσετε.',
+                'Tap a booking to see its code, contact details and payment status, add a note, mark it completed or cancel it.'
+              )}
             </p>
-          </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Badge color="green">{g('Πληρώθηκε', 'Paid')}</Badge>
+              <Badge color="amber">{g('Προκαταβολή', 'Deposit paid')}</Badge>
+              <Badge color="blue">{g('Πληρωμή στον χώρο', 'Pay on arrival')}</Badge>
+              <Badge color="gray">{g('Επιστροφή', 'Refunded')}</Badge>
+            </div>
+          </Card>
+        </Section>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Τρόποι Τιμολόγησης' : 'Pricing Modes'}
+        {/* ─── 6. Time Slots & Availability ─── */}
+        <Section icon={Clock} title={g('Ώρες & Διαθεσιμότητα', 'Time Slots & Availability')}>
+          <Card title={g('Εβδομαδιαίο πρόγραμμα', 'Weekly schedule')}>
+            <p>
+              {g(
+                'Για κάθε δωμάτιο ορίζετε τις ημέρες λειτουργίας και τις ώρες με την τιμή τους. Αυτό το πρόγραμμα ισχύει κάθε εβδομάδα. Τις ημέρες που το δωμάτιο δεν λειτουργεί, οι παίκτες το βλέπουν κλειστό.',
+                'For each room you set its operating days and its times with their prices. This schedule repeats every week. On days the room doesn\'t operate, players see it as closed.'
+              )}
             </p>
+          </Card>
+
+          <Card title={g('Άνοιγμα & κλείσιμο ωρών', 'Opening & closing times')}>
+            <p>
+              {g(
+                'Στη σελίδα Slots επιλέγετε μέρα και πατάτε μια ώρα για να την ανοίξετε ή να την κλείσετε. Οι παίκτες βλέπουν την αλλαγή αμέσως. Μπορείτε επίσης να κλείσετε ή να ανοίξετε όλη τη μέρα, και να προσθέσετε έξτρα ώρα μόνο για μία μέρα.',
+                'On the Slots page, pick a day and tap a time to open or close it. Players see the change right away. You can also close or open a whole day, and add an extra time for one day only.'
+              )}
+            </p>
+          </Card>
+
+          <Card title={g('Αργίες & πολλές ημέρες', 'Holidays & several days')}>
+            <p>
+              {g(
+                'Με το "Κλείσιμο πολλών ημερών" κλείνετε ή ανοίγετε ξανά έως 92 ημέρες για όσα δωμάτια θέλετε (αργίες, συντήρηση, ιδιωτικές εκδηλώσεις). Οι υπάρχουσες κρατήσεις μένουν ως έχουν· κλείνουν μόνο οι ελεύθερες ώρες.',
+                'With "Close several days" you close or reopen up to 92 days for the rooms you pick (holidays, maintenance, private events). Existing bookings stay as they are; only free times are closed.'
+              )}
+            </p>
+          </Card>
+
+          <Card title={g('Κανόνας τελευταίας ώρας', 'Last-hour rule')}>
+            <p>
+              {g(
+                'Μια ελεύθερη ώρα κλείνει για κρατήσεις 1 ώρα πριν ξεκινήσει, εκτός αν η αμέσως προηγούμενη ώρα είναι κλεισμένη· τότε μένει ανοιχτή μέχρι να ξεκινήσει. Όσες ώρες έχουν ήδη ξεκινήσει κλείνουν αυτόματα.',
+                'A free time closes for booking 1 hour before it starts, unless the time right before it is booked; then it stays open until it starts. Times that have already started close automatically.'
+              )}
+            </p>
+          </Card>
+
+          <Card title="Overflow slot">
+            <p>
+              {g(
+                'Μια επιπλέον ώρα που εμφανίζεται μόνο όταν ΟΛΕΣ οι κανονικές ώρες είναι κλεισμένες. Ρυθμίζεται ανά δωμάτιο με ώρα, τιμή και τις ημέρες που ισχύει.',
+                'A bonus time that only appears when ALL regular times are booked. Set per room with its time, price and the days it applies.'
+              )}
+            </p>
+          </Card>
+
+          <Card title={g('Τρόποι τιμολόγησης', 'Pricing modes')}>
             <div className="space-y-2 mt-1">
               <div className="flex gap-3">
-                <Badge color="blue">{isGreek ? 'Ανά Άτομο' : 'Per Person'}</Badge>
-                <span>{isGreek ? 'Τιμή × αριθμός παικτών' : 'Price × number of players'}</span>
+                <Badge color="blue">{g('Ανά άτομο', 'Per person')}</Badge>
+                <span>{g('Τιμή × αριθμός παικτών', 'Price × number of players')}</span>
               </div>
               <div className="flex gap-3">
-                <Badge color="purple">{isGreek ? 'Ανά Ομάδα' : 'Per Group'}</Badge>
+                <Badge color="purple">{g('Ανά ομάδα', 'Per group')}</Badge>
                 <span>
-                  {isGreek
-                    ? 'Κλιμακωτή τιμολόγηση ανά μέγεθος ομάδας (π.χ. 2 άτομα = €50, 3 = €42, ...)'
-                    : 'Tiered pricing per group size (e.g., 2 players = €50, 3 = €42, ...)'}
+                  {g(
+                    'Κλιμακωτή τιμή ανά μέγεθος ομάδας (π.χ. 2 άτομα = €50, 3 = €42, ...)',
+                    'Tiered price per group size (e.g. 2 players = €50, 3 = €42, ...)'
+                  )}
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 4. Photo Branding ─── */}
-        <Section icon={Camera} title={isGreek ? 'Φωτογραφίες & Branding' : 'Photo Branding'}>
+        {/* ─── 7. Booking Widget ─── */}
+        <Section icon={Code2} title={g('Widget Κρατήσεων', 'Booking Widget')}>
           <p>
-            {isGreek
-              ? 'Ανεβάστε φωτογραφίες από ολοκληρωμένες κρατήσεις και εφαρμόστε αυτόματα τα branding στοιχεία της εταιρείας σας.'
-              : 'Upload photos from completed bookings and automatically apply your company\'s branding elements.'}
+            {g(
+              'Βάλτε το widget κρατήσεων στη δική σας ιστοσελίδα. Οι πελάτες κλείνουν χωρίς λογαριασμό UNLOCKED.',
+              'Put the booking widget on your own website. Customers book without an UNLOCKED account.'
+            )}
           </p>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ρυθμίσεις Branding' : 'Branding Settings'}
-            </p>
+          <Card title={g('Χαρακτηριστικά', 'Features')}>
             <ul className="space-y-2 list-disc pl-5">
-              <li>{isGreek ? 'Λογότυπο εταιρείας με επιλογή θέσης (πάνω αριστερά, πάνω δεξιά, κάτω αριστερά, κάτω δεξιά, κάτω κέντρο)' : 'Company logo with position choice (top-left, top-right, bottom-left, bottom-right, bottom-center)'}</li>
-              <li>{isGreek ? 'Χρώμα brand' : 'Brand color'}</li>
-              <li>{isGreek ? 'Αδιαφάνεια watermark (0% – 100%)' : 'Watermark opacity (0% – 100%)'}</li>
-              <li>{isGreek ? 'Πρότυπο κειμένου (π.χ. "You escaped in {{time}}")' : 'Text template (e.g., "You escaped in {{time}}")'}</li>
-              <li>{isGreek ? 'Full-frame overlay (διαφανές PNG)' : 'Full-frame overlay (transparent PNG)'}</li>
+              <li>{g('Διαθεσιμότητα σε πραγματικό χρόνο', 'Real-time availability')}</li>
+              <li>{g('Κράτηση ως επισκέπτης, χωρίς λογαριασμό', 'Guest booking, no account needed')}</li>
+              <li>{g('Online πληρωμή στον λογαριασμό σας Stripe ή Viva', 'Online payment into your Stripe or Viva account')}</li>
+              <li>{g('Αυτόματα email επιβεβαίωσης', 'Automatic confirmation emails')}</li>
+              <li>{g('Λειτουργεί σε κινητά', 'Works on mobile')}</li>
+              <li>{g('Ειδοποιήσεις διαθεσιμότητας για επισκέπτες', 'Slot alerts for guests')}</li>
+              <li>{g('Υποστηρίζει τιμή ανά ομάδα', 'Supports per-group pricing')}</li>
             </ul>
-          </div>
+          </Card>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ροή Εργασίας' : 'Workflow'}
+          <Card title={g('Ενσωμάτωση', 'Adding it to your site')}>
+            <p>
+              {g(
+                'Στις Ρυθμίσεις → Widget αντιγράψτε τον κώδικα και επικολλήστε τον στο HTML της ιστοσελίδας σας, ή στείλτε τον με email στον developer σας με ένα κλικ. Το widget παίρνει αυτόματα το όνομα, το λογότυπο και τα δωμάτιά σας.',
+                'In Settings → Widget, copy the code and paste it into your website\'s HTML, or email it to your web developer in one click. The widget picks up your name, logo and rooms automatically.'
+              )}
             </p>
+          </Card>
+        </Section>
+
+        {/* ─── 8. Slot Alerts ─── */}
+        <Section icon={Bell} title={g('Ειδοποιήσεις Διαθεσιμότητας', 'Slot Alerts')}>
+          <p>
+            {g(
+              'Οι παίκτες μπορούν να ζητήσουν ειδοποίηση για μια κλεισμένη ώρα. Αν η κράτηση ακυρωθεί, ειδοποιούνται αυτόματα ότι η ώρα είναι πάλι διαθέσιμη.',
+              'Players can ask to be alerted about a booked time. If that booking is cancelled, they are told automatically that the time is free again.'
+            )}
+          </p>
+          <Card>
+            <p>
+              {g(
+                'Λειτουργεί για εγγεγραμμένους παίκτες (ειδοποίηση στην εφαρμογή) και για επισκέπτες του widget (email ή τηλέφωνο).',
+                'Works for registered players (in-app notification) and for widget guests (email or phone).'
+              )}
+            </p>
+          </Card>
+        </Section>
+
+        {/* ─── 9. Photos ─── */}
+        <Section icon={Camera} title={g('Φωτογραφίες Ομάδων', 'Team Photos')}>
+          <p>
+            {g(
+              'Η εφαρμογή Photos (από το μενού του portal, με τον ίδιο λογαριασμό) σας επιτρέπει να ανεβάζετε φωτογραφίες ομάδων, να βάζετε το branding σας και να τις στέλνετε στους παίκτες με email.',
+              'The Photos app (from the portal menu, with the same account) lets you upload team photos, add your branding and email them to the players.'
+            )}
+          </p>
+
+          <Card title={g('Branding ανά δωμάτιο', 'Branding per room')}>
+            <ul className="space-y-2 list-disc pl-5">
+              <li>{g('Λογότυπο με μέγεθος και θέση (πάνω/κάτω, αριστερά/δεξιά, κάτω κέντρο)', 'Logo with size and position (top/bottom, left/right, bottom centre)')}</li>
+              <li>{g('Overlay σε όλο το κάδρο (PNG με διαφάνεια) και αδιαφάνεια', 'Full-frame overlay (transparent PNG) and opacity')}</li>
+              <li>{g('Χρώμα brand και προεπιλεγμένο φίλτρο', 'Brand colour and default filter')}</li>
+              <li>
+                {g(
+                  'Κείμενο στη φωτογραφία με {{room}}, {{team}} και {{time}} που συμπληρώνονται αυτόματα',
+                  'Text on the photo, with {{room}}, {{team}} and {{time}} filled in automatically'
+                )}
+              </li>
+            </ul>
+          </Card>
+
+          <Card title={g('Ροή εργασίας', 'Workflow')}>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge color="amber">Pending</Badge>
+              <Badge color="gray">{g('Πρόχειρη', 'Draft')}</Badge>
               <span className="text-brand-text-secondary/40">→</span>
-              <Badge color="blue">Processing</Badge>
+              <Badge color="blue">{g('Έτοιμη', 'Ready')}</Badge>
               <span className="text-brand-text-secondary/40">→</span>
-              <Badge color="green">Ready</Badge>
+              <Badge color="green">{g('Στάλθηκε', 'Sent')}</Badge>
             </div>
             <p className="mt-2">
-              {isGreek
-                ? 'Μόλις όλες οι φωτογραφίες μιας κράτησης είναι έτοιμες, ο παίκτης λαμβάνει ειδοποίηση "Τα Escape Moments σας είναι έτοιμα!" και μπορεί να τις κατεβάσει ή να τις μοιραστεί.'
-                : 'Once all photos for a booking are ready, the player gets a notification "Your Escape Moments are ready!" and can download or share them.'}
+              {g(
+                'Ανεβάστε τη φωτογραφία, γράψτε όνομα ομάδας, αποτέλεσμα και χρόνο, εφαρμόστε το branding και στείλτε τη στα email των παικτών. Κάθε φωτογραφία έχει δική της σελίδα με link, και βλέπετε προβολές και λήψεις.',
+                'Upload the photo, add the team name, result and time, apply your branding and send it to the players\' emails. Every photo gets its own page link, and you can see views and downloads.'
+              )}
             </p>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 5. Booking Codes ─── */}
-        <Section icon={Ticket} title={isGreek ? 'Κωδικός Κράτησης' : 'Booking Codes'}>
+        {/* ─── 10. Reviews ─── */}
+        <Section icon={Star} title={g('Αξιολογήσεις', 'Reviews')}>
           <p>
-            {isGreek
-              ? 'Κάθε κράτηση παίρνει αυτόματα έναν μοναδικό κωδικό κράτησης (π.χ. UNL-A1B2C3).'
-              : 'Every booking automatically gets a unique booking code (e.g., UNL-A1B2C3).'}
+            {g(
+              'Μόνο παίκτες με ολοκληρωμένη κράτηση μπορούν να αξιολογήσουν ένα δωμάτιο.',
+              'Only players with a completed booking can review a room.'
+            )}
           </p>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <div className="flex gap-3 items-start">
-              <Ticket className="w-5 h-5 text-brand-red-light shrink-0 mt-0.5" />
-              <div>
-                <p className="text-white font-medium">
-                  {isGreek ? 'Πώς λειτουργεί' : 'How it works'}
-                </p>
-                <p className="mt-1">
-                  {isGreek
-                    ? 'Ο παίκτης βλέπει τον κωδικό στην επιβεβαίωση και στα εισιτήριά του. Ο ίδιος κωδικός εμφανίζεται δίπλα σε κάθε κράτηση στη σελίδα Κρατήσεις, ώστε να τον συγκρίνετε στην είσοδο χωρίς χαρτιά.'
-                    : 'The player sees the code on their confirmation and in their tickets. The same code is shown next to each booking on your Bookings page, so you can match it at the door with no paperwork.'}
-                </p>
+          <Card>
+            <div className="space-y-3">
+              <div className="flex gap-3 items-center">
+                <Star className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{g('Βαθμολογία 1 έως 5 αστέρια (υποχρεωτική)', 'Rating from 1 to 5 stars (required)')}</span>
+              </div>
+              <div className="flex gap-3 items-center">
+                <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{g('Κάθε αξιολόγηση είναι επιβεβαιωμένη, συνδεδεμένη με πραγματική κράτηση', 'Every review is verified and linked to a real booking')}</span>
+              </div>
+              <div className="flex gap-3 items-center">
+                <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>{g('Μία αξιολόγηση ανά κράτηση', 'One review per booking')}</span>
               </div>
             </div>
-          </div>
+          </Card>
+          <p>
+            {g(
+              'Η μέση βαθμολογία και ο αριθμός αξιολογήσεων του δωματίου ενημερώνονται αυτόματα.',
+              'The room\'s average rating and review count update automatically.'
+            )}
+          </p>
         </Section>
 
-        {/* ─── 6. Booking Widget ─── */}
-        <Section icon={Code2} title={isGreek ? 'Widget Κρατήσεων' : 'Booking Widget'}>
+        {/* ─── 11. Early Access Partner Program ─── */}
+        <Section icon={Sparkles} title={g('Πρόγραμμα Early Access', 'Early Access Partner Program')}>
           <p>
-            {isGreek
-              ? 'Ενσωματώστε ένα widget κρατήσεων απευθείας στο site σας. Οι πελάτες μπορούν να κλείσουν χωρίς να χρειάζεται λογαριασμός UNLOCKED.'
-              : 'Embed a booking widget directly on your website. Customers can book without needing an UNLOCKED account.'}
+            {g(
+              'Ενταχθείτε από τις Ρυθμίσεις → Early Access. Ως Early Access Partner:',
+              'Join from Settings → Early Access. As an Early Access Partner:'
+            )}
           </p>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Χαρακτηριστικά' : 'Features'}
-            </p>
+          <Card>
             <ul className="space-y-2 list-disc pl-5">
-              <li>{isGreek ? 'Διαθεσιμότητα σε πραγματικό χρόνο' : 'Real-time availability'}</li>
-              <li>{isGreek ? 'Κράτηση ως επισκέπτης (χωρίς λογαριασμό)' : 'Guest booking (no account required)'}</li>
-              <li>{isGreek ? 'Αυτόματα emails επιβεβαίωσης' : 'Automatic confirmation emails'}</li>
-              <li>{isGreek ? 'Φιλικό προς κινητά / responsive' : 'Mobile-friendly / responsive'}</li>
-              <li>{isGreek ? 'Ειδοποιήσεις slot (slot alerts) για επισκέπτες' : 'Slot alerts for guests'}</li>
-              <li>{isGreek ? 'Υποστήριξη τιμολόγησης ανά ομάδα' : 'Per-group pricing support'}</li>
+              <li>{g('Τα δωμάτιά σας εμφανίζονται στο Featured Spotlight της αρχικής σελίδας', 'Your rooms appear in the Featured Spotlight on the home page')}</li>
+              <li>{g('Ορίζετε ημερομηνία κυκλοφορίας και οι Premium παίκτες κλείνουν έως 3 ημέρες νωρίτερα', 'You set a release date and Premium players can book up to 3 days early')}</li>
+              <li>{g('Οι Premium παίκτες ειδοποιούνται όταν προσθέτετε νέο δωμάτιο', 'Premium players are notified when you add a new room')}</li>
+              <li>{g('Τα δωμάτιά σας έχουν το σήμα "Early Access"', 'Your rooms show the "Early Access" badge')}</li>
             </ul>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ενσωμάτωση' : 'Integration'}
-            </p>
-            <p>
-              {isGreek
-                ? 'Απλά αντιγράψτε τον κώδικα ενσωμάτωσης από τις Ρυθμίσεις και επικολλήστε τον στο HTML του site σας. Το widget χρησιμοποιεί αυτόματα το όνομα, λογότυπο και τα δωμάτια της εταιρείας σας.'
-                : 'Simply copy the embed code from Settings and paste it into your website\'s HTML. The widget automatically uses your company name, logo, and room configuration.'}
-            </p>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 7. Slot Alerts ─── */}
-        <Section icon={Bell} title={isGreek ? 'Ειδοποιήσεις Slot' : 'Slot Alerts'}>
-          <p>
-            {isGreek
-              ? 'Οι παίκτες μπορούν να εγγραφούν σε ειδοποίηση για κλεισμένα slots. Αν μια κράτηση ακυρωθεί, οι εγγεγραμμένοι λαμβάνουν αυτόματα ειδοποίηση ότι το slot είναι πλέον διαθέσιμο.'
-              : 'Players can subscribe to booked slots. When a booking is cancelled, subscribers automatically receive a notification that the slot is now available.'}
-          </p>
-
-          <div className="bg-white/5 rounded-xl p-4">
+        {/* ─── 12. Leaderboard & Escape Rate ─── */}
+        <Section icon={Trophy} title={g('Κατάταξη & Ποσοστό Απόδρασης', 'Leaderboard & Escape Rate')}>
+          <Card title={g('Κατάταξη παικτών', 'Player ranking')}>
             <p>
-              {isGreek
-                ? 'Υποστηρίζονται τόσο εγγεγραμμένοι παίκτες (in-app ειδοποίηση) όσο και επισκέπτες widget (email/phone).'
-                : 'Supports both registered players (in-app notification) and widget guests (email/phone).'}
+              {g(
+                'Οι παίκτες κατατάσσονται με βάση πόσα διαφορετικά δωμάτια έχουν λύσει. Σε ισοβαθμία, προηγείται όποιος χρειάστηκε λιγότερες προσπάθειες.',
+                'Players are ranked by how many different rooms they escaped. On a tie, the player with fewer attempts goes first.'
+              )}
             </p>
-          </div>
-        </Section>
-
-        {/* ─── 8. EA Partner Program ─── */}
-        <Section icon={Sparkles} title={isGreek ? 'EA Partner Program' : 'EA Partner Program'}>
-          <p>
-            {isGreek
-              ? 'Οι εταιρείες με ενεργή συνδρομή θεωρούνται EA (Early Access) Partners.'
-              : 'Companies with an active subscription are considered EA (Early Access) Partners.'}
-          </p>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <ul className="space-y-2 list-disc pl-5">
-              <li>
-                {isGreek
-                  ? 'Τα δωμάτια EA partners εμφανίζονται αυτόματα στο Featured Spotlight της αρχικής σελίδας'
-                  : 'EA partner rooms are automatically included in the Featured Spotlight on the home page'}
-              </li>
-              <li>
-                {isGreek
-                  ? 'Ορίστε ημερομηνία κυκλοφορίας — οι Premium συνδρομητές μπορούν να κλείσουν έως 3 ημέρες νωρίτερα'
-                  : 'Set a release date — Premium subscribers can book up to 3 days early'}
-              </li>
-              <li>
-                {isGreek
-                  ? 'Όταν προσθέτετε νέο δωμάτιο, οι Premium παίκτες λαμβάνουν ειδοποίηση'
-                  : 'When you add a new room, Premium players receive a notification'}
-              </li>
-              <li>
-                {isGreek
-                  ? 'Εμφανίζεται badge "Early Access" στα δωμάτιά σας'
-                  : '"Early Access" badge displayed on your rooms'}
-              </li>
-            </ul>
-          </div>
-        </Section>
-
-        {/* ─── 9. Leaderboard & Escape Rate ─── */}
-        <Section icon={Trophy} title={isGreek ? 'Πίνακας Κατάταξης & Ποσοστό Απόδρασης' : 'Leaderboard & Escape Rate'}>
-          <p>
-            {isGreek
-              ? 'Η πλατφόρμα διατηρεί δημόσιο πίνακα κατάταξης παικτών και δωματίων.'
-              : 'The platform maintains a public leaderboard for players and rooms.'}
-          </p>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Κατάταξη Παικτών' : 'Player Ranking'}
-            </p>
+          </Card>
+          <Card title={g('Ποσοστό απόδρασης δωματίου', 'Room escape rate')}>
             <p>
-              {isGreek
-                ? 'Οι παίκτες κατατάσσονται ανά αριθμό μοναδικών δωματίων που δραπέτευσαν. Σε ισοβαθμία, κερδίζει ο παίκτης με λιγότερες συνολικές προσπάθειες (καλύτερη αποτελεσματικότητα).'
-                : 'Players are ranked by unique rooms escaped. In case of a tie, the player with fewer total attempts (better efficiency) wins.'}
+              {g(
+                '(ολοκληρωμένες κρατήσεις / όλες οι παρελθούσες μη ακυρωμένες κρατήσεις) × 100%. Εμφανίζεται στην καρτέλα "Top Rooms".',
+                '(completed bookings / all past non-cancelled bookings) × 100%. Shown on the "Top Rooms" tab.'
+              )}
             </p>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Ποσοστό Απόδρασης Δωματίου' : 'Room Escape Rate'}
-            </p>
-            <p>
-              {isGreek
-                ? 'Υπολογίζεται ως: (ολοκληρωμένες κρατήσεις / σύνολο παρελθοντικών μη-ακυρωμένων κρατήσεων) × 100%. Εμφανίζεται στον πίνακα κατάταξης "Top Rooms".'
-                : 'Calculated as: (completed bookings / total past non-cancelled bookings) × 100%. Shown in the "Top Rooms" leaderboard tab.'}
-            </p>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-3">
-            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">
-              {isGreek ? 'Badges' : 'Badges'}
-            </p>
+          </Card>
+          <Card title="Badges">
             <div className="flex flex-wrap gap-2">
               <Badge color="amber">🏆 Champion</Badge>
               <Badge color="red">🔥 On Fire</Badge>
@@ -535,156 +667,69 @@ export default function DocsPage() {
               <Badge color="amber">🎯 Perfectionist</Badge>
               <Badge color="purple">🌙 Night Owl</Badge>
             </div>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 10. Notifications ─── */}
-        <Section icon={Bell} title={isGreek ? 'Ειδοποιήσεις' : 'Notifications'}>
+        {/* ─── 13. Notifications ─── */}
+        <Section icon={Bell} title={g('Ειδοποιήσεις Παικτών', 'Player Notifications')}>
           <p>
-            {isGreek
-              ? 'Όλες οι ειδοποιήσεις είναι τοπικοποιημένες (Ελληνικά & Αγγλικά) βάσει της προτίμησης γλώσσας του παίκτη.'
-              : 'All notifications are localized (Greek & English) based on the player\'s language preference.'}
+            {g(
+              'Οι ειδοποιήσεις στέλνονται στα Ελληνικά ή στα Αγγλικά, ανάλογα με τη γλώσσα του παίκτη.',
+              'Notifications are sent in Greek or English, depending on the player\'s language.'
+            )}
           </p>
-
-          <div className="bg-white/5 rounded-xl p-4">
+          <Card>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
-                { type: 'booking', label: isGreek ? 'Επιβεβαίωση κράτησης' : 'Booking confirmation' },
-                { type: 'cancelled', label: isGreek ? 'Ακύρωση κράτησης' : 'Booking cancelled' },
-                { type: 'reminder', label: isGreek ? 'Υπενθύμιση κράτησης' : 'Booking reminder' },
-                { type: 'slot_available', label: isGreek ? 'Slot διαθέσιμο' : 'Slot available' },
-                { type: 'new_room', label: isGreek ? 'Νέο δωμάτιο (Premium)' : 'New room (Premium)' },
-                { type: 'photos_ready', label: isGreek ? 'Φωτογραφίες έτοιμες' : 'Photos ready' },
-                { type: 'friend_request', label: isGreek ? 'Αίτημα φιλίας' : 'Friend request' },
-                { type: 'friend_accepted', label: isGreek ? 'Αποδοχή φιλίας' : 'Friend accepted' },
-                { type: 'booking_invite', label: isGreek ? 'Πρόσκληση κράτησης' : 'Booking invite' },
-                { type: 'promo', label: isGreek ? 'Προωθητική' : 'Promotional' },
-                { type: 'system', label: isGreek ? 'Σύστημα' : 'System' },
-              ].map(({ type, label }) => (
-                <div key={type} className="flex items-center gap-2 text-xs">
-                  <span className="text-brand-red-light font-mono">{type}</span>
-                  <span className="text-brand-text-secondary/40">—</span>
+                g('Επιβεβαίωση κράτησης', 'Booking confirmation'),
+                g('Ακύρωση κράτησης', 'Booking cancelled'),
+                g('Υπενθύμιση κράτησης', 'Booking reminder'),
+                g('Η ώρα είναι διαθέσιμη', 'Slot available'),
+                g('Νέο δωμάτιο (Premium)', 'New room (Premium)'),
+                g('Φωτογραφίες έτοιμες', 'Photos ready'),
+                g('Αίτημα & αποδοχή φιλίας', 'Friend request & accepted'),
+                g('Πρόσκληση σε κράτηση', 'Booking invite'),
+                g('Προσφορές & ανακοινώσεις', 'Offers & announcements'),
+              ].map((label) => (
+                <div key={label} className="flex items-center gap-2 text-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-red-light shrink-0" />
                   <span>{label}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </Section>
 
-        {/* ─── 11. Plans & Pricing ─── */}
-        <Section icon={CreditCard} title={isGreek ? 'Πλάνα & Τιμολόγηση' : 'Plans & Pricing'}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left pb-3 pr-4 text-brand-text-secondary font-medium"></th>
-                  <th className="text-center pb-3 px-3">
-                    <Badge color="blue">Starter</Badge>
-                  </th>
-                  <th className="text-center pb-3 px-3">
-                    <Badge color="purple">Pro</Badge>
-                  </th>
-                  <th className="text-center pb-3 px-3">
-                    <Badge color="red">Enterprise</Badge>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-xs">
-                {[
-                  { label: isGreek ? 'Μηνιαία' : 'Monthly', values: ['€58', '€98', '€198'] },
-                  { label: isGreek ? 'Ετήσια' : 'Yearly', values: ['€580', '€980', '€1980'] },
-                  { label: isGreek ? 'Δωμάτια' : 'Rooms', values: [isGreek ? 'Έως 1' : 'Up to 1', isGreek ? 'Απεριόριστα' : 'Unlimited', isGreek ? 'Απεριόριστα' : 'Unlimited'] },
-                  { label: 'Analytics', values: ['Basic', isGreek ? 'Προχωρημένα' : 'Advanced', isGreek ? 'Προχωρημένα + Revenue' : 'Advanced + Revenue'] },
-                  { label: 'Support', values: ['Email', 'Priority', '24/7 + Manager'] },
-                  { label: isGreek ? 'Συνδρομές' : 'Subscriptions', values: ['—', '✓', '✓'] },
-                  { label: 'Custom Branding', values: ['—', '—', '✓'] },
-                  { label: 'API Access', values: ['—', '—', '✓'] },
-                  { label: 'White-label Widget', values: ['—', '—', '✓'] },
-                  { label: 'Multi-location', values: ['—', '—', '✓'] },
-                ].map(({ label, values }) => (
-                  <tr key={label} className="border-b border-white/5">
-                    <td className="py-2.5 pr-4 text-brand-text-secondary">{label}</td>
-                    {values.map((v, i) => (
-                      <td key={i} className="text-center py-2.5 px-3 text-white">
-                        {v}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
-            <p className="text-emerald-400 font-semibold text-sm">
-              {isGreek ? '🎉 Ετήσια Συνδρομή = 2 μήνες δωρεάν! (~17% έκπτωση)' : '🎉 Yearly Subscription = 2 months free! (~17% savings)'}
-            </p>
-          </div>
-
+        {/* ─── 14. Friends & Invitations ─── */}
+        <Section icon={Users} title={g('Φίλοι & Προσκλήσεις', 'Friends & Invitations')}>
           <p>
-            {isGreek
-              ? 'Οι πληρωμές γίνονται ασφαλώς μέσω Stripe. Μπορείτε να διαχειριστείτε ή να ακυρώσετε τη συνδρομή σας ανά πάσα στιγμή μέσω της σελίδας Χρεώσεων.'
-              : 'Payments are securely processed by Stripe. You can manage or cancel your subscription at any time from the Billing page.'}
+            {g(
+              'Οι παίκτες στέλνουν αιτήματα φιλίας και προσκαλούν φίλους στις κρατήσεις τους.',
+              'Players send friend requests and invite friends to their bookings.'
+            )}
           </p>
-        </Section>
-
-        {/* ─── 12. Onboarding ─── */}
-        <Section icon={Layers} title={isGreek ? 'Διαδικασία Ένταξης' : 'Onboarding Process'}>
-          <div className="bg-white/5 rounded-xl p-4 space-y-4">
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">1</div>
-              <div>
-                <p className="text-white font-medium">{isGreek ? 'Αποδοχή Όρων' : 'Accept Terms'}</p>
-                <p className="text-xs mt-1">{isGreek ? 'Αποδοχή των όρων χρήσης και της πολιτικής απορρήτου' : 'Accept terms of service and privacy policy'}</p>
+          <Card>
+            <div className="space-y-2">
+              <div className="flex gap-3 items-center">
+                <Users className="w-4 h-4 text-brand-red-light shrink-0" />
+                <span>{g('Αιτήματα φιλίας (αποστολή, αποδοχή, απόρριψη)', 'Friend requests (send, accept, decline)')}</span>
+              </div>
+              <div className="flex gap-3 items-center">
+                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{g('Πρόσκληση φίλων σε κράτηση', 'Invite friends to a booking')}</span>
+              </div>
+              <div className="flex gap-3 items-center">
+                <Layers className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>{g('Ειδοποίηση σε κάθε βήμα', 'A notification at every step')}</span>
               </div>
             </div>
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">2</div>
-              <div>
-                <p className="text-white font-medium">{isGreek ? 'Επιλογή Πλάνου' : 'Choose Plan'}</p>
-                <p className="text-xs mt-1">{isGreek ? 'Επιλέξτε πλάνο και ολοκληρώστε την πληρωμή μέσω Stripe Checkout' : 'Select a plan and complete payment via Stripe Checkout'}</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red-light font-bold text-sm shrink-0">3</div>
-              <div>
-                <p className="text-white font-medium">{isGreek ? 'Αξιολόγηση Διαχειριστή' : 'Admin Review'}</p>
-                <p className="text-xs mt-1">{isGreek ? 'Η αίτησή σας αξιολογείται εντός 48 ωρών' : 'Your application is reviewed within 48 hours'}</p>
-              </div>
-            </div>
-          </div>
-        </Section>
-
-        {/* ─── 13. Friends & Invitations ─── */}
-        <Section icon={Users} title={isGreek ? 'Φίλοι & Προσκλήσεις' : 'Friends & Invitations'}>
-          <p>
-            {isGreek
-              ? 'Οι παίκτες μπορούν να στείλουν αιτήματα φιλίας και να προσκαλέσουν φίλους σε κρατήσεις.'
-              : 'Players can send friend requests and invite friends to their bookings.'}
-          </p>
-
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <div className="flex gap-3 items-center">
-              <Users className="w-4 h-4 text-brand-red-light" />
-              <span>{isGreek ? 'Σύστημα αιτημάτων φιλίας (αποστολή/αποδοχή/απόρριψη)' : 'Friend request system (send/accept/reject)'}</span>
-            </div>
-            <div className="flex gap-3 items-center">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span>{isGreek ? 'Πρόσκληση φίλων σε κράτηση μέσω ειδοποίησης' : 'Invite friends to a booking via notification'}</span>
-            </div>
-            <div className="flex gap-3 items-center">
-              <Bell className="w-4 h-4 text-blue-400" />
-              <span>{isGreek ? 'Ειδοποιήσεις σε κάθε βήμα (αίτημα, αποδοχή, πρόσκληση)' : 'Notifications at every step (request, accepted, invite)'}</span>
-            </div>
-          </div>
+          </Card>
         </Section>
 
         {/* ─── Help ─── */}
         <div className="mt-8 bg-brand-surface rounded-2xl border border-white/5 p-6 text-center">
           <p className="text-brand-text-secondary text-sm">
-            {isGreek
-              ? 'Χρειάζεστε βοήθεια; Επικοινωνήστε μαζί μας στο'
-              : 'Need help? Contact us at'}{' '}
+            {g('Χρειάζεστε βοήθεια; Στείλτε μας email στο', 'Need help? Email us at')}{' '}
             <a href="mailto:hello@unlocked.gr" className="text-brand-red-light hover:underline">
               hello@unlocked.gr
             </a>
