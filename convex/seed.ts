@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 
 const ROOM_IMAGES = [
   "https://images.unsplash.com/photo-1509248961085-879c6c3c7b05?w=600&q=80",
@@ -9,7 +9,7 @@ const ROOM_IMAGES = [
   "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80",
 ];
 
-export const seed = mutation({
+export const seed = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Check if already seeded
@@ -198,7 +198,7 @@ export const seed = mutation({
 });
 
 // Delete all seeded rooms (rooms without a companyId = not created by a real company)
-export const clearSeedRooms = mutation({
+export const clearSeedRooms = internalMutation({
   args: {},
   handler: async (ctx) => {
     const rooms = await ctx.db.query("rooms").collect();
@@ -213,7 +213,7 @@ export const clearSeedRooms = mutation({
   },
 });
 
-export const seedDiscountCodes = mutation({
+export const seedDiscountCodes = internalMutation({
   args: {},
   handler: async (ctx) => {
     const existing = await ctx.db
