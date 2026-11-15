@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 /* ════════════════════════════════════════════════════════════
@@ -155,7 +155,7 @@ export const getBlockedUserIds = query({
 });
 
 /* ── Get Pending Reports (admin) ── */
-export const getPendingReports = query({
+export const getPendingReports = internalQuery({
   args: {},
   handler: async (ctx) => {
     return await ctx.db
@@ -167,7 +167,7 @@ export const getPendingReports = query({
 });
 
 /* ── Resolve a Report (admin) ── */
-export const resolveReport = mutation({
+export const resolveReport = internalMutation({
   args: {
     reportId: v.id("reports"),
     resolution: v.union(v.literal("dismissed"), v.literal("removed")),
