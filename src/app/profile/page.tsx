@@ -188,8 +188,8 @@ export default function ProfilePage() {
       </section>
 
       {/* Reports businesses filed about this player (only while active) */}
-      {user?.id && <ReportsAboutMe userId={user.id} />}
-      {user?.id && <LateCancelsAboutMe userId={user.id} />}
+      {user?.sessionToken && <ReportsAboutMe sessionToken={user.sessionToken} />}
+      {user?.sessionToken && <LateCancelsAboutMe sessionToken={user.sessionToken} />}
 
       {/* Badges */}
       <section className="pb-6">

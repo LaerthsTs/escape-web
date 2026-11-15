@@ -3,6 +3,7 @@ import { query } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { sessionTokenV, requireCompany } from "./companySession";
+import { optionalUser } from "./userSession";
 import {
   LATE_CANCEL_FLAG_THRESHOLD,
   LATE_CANCEL_LOOKBACK_DAYS,
@@ -88,9 +89,11 @@ export const flagsForBookings = query({
 
 /** The player's own late cancellations: how many count and whether they're flagged. */
 export const myLateCancels = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const summary = await loadLateCancels(ctx, args.userId, Date.now());
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return null;
+    const summary = await loadLateCancels(ctx, user._id, Date.now());
     return {
       count: summary.count,
       flagged: summary.count >= LATE_CANCEL_FLAG_THRESHOLD,

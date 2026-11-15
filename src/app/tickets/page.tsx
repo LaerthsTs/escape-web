@@ -60,7 +60,7 @@ export default function TicketsPage() {
 
   const myRoomReports = useQuery(
     api.reports.myRoomReports,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const [reporting, setReporting] = useState<any>(null);
   const [reportSent, setReportSent] = useState(false);
@@ -69,14 +69,14 @@ export default function TicketsPage() {
   const [cancelTarget, setCancelTarget] = useState<any>(null);
   const lateCancels = useQuery(
     api.cancellations.myLateCancels,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const retryPayment = useAction(api.stripe.retryBookingPayment);
 
   // Photos for completed bookings
   const bookingsWithPhotos = useQuery(
     api.bookingPhotos.getBookingsWithPhotos,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   useEffect(() => {
@@ -556,7 +556,7 @@ export default function TicketsPage() {
 
       {reporting && (
         <RoomReportModal
-          userId={user.id}
+          sessionToken={user.sessionToken}
           booking={reporting}
           onClose={() => setReporting(null)}
           onSent={() => {

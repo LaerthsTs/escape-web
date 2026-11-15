@@ -16,12 +16,12 @@ type Kind = 'safety' | 'behaviour';
  * behaviour). Goes only to the UNLOCKED team; the business never sees who sent it.
  */
 export function RoomReportModal({
-  userId,
+  sessionToken,
   booking,
   onClose,
   onSent,
 }: {
-  userId: string;
+  sessionToken: string;
   booking: { _id: string; room?: { title?: string } | null; date: string; time: string };
   onClose: () => void;
   onSent: () => void;
@@ -59,14 +59,14 @@ export function RoomReportModal({
     try {
       const ids: string[] = [];
       for (const p of photos) {
-        const url = await generateUploadUrl({ userId: userId as any });
+        const url = await generateUploadUrl({ sessionToken });
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': p.file.type }, body: p.file });
         if (!res.ok) throw new Error(t('reports.err.upload'));
         const { storageId } = await res.json();
         ids.push(storageId);
       }
       await submit({
-        userId: userId as any,
+        sessionToken,
         bookingId: booking._id as any,
         kind,
         description: text,

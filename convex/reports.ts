@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { requireAdminSession } from "./adminSession";
+import { requireUser, optionalUser } from "./userSession";
 import { sessionTokenV, requireCompany, requireBookingOf } from "./companySession";
 import {
   COMPANY_REPORT_WINDOW_MS,
@@ -36,12 +37,6 @@ type Ctx = QueryCtx | MutationCtx;
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
-
-async function requirePlayer(ctx: Ctx, userId: Id<"users">): Promise<Doc<"users">> {
-  const user = await ctx.db.get(userId);
-  if (!user) throw new ConvexError("User not found");
-  return user;
-}
 
 /** Room duration lookups, cached per call. */
 function roomCache(ctx: Ctx) {
@@ -97,11 +92,13 @@ function categoryCounts(reports: { categories: PlayerReportCategory[] }[]) {
 
 /** The player's room reports, so ticket pages can show "Reported" instead of the button. */
 export const myRoomReports = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const rows = await ctx.db
       .query("roomReports")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     return rows.map((r) => ({
       _id: r._id,
@@ -114,25 +111,25 @@ export const myRoomReports = query({
 });
 
 export const generateRoomReportUploadUrl = mutation({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    await requirePlayer(ctx, args.userId);
+    await requireUser(ctx, args.sessionToken);
     return await ctx.storage.generateUploadUrl();
   },
 });
 
 export const submitRoomReport = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     bookingId: v.id("bookings"),
     kind: roomReportKindV,
     description: v.string(),
     photoStorageIds: v.array(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    await requirePlayer(ctx, args.userId);
+    const user = await requireUser(ctx, args.sessionToken);
     const booking = await ctx.db.get(args.bookingId);
-    if (!booking || booking.userId !== args.userId) throw new ConvexError("Booking not found");
+    if (!booking || booking.userId !== user._id) throw new ConvexError("Booking not found");
     if (booking.status !== "completed") throw new ConvexError("You can only report a room you have played");
     const room = await ctx.db.get(booking.roomId);
     const end = gameEndMs(booking.date, booking.time, room?.duration);
@@ -143,7 +140,7 @@ export const submitRoomReport = mutation({
       .query("roomReports")
       .withIndex("by_booking", (q) => q.eq("bookingId", args.bookingId))
       .collect();
-    if (existing.some((r) => r.userId === args.userId)) {
+    if (existing.some((r) => r.userId === user._id)) {
       throw new ConvexError("You have already reported this game");
     }
 
@@ -164,7 +161,7 @@ export const submitRoomReport = mutation({
     const now = Date.now();
     const companyId = booking.companyId ?? room?.companyId;
     const id = await ctx.db.insert("roomReports", {
-      userId: args.userId,
+      userId: user._id,
       bookingId: args.bookingId,
       roomId: booking.roomId,
       companyId,
@@ -322,9 +319,11 @@ export const flagsForBookings = query({
 // ═══════════════════════════════════════════════════════════════════════
 
 export const myStanding = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const standing = await loadStanding(ctx, args.userId);
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return null;
+    const standing = await loadStanding(ctx, user._id);
     return {
       active: standing.active.length > 0,
       gamesRemaining: standing.gamesRemaining,
@@ -339,11 +338,12 @@ export const myStanding = query({
 });
 
 export const replyToReport = mutation({
-  args: { userId: v.id("users"), reportId: v.id("playerReports"), reply: v.string() },
+  args: { sessionToken: v.string(), reportId: v.id("playerReports"), reply: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const report = await ctx.db.get(args.reportId);
-    if (!report || report.userId !== args.userId || report.voidedAt) throw new ConvexError("Report not found");
-    const standing = await loadStanding(ctx, args.userId);
+    if (!report || report.userId !== user._id || report.voidedAt) throw new ConvexError("Report not found");
+    const standing = await loadStanding(ctx, user._id);
     if (!standing.active.some((r) => r._id === report._id)) throw new ConvexError("Report not found");
     const reply = args.reply.trim();
     if (reply.length > PLAYER_REPLY_MAX_CHARS) throw new ConvexError("Reply is too long");

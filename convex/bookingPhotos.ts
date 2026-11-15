@@ -2,6 +2,7 @@ import { query, mutation, internalAction, internalMutation, internalQuery } from
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { nt } from "./notificationTexts";
+import { optionalUser } from "./userSession";
 import { sessionTokenV, requireCompany, optionalCompany, requireBookingOf } from "./companySession";
 
 // ════════════════════════════════════════════════
@@ -132,11 +133,13 @@ export const getByBookingInternal = internalQuery({
 
 // ── Get photos for a booking (player view — only ready photos) ──
 export const getReadyByBooking = query({
-  args: { bookingId: v.id("bookings"), userId: v.id("users") },
+  args: { bookingId: v.id("bookings"), sessionToken: v.string() },
   handler: async (ctx, args) => {
     // Verify this user owns this booking
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const booking = await ctx.db.get(args.bookingId);
-    if (!booking || booking.userId?.toString() !== args.userId.toString()) {
+    if (!booking || booking.userId?.toString() !== user._id.toString()) {
       return [];
     }
 
@@ -443,11 +446,13 @@ export const getCompletedBookings = query({
 
 // ── Get bookings with photos for a player ──
 export const getBookingsWithPhotos = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
     const withPhotos = [];

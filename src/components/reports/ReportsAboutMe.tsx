@@ -13,9 +13,9 @@ import { PLAYER_REPLY_MAX_CHARS } from '../../../convex/reportRules';
  * has no active reports. Never shows which business, room or date: the server
  * only returns categories and the player's own replies.
  */
-export function ReportsAboutMe({ userId }: { userId: string }) {
+export function ReportsAboutMe({ sessionToken }: { sessionToken: string }) {
   const { t } = useTranslation();
-  const standing = useQuery(api.reports.myStanding, { userId: userId as any });
+  const standing = useQuery(api.reports.myStanding, { sessionToken });
   if (!standing || !standing.active) return null;
 
   return (
@@ -36,7 +36,7 @@ export function ReportsAboutMe({ userId }: { userId: string }) {
           </div>
           <ul className="space-y-3">
             {standing.reports.map((r) => (
-              <ReportRow key={r._id} userId={userId} report={r} />
+              <ReportRow key={r._id} sessionToken={sessionToken} report={r} />
             ))}
           </ul>
           <p className="text-xs text-brand-text-muted">{t('reports.me.privacy')}</p>
@@ -50,9 +50,9 @@ export function ReportsAboutMe({ userId }: { userId: string }) {
  * The player's late cancellations. Shows nothing until they have one; says
  * when businesses start seeing a warning and when the oldest one stops counting.
  */
-export function LateCancelsAboutMe({ userId }: { userId: string }) {
+export function LateCancelsAboutMe({ sessionToken }: { sessionToken: string }) {
   const { t, language } = useTranslation();
-  const late = useQuery(api.cancellations.myLateCancels, { userId: userId as any });
+  const late = useQuery(api.cancellations.myLateCancels, { sessionToken });
   if (!late || late.count === 0) return null;
   const expires = late.oldestExpiresAt
     ? new Date(late.oldestExpiresAt).toLocaleDateString(language, { day: 'numeric', month: 'long', year: 'numeric' })
@@ -87,10 +87,10 @@ export function LateCancelsAboutMe({ userId }: { userId: string }) {
 }
 
 function ReportRow({
-  userId,
+  sessionToken,
   report,
 }: {
-  userId: string;
+  sessionToken: string;
   report: { _id: string; categories: string[]; reply: string | null };
 }) {
   const { t } = useTranslation();
@@ -133,7 +133,7 @@ function ReportRow({
                   setSaving(true);
                   setError(null);
                   try {
-                    await reply({ userId: userId as any, reportId: report._id as any, reply: text });
+                    await reply({ sessionToken, reportId: report._id as any, reply: text });
                     setEditing(false);
                   } catch (err) {
                     setError(friendlyError(err, t));
