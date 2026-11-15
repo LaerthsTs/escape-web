@@ -55,7 +55,7 @@ export default function TicketsPage() {
 
   const bookings = useQuery(
     api.bookings.getByUser,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const myRoomReports = useQuery(
@@ -106,7 +106,7 @@ export default function TicketsPage() {
     if (!cancelTarget) return;
     setCancelling(cancelTarget._id);
     try {
-      await cancelBooking({ id: cancelTarget._id, userId: user.id as any, reason, note });
+      await cancelBooking({ id: cancelTarget._id, sessionToken: user.sessionToken, reason, note });
       setCancelTarget(null);
     } finally {
       setCancelling(null);
@@ -123,6 +123,7 @@ export default function TicketsPage() {
     setPayingBooking(bookingId);
     try {
       const result = await retryPayment({
+        sessionToken: user!.sessionToken,
         bookingId: bookingId as any,
         successUrl: `${window.location.origin}/booking/confirmation?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${window.location.origin}/tickets`,

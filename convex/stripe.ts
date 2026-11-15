@@ -1,6 +1,6 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import Stripe from "stripe";
@@ -274,7 +274,7 @@ export const getSubscriptionDetails = action({
 // app calls them; they forward to the new flow. `total` from the client is
 // ignored, the price is computed on the server.
 
-export const createBookingCheckout = action({
+export const createBookingCheckout = internalAction({
   args: {
     userId: v.id("users"),
     roomId: v.id("rooms"),
@@ -306,12 +306,15 @@ export const createBookingCheckout = action({
 
 export const retryBookingPayment = action({
   args: {
+    sessionToken: v.string(),
     bookingId: v.id("bookings"),
     successUrl: v.string(),
     cancelUrl: v.string(),
   },
   handler: async (ctx, args): Promise<{ url: string }> => {
-    return await retryCheckoutImpl(ctx, args);
+    const { userId } = await ctx.runQuery(internal.userSession.verify, { sessionToken: args.sessionToken });
+    const { sessionToken: _t, ...rest } = args;
+    return await retryCheckoutImpl(ctx, { ...rest, userId });
   },
 });
 

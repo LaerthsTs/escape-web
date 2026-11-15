@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { internalQuery, mutation } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 
@@ -80,6 +80,15 @@ export async function optionalUser(ctx: Ctx, token: string | undefined): Promise
   if (!session) return null;
   return await ctx.db.get(session.userId);
 }
+
+/** For actions (which cannot read the database): resolves the caller from a session token. */
+export const verify = internalQuery({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
+    return { userId: user._id };
+  },
+});
 
 /** Ends the session for this token. Never fails: an unknown token is already logged out. */
 export const logout = mutation({

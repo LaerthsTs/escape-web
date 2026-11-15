@@ -89,7 +89,7 @@ function CheckoutContent() {
     try {
       if (paymentTerms === 'pay_on_arrival') {
         const result = await createBooking({
-          userId: user.id as any,
+          sessionToken: user.sessionToken,
           roomId: roomId as any,
           date,
           time,
@@ -113,7 +113,7 @@ function CheckoutContent() {
         const baseUrl = window.location.origin;
         const back = new URLSearchParams({ roomId, date, time, players: String(players), total: String(total) });
         const { url } = await startCheckout({
-          userId: user.id as any,
+          sessionToken: user.sessionToken,
           roomId: roomId as any,
           date,
           time,

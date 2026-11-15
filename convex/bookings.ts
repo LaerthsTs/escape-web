@@ -1,4 +1,5 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { requireUser, optionalUser } from "./userSession";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { assertSlotStillBookable } from "./slotRules";
@@ -7,7 +8,7 @@ import { PLAYER_CANCEL_REASONS, cancelReasonV, cleanCancelNote, isLateCancel } f
 
 export const create = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
     date: v.string(),
     time: v.string(),
@@ -22,6 +23,9 @@ export const create = mutation({
     pendingPayment: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    // The booking belongs to whoever is logged in, never to a userId from the client.
+    const user = await requireUser(ctx, args.sessionToken);
+
     // Prevent double-booking: check for existing active booking at this slot
     const existing = await ctx.db
       .query("bookings")
@@ -51,7 +55,7 @@ export const create = mutation({
 
     const bookingCode = `UNL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
     const id = await ctx.db.insert("bookings", {
-      userId: args.userId,
+      userId: user._id,
       roomId: args.roomId,
       date: args.date,
       time: args.time,
@@ -70,7 +74,6 @@ export const create = mutation({
     // Only send confirmation emails if payment is not pending
     // (for Stripe bookings, emails are sent after payment is confirmed via webhook)
     if (!isPending) {
-      const user = await ctx.db.get(args.userId);
       const company: any = room?.companyId ? await ctx.db.get(room.companyId as any) : null;
       if (user) {
         await ctx.scheduler.runAfter(0, internal.email.sendBookingEmails, {
@@ -105,11 +108,13 @@ export const getById = internalQuery({
 });
 
 export const getByUser = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
     // Enrich with room data
@@ -123,7 +128,7 @@ export const getByUser = query({
   },
 });
 
-export const upcoming = query({
+export const upcoming = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const bookings = await ctx.db
@@ -150,14 +155,16 @@ export const upcoming = query({
 export const cancel = mutation({
   args: {
     id: v.id("bookings"),
-    userId: v.optional(v.id("users")),
+    sessionToken: v.string(),
     reason: v.optional(cancelReasonV),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const booking = await ctx.db.get(args.id);
     if (!booking) return { lateCancel: false };
-    if (args.userId && booking.userId && booking.userId !== args.userId) {
+    // Only the owner can cancel (bookings made by guests/companies have no player owner).
+    if (!booking.userId || booking.userId !== user._id) {
       throw new ConvexError("This booking belongs to another account");
     }
     if (booking.status === "cancelled") return { lateCancel: !!booking.lateCancel };
@@ -243,7 +250,7 @@ export const cancel = mutation({
   },
 });
 
-export const complete = mutation({
+export const complete = internalMutation({
   args: { id: v.id("bookings") },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { status: "completed" });

@@ -435,7 +435,7 @@ export async function startCheckoutImpl(ctx: ActionCtx, args: CheckoutArgs) {
 
 export const startCheckout = action({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
     date: v.string(),
     time: v.string(),
@@ -445,17 +445,21 @@ export const startCheckout = action({
     cancelUrl: v.string(),
   },
   handler: async (ctx, args): Promise<{ url: string; bookingId: string; provider: string }> => {
-    return await startCheckoutImpl(ctx, args);
+    // The booking is made for whoever is logged in, never for a userId from the client.
+    const { userId } = await ctx.runQuery(internal.userSession.verify, { sessionToken: args.sessionToken });
+    const { sessionToken: _t, ...rest } = args;
+    return await startCheckoutImpl(ctx, { ...rest, userId });
   },
 });
 
 /** "Pay now" again for a booking that is still waiting for payment. */
 export async function retryCheckoutImpl(
   ctx: ActionCtx,
-  args: { bookingId: Id<"bookings">; successUrl: string; cancelUrl: string }
+  args: { bookingId: Id<"bookings">; successUrl: string; cancelUrl: string; userId?: Id<"users"> }
 ) {
   const info = await ctx.runQuery(internal.companyPaymentsData.getBookingForPayment, { bookingId: args.bookingId });
   if (!info) throw new ConvexError("Booking not found");
+  if (args.userId && info.booking.userId !== args.userId) throw new ConvexError("Access denied");
   if (info.booking.status !== "pending_payment" || info.booking.paidAt) {
     throw new ConvexError("Booking is not pending payment");
   }
@@ -465,7 +469,7 @@ export async function retryCheckoutImpl(
   return { url: await openCheckout(ctx, args.bookingId, args.successUrl, args.cancelUrl) };
 }
 
-export const retryCheckout = action({
+export const retryCheckout = internalAction({
   args: { bookingId: v.id("bookings"), successUrl: v.string(), cancelUrl: v.string() },
   handler: async (ctx, args): Promise<{ url: string }> => retryCheckoutImpl(ctx, args),
 });
