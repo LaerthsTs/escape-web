@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { internalMutation, mutation } from "./_generated/server";
+import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { hashPassword, verifyPassword } from "./passwordUtils";
@@ -101,5 +101,14 @@ export const logout = mutation({
       .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
       .first();
     if (row) await ctx.db.delete(row._id);
+  },
+});
+
+/** For actions (they cannot read the database): checks the admin session first. */
+export const verify = internalQuery({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const admin = await requireAdminSession(ctx, args.sessionToken);
+    return { email: admin.email };
   },
 });

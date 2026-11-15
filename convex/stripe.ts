@@ -323,9 +323,11 @@ export const declineCompanyWithCancel = action({
   args: {
     companyId: v.id("companies"),
     notes: v.string(),
-    adminEmail: v.string(),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    // Check the admin FIRST, before anything is cancelled at Stripe.
+    await ctx.runQuery(internal.adminSession.verify, { sessionToken: args.sessionToken });
     // Get company to check for subscription
     const company: any = await ctx.runQuery(internal.companies.getByIdInternal, { id: args.companyId });
     if (!company) throw new Error("Company not found");
@@ -344,7 +346,7 @@ export const declineCompanyWithCancel = action({
     await ctx.runMutation(api.companies.declineCompany, {
       companyId: args.companyId,
       notes: args.notes,
-      adminEmail: args.adminEmail,
+      sessionToken: args.sessionToken,
     });
   },
 });

@@ -862,10 +862,9 @@ export const getAllCompanies = query({
 
 // Admin: approve company
 export const approveCompany = mutation({
-  args: { companyId: v.id("companies"), adminEmail: v.string() },
+  args: { companyId: v.id("companies"), sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const email = args.adminEmail.toLowerCase().trim();
-    if (!ADMIN_EMAILS.includes(email)) throw new Error("Unauthorized: admin access required");
+    await requireAdminSession(ctx, args.sessionToken);
     const company = await ctx.db.get(args.companyId);
     await ctx.db.patch(args.companyId, {
       onboardingStatus: "approved",
@@ -887,10 +886,9 @@ export const approveCompany = mutation({
 
 // Admin: decline company with notes
 export const declineCompany = mutation({
-  args: { companyId: v.id("companies"), notes: v.string(), adminEmail: v.string() },
+    args: { companyId: v.id("companies"), notes: v.string(), sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const email = args.adminEmail.toLowerCase().trim();
-    if (!ADMIN_EMAILS.includes(email)) throw new Error("Unauthorized: admin access required");
+    await requireAdminSession(ctx, args.sessionToken);
     await ctx.db.patch(args.companyId, {
       onboardingStatus: "declined",
       reviewedAt: Date.now(),
