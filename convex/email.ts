@@ -921,9 +921,15 @@ export const sendNewApplicationNotification = internalAction({
       "You received this email because a new company registered on UNLOCKED."
     );
 
+    const adminTo = process.env.ADMIN_NOTIFY_EMAIL;
+    if (!adminTo) {
+      console.warn("[Email] ADMIN_NOTIFY_EMAIL not set — admin notification skipped");
+      return;
+    }
+
     await resend.emails.send({
       from: fromAddr(),
-      to: "dstroumpakos@planeraai.app",
+      to: adminTo,
       subject: `🏢 New Application: ${d.companyName} — Review Required`,
       html,
     }).then(r => console.log("[Email] Admin notification sent:", r))
@@ -965,9 +971,15 @@ export const sendRoomReportAlert = internalAction({
       "You received this email because you are an UNLOCKED admin."
     );
 
+    const adminTo = process.env.ADMIN_NOTIFY_EMAIL;
+    if (!adminTo) {
+      console.warn("[Email] ADMIN_NOTIFY_EMAIL not set — admin notification skipped");
+      return;
+    }
+
     await resend.emails.send({
       from: fromAddr(),
-      to: "dstroumpakos@planeraai.app",
+      to: adminTo,
       subject: `⚠️ Room report (${kindLabel}): ${d.roomTitle}`,
       html,
     }).then(r => console.log("[Email] Room report alert sent:", r))
