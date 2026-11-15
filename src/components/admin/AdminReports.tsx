@@ -21,15 +21,15 @@ const STATUS_CLS: Record<string, string> = {
 };
 
 /** Admin queue for both report flows. Reporter identities are visible here only. */
-export function AdminReports({ adminEmail }: { adminEmail: string }) {
+export function AdminReports({ sessionToken }: { sessionToken: string }) {
   const { t } = useTranslation();
   const [view, setView] = useState<'rooms' | 'players'>('rooms');
   const [filter, setFilter] = useState<RoomStatus | 'all'>('new');
   const roomReports = useQuery(api.reports.adminRoomReports, {
-    adminEmail,
+    sessionToken,
     status: filter === 'all' ? undefined : filter,
   });
-  const playerReports = useQuery(api.reports.adminPlayerReports, view === 'players' ? { adminEmail } : 'skip');
+  const playerReports = useQuery(api.reports.adminPlayerReports, view === 'players' ? { sessionToken } : 'skip');
 
   return (
     <div className="space-y-5">
@@ -70,7 +70,7 @@ export function AdminReports({ adminEmail }: { adminEmail: string }) {
           ) : (
             <div className="space-y-4">
               {roomReports.map((r) => (
-                <RoomReportCard key={r._id} adminEmail={adminEmail} report={r} />
+                <RoomReportCard key={r._id} sessionToken={sessionToken} report={r} />
               ))}
             </div>
           )}
@@ -86,7 +86,7 @@ export function AdminReports({ adminEmail }: { adminEmail: string }) {
           <div className="space-y-3">
             <p className="text-xs text-brand-text-muted">{t('admin.reports.players_help')}</p>
             {playerReports.map((r) => (
-              <PlayerReportCard key={r._id} adminEmail={adminEmail} report={r} />
+              <PlayerReportCard key={r._id} sessionToken={sessionToken} report={r} />
             ))}
           </div>
         ))}
@@ -94,7 +94,7 @@ export function AdminReports({ adminEmail }: { adminEmail: string }) {
   );
 }
 
-function RoomReportCard({ adminEmail, report }: { adminEmail: string; report: any }) {
+function RoomReportCard({ sessionToken, report }: { sessionToken: string; report: any }) {
   const { t } = useTranslation();
   const update = useMutation(api.reports.adminUpdateRoomReport);
   const [notes, setNotes] = useState<string>(report.adminNotes);
@@ -105,7 +105,7 @@ function RoomReportCard({ adminEmail, report }: { adminEmail: string; report: an
     setBusy(true);
     setError(null);
     try {
-      await update({ adminEmail, reportId: report._id, ...patch });
+      await update({ sessionToken, reportId: report._id, ...patch });
     } catch (err) {
       setError(friendlyError(err, t));
     }
@@ -200,7 +200,7 @@ function Contact({ label, person, note }: { label: string; person: any; note?: s
   );
 }
 
-function PlayerReportCard({ adminEmail, report }: { adminEmail: string; report: any }) {
+function PlayerReportCard({ sessionToken, report }: { sessionToken: string; report: any }) {
   const { t } = useTranslation();
   const setVoided = useMutation(api.reports.adminSetPlayerReportVoided);
   const [busy, setBusy] = useState(false);
@@ -252,7 +252,7 @@ function PlayerReportCard({ adminEmail, report }: { adminEmail: string; report: 
             setBusy(true);
             setError(null);
             try {
-              await setVoided({ adminEmail, reportId: report._id, voided: !voided, note });
+              await setVoided({ sessionToken, reportId: report._id, voided: !voided, note });
             } catch (err) {
               setError(friendlyError(err, t));
             }

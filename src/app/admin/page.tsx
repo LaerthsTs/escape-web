@@ -503,7 +503,7 @@ export default function AdminPage() {
         )}
 
         {/* ══════════ REPORTS TAB ══════════ */}
-        {activeTab === 'reports' && adminEmail && <AdminReports adminEmail={adminEmail} />}
+        {activeTab === 'reports' && adminToken && <AdminReports sessionToken={adminToken} />}
 
         {activeTab === 'shop' && adminEmail && <AdminShop adminEmail={adminEmail} />}
 

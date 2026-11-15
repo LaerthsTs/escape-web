@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { ADMIN_EMAILS } from "./companies";
+import { requireAdminSession } from "./adminSession";
 import { sessionTokenV, requireCompany, requireBookingOf } from "./companySession";
 import {
   COMPANY_REPORT_WINDOW_MS,
@@ -36,11 +36,6 @@ type Ctx = QueryCtx | MutationCtx;
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
-function requireAdminEmail(adminEmail: string) {
-  const email = adminEmail.toLowerCase().trim();
-  if (!ADMIN_EMAILS.includes(email)) throw new ConvexError("Unauthorized");
-  return email;
-}
 
 async function requirePlayer(ctx: Ctx, userId: Id<"users">): Promise<Doc<"users">> {
   const user = await ctx.db.get(userId);
@@ -364,9 +359,9 @@ export const replyToReport = mutation({
 // ═══════════════════════════════════════════════════════════════════════
 
 export const adminRoomReports = query({
-  args: { adminEmail: v.string(), status: v.optional(roomReportStatusV) },
+  args: { sessionToken: v.string(), status: v.optional(roomReportStatusV) },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const rows = args.status
       ? await ctx.db.query("roomReports").withIndex("by_status", (q) => q.eq("status", args.status!)).collect()
       : await ctx.db.query("roomReports").collect();
@@ -404,13 +399,13 @@ export const adminRoomReports = query({
 
 export const adminUpdateRoomReport = mutation({
   args: {
-    adminEmail: v.string(),
+    sessionToken: v.string(),
     reportId: v.id("roomReports"),
     status: v.optional(roomReportStatusV),
     adminNotes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
     const patch: Partial<Doc<"roomReports">> = { updatedAt: Date.now() };
@@ -421,9 +416,9 @@ export const adminUpdateRoomReport = mutation({
 });
 
 export const adminPlayerReports = query({
-  args: { adminEmail: v.string() },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+   await requireAdminSession(ctx, args.sessionToken);
     const rows = await ctx.db.query("playerReports").collect();
     rows.sort((a, b) => b.createdAt - a.createdAt);
 
@@ -470,13 +465,13 @@ export const adminPlayerReports = query({
 
 export const adminSetPlayerReportVoided = mutation({
   args: {
-    adminEmail: v.string(),
+    sessionToken: v.string(),
     reportId: v.id("playerReports"),
     voided: v.boolean(),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const report = await ctx.db.get(args.reportId);
     if (!report) throw new ConvexError("Report not found");
     await ctx.db.patch(report._id, args.voided
