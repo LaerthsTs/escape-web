@@ -13,13 +13,13 @@ import { euro } from '@/components/shop/shopUi';
 type View = 'orders' | 'official' | 'companies';
 
 /** Admin: UNLOCKED Official store, its orders, and moderation of company items. */
-export function AdminShop({ adminEmail }: { adminEmail: string }) {
+export function AdminShop({ sessionToken }: { sessionToken: string }) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('orders');
-  const stats = useQuery(api.merch.adminMerchStats, { adminEmail });
-  const official = useQuery(api.merch.adminProducts, view === 'official' ? { adminEmail, seller: 'platform' } : 'skip');
-  const companyItems = useQuery(api.merch.adminProducts, view === 'companies' ? { adminEmail, seller: 'company' } : 'skip');
-  const orders = useQuery(api.merch.adminOrders, view === 'orders' ? { adminEmail, seller: 'platform' } : 'skip');
+  const stats = useQuery(api.merch.adminMerchStats, { sessionToken });
+  const official = useQuery(api.merch.adminProducts, view === 'official' ? { sessionToken, seller: 'platform' } : 'skip');
+  const companyItems = useQuery(api.merch.adminProducts, view === 'companies' ? { sessionToken, seller: 'company' } : 'skip');
+  const orders = useQuery(api.merch.adminOrders, view === 'orders' ? { sessionToken, seller: 'platform' } : 'skip');
   const save = useMutation(api.merch.adminSaveProduct);
   const setStatus = useMutation(api.merch.adminSetProductStatus);
   const moderate = useMutation(api.merch.adminModerateProduct);
@@ -40,7 +40,7 @@ export function AdminShop({ adminEmail }: { adminEmail: string }) {
 
   const onSave = async (input: ProductInput) => {
     const { roomIds: _r, unlockRoomId: _u, unlockRule: _x, ...rest } = input;
-    await save({ adminEmail, productId: editing && editing !== 'new' ? (editing._id as any) : undefined, ...rest });
+    await save({ sessionToken, productId: editing && editing !== 'new' ? (editing._id as any) : undefined, ...rest });
   };
 
   return (
@@ -86,7 +86,7 @@ export function AdminShop({ adminEmail }: { adminEmail: string }) {
       {view === 'orders' && (
         <SellerOrders
           orders={orders}
-          onUpdate={(orderId, status, extra) => updateOrder({ adminEmail, orderId: orderId as any, status, ...extra })}
+          onUpdate={(orderId, status, extra) => updateOrder({ sessionToken, orderId: orderId as any, status, ...extra })}
         />
       )}
 
@@ -118,7 +118,7 @@ export function AdminShop({ adminEmail }: { adminEmail: string }) {
                     </button>
                     <button
                       onClick={() =>
-                        setStatus({ adminEmail, productId: p._id, status: p.status === 'active' ? 'draft' : 'active' }).catch((e) =>
+                        setStatus({ sessionToken, productId: p._id, status: p.status === 'active' ? 'draft' : 'active' }).catch((e) =>
                           setErr(friendlyError(e, t))
                         )
                       }
@@ -159,7 +159,7 @@ export function AdminShop({ adminEmail }: { adminEmail: string }) {
                     const note = p.hiddenByAdmin ? undefined : prompt(t('shop.admin.hide_reason')) ?? undefined;
                     if (!p.hiddenByAdmin && note === undefined) return;
                     try {
-                      await moderate({ adminEmail, productId: p._id, hidden: !p.hiddenByAdmin, note });
+                      await moderate({ sessionToken, productId: p._id, hidden: !p.hiddenByAdmin, note });
                     } catch (e) {
                       setErr(friendlyError(e, t));
                     }

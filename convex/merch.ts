@@ -17,7 +17,7 @@ import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { sessionTokenV, requireCompany } from "./companySession";
-import { ADMIN_EMAILS } from "./companies";
+import { requireAdminSession } from "./adminSession";
 import { dateAthens } from "./plans";
 import {
   MAX_ITEMS_PER_ORDER,
@@ -53,12 +53,6 @@ type Product = Doc<"merchProducts">;
 type Order = Doc<"merchOrders">;
 
 // ─── Helpers ───
-
-function requireAdminEmail(adminEmail: string) {
-  const email = adminEmail.toLowerCase().trim();
-  if (!ADMIN_EMAILS.includes(email)) throw new ConvexError("Unauthorized");
-}
-
 function isPremiumUser(user: Doc<"users"> | null | undefined, now = Date.now()): boolean {
   return !!user && user.isPremium === true && (user.premiumExpiresAt ?? 0) > now;
 }
@@ -1296,10 +1290,9 @@ export const companyMerchSummary = query({
 // ─── Admin ───
 
 export const adminProducts = query({
-  args: { adminEmail: v.string(), seller: v.union(v.literal("platform"), v.literal("company")) },
+  args: { sessionToken: v.string(), seller: v.union(v.literal("platform"), v.literal("company")) },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
-    const rows = (await ctx.db.query("merchProducts").collect()).filter((p) => p.seller === args.seller);
+    await requireAdminSession(ctx, args.sessionToken);    const rows = (await ctx.db.query("merchProducts").collect()).filter((p) => p.seller === args.seller);
     const orders = await ctx.db.query("merchOrders").collect();
     const sold = await soldCounts(ctx, orders);
     const out = [];
@@ -1312,10 +1305,10 @@ export const adminProducts = query({
 });
 
 export const adminSaveProduct = mutation({
-  args: { adminEmail: v.string(), productId: v.optional(v.id("merchProducts")), ...productInputV },
+  args: { sessionToken: v.string(), productId: v.optional(v.id("merchProducts")), ...productInputV },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
-    const { adminEmail: _a, productId, ...input } = args;
+    await requireAdminSession(ctx, args.sessionToken);
+    const { sessionToken: _a, productId, ...input } = args;
     const clean = cleanProduct({ ...input, unlockRoomId: undefined, roomIds: undefined }, "platform");
     const now = Date.now();
     if (productId) {
@@ -1329,9 +1322,9 @@ export const adminSaveProduct = mutation({
 });
 
 export const adminSetProductStatus = mutation({
-  args: { adminEmail: v.string(), productId: v.id("merchProducts"), status: merchProductStatusV },
+  args: { sessionToken: v.string(), productId: v.id("merchProducts"), status: merchProductStatusV },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const p = await ctx.db.get(args.productId);
     if (!p || p.seller !== "platform") throw new ConvexError("Item not found");
     await ctx.db.patch(p._id, { status: args.status, updatedAt: Date.now() });
@@ -1340,9 +1333,9 @@ export const adminSetProductStatus = mutation({
 
 /** Hide (or show again) a company's item from the shop. */
 export const adminModerateProduct = mutation({
-  args: { adminEmail: v.string(), productId: v.id("merchProducts"), hidden: v.boolean(), note: v.optional(v.string()) },
+  args: { sessionToken: v.string(), productId: v.id("merchProducts"), hidden: v.boolean(), note: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const p = await ctx.db.get(args.productId);
     if (!p) throw new ConvexError("Item not found");
     await ctx.db.patch(p._id, {
@@ -1354,9 +1347,9 @@ export const adminModerateProduct = mutation({
 });
 
 export const adminOrders = query({
-  args: { adminEmail: v.string(), seller: v.union(v.literal("platform"), v.literal("company")) },
+  args: { sessionToken: v.string(), seller: v.union(v.literal("platform"), v.literal("company")) },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const rows = await ctx.db
       .query("merchOrders")
       .withIndex("by_seller", (q) => q.eq("seller", args.seller))
@@ -1370,7 +1363,7 @@ export const adminOrders = query({
 
 export const adminUpdateOrder = mutation({
   args: {
-    adminEmail: v.string(),
+    sessionToken: v.string(),
     orderId: v.id("merchOrders"),
     status: merchOrderStatusV,
     trackingCode: v.optional(v.string()),
@@ -1378,7 +1371,7 @@ export const adminUpdateOrder = mutation({
     sellerNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const o = await ctx.db.get(args.orderId);
     if (!o || o.seller !== "platform") throw new ConvexError("Order not found");
     await changeStatus(ctx, o, args.status, args);
@@ -1386,9 +1379,9 @@ export const adminUpdateOrder = mutation({
 });
 
 export const adminMerchStats = query({
-  args: { adminEmail: v.string() },
+  args: { sessionToken: v.string()},
   handler: async (ctx, args) => {
-    requireAdminEmail(args.adminEmail);
+    await requireAdminSession(ctx, args.sessionToken);
     const orders = await ctx.db.query("merchOrders").collect();
     const paid = orders.filter((o) => isPaidStatus(o.status));
     const month = monthOf(Date.now());
