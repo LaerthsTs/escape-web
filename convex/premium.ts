@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUser, optionalUser } from "./userSession";
 
 const PREMIUM_PRICES = {
   monthly: 4.99,
@@ -10,9 +11,9 @@ const EARLY_ACCESS_DAYS = 3;
 
 // ─── Get premium status for a user ───
 export const getStatus = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    const user = await optionalUser(ctx, args.sessionToken);
     if (!user) return { isPremium: false };
 
     const now = Date.now();
@@ -31,7 +32,7 @@ export const getStatus = query({
 // Validates the receipt data and activates premium.
 export const subscribeWithIAP = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     plan: v.union(v.literal("monthly"), v.literal("yearly")),
     productId: v.string(),
     transactionId: v.string(),
@@ -40,8 +41,7 @@ export const subscribeWithIAP = mutation({
     purchaseToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
     // Check for duplicate transaction
     const existingSubs = await ctx.db
@@ -63,7 +63,7 @@ export const subscribeWithIAP = mutation({
 
     // Create premium subscription record with IAP data
     await ctx.db.insert("premiumSubscriptions", {
-      userId: args.userId,
+      userId: user._id,
       plan: args.plan,
       price,
       startDate: now,
@@ -76,7 +76,7 @@ export const subscribeWithIAP = mutation({
     });
 
     // Update user premium status
-    await ctx.db.patch(args.userId, {
+    await ctx.db.patch(user._id, {
       isPremium: true,
       premiumSince: user.premiumSince ?? now,
       premiumExpiresAt: endDate,
@@ -84,7 +84,7 @@ export const subscribeWithIAP = mutation({
 
     // Create notification
     await ctx.db.insert("notifications", {
-      userId: args.userId,
+      userId: user._id,
       type: "system",
       title: "Welcome to UNLOCKED Premium! 🎉",
       message: `You now have early access to new rooms 3 days before everyone else. Your ${args.plan} plan is active.`,
@@ -100,15 +100,14 @@ export const subscribeWithIAP = mutation({
 // Called when a user taps "Restore Purchases" — re-validates and reactivates.
 export const restoreWithIAP = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     productId: v.string(),
     transactionId: v.string(),
     platform: v.union(v.literal("ios"), v.literal("android")),
     purchaseToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
     // Determine plan from product ID
     const plan = args.productId.includes("yearly") ? "yearly" : "monthly";
@@ -130,7 +129,7 @@ export const restoreWithIAP = mutation({
     if (existingSubs.length === 0) {
       // Record the restored subscription
       await ctx.db.insert("premiumSubscriptions", {
-        userId: args.userId,
+        userId: user._id,
         plan,
         price,
         startDate: now,
@@ -148,7 +147,7 @@ export const restoreWithIAP = mutation({
     }
 
     // Re-activate user premium
-    await ctx.db.patch(args.userId, {
+    await ctx.db.patch(user._id, {
       isPremium: true,
       premiumSince: user.premiumSince ?? now,
       premiumExpiresAt: endDate,
@@ -160,15 +159,14 @@ export const restoreWithIAP = mutation({
 
 // ─── Cancel premium subscription ───
 export const cancel = mutation({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
     // Find active subscription
     const subs = await ctx.db
       .query("premiumSubscriptions")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     const active = subs.find((s) => s.isActive);
     if (active) {
@@ -185,15 +183,15 @@ export const cancel = mutation({
 // Premium users see rooms with releaseDate up to 3 days in the future
 // Non-premium users only see rooms that are already released (or have no releaseDate)
 export const getVisibleRooms = query({
-  args: { userId: v.optional(v.id("users")) },
+  args: { sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const allRooms = await ctx.db.query("rooms").collect();
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     let isPremium = false;
-    if (args.userId) {
-      const user = await ctx.db.get(args.userId);
+    if (args.sessionToken) {
+      const user = await optionalUser(ctx, args.sessionToken);
       isPremium = user?.isPremium === true && (user?.premiumExpiresAt ?? 0) > Date.now();
     }
 
@@ -226,9 +224,9 @@ export const getVisibleRooms = query({
 
 // ─── Get early access rooms only (for premium showcase) ───
 export const getEarlyAccessRooms = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    const user = await optionalUser(ctx, args.sessionToken);
     const isPremium = user?.isPremium === true && (user?.premiumExpiresAt ?? 0) > Date.now();
     if (!isPremium) return [];
 

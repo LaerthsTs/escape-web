@@ -21,7 +21,7 @@ const PERKS = [
 export default function PremiumPage() {
   const { t, language } = useTranslation();
   const { user } = useAuth();
-  const status = useQuery(api.premium.getStatus, user?.id ? { userId: user.id as any } : 'skip');
+  const status = useQuery(api.premium.getStatus, user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip');
   const plans = useQuery(api.premium.getPlanInfo, {});
 
   return (
