@@ -212,27 +212,3 @@ export const clearSeedRooms = internalMutation({
     return `Deleted ${deleted} seed rooms`;
   },
 });
-
-export const seedDiscountCodes = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const existing = await ctx.db
-      .query("discountCodes")
-      .withIndex("by_code", (q) => q.eq("code", "UNLOCKEDVIP"))
-      .first();
-    if (existing) return "Discount code already exists";
-
-    await ctx.db.insert("discountCodes", {
-      code: "UNLOCKEDVIP",
-      plan: "enterprise",
-      period: "yearly",
-      durationMonths: 12,
-      maxUses: 100,
-      usedCount: 0,
-      isActive: true,
-      createdAt: Date.now(),
-    });
-
-    return "Created UNLOCKEDVIP discount code";
-  },
-});

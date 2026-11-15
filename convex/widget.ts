@@ -364,7 +364,7 @@ export const createGuestSlotAlert = mutation({
 
 // ─── Upload Widget Bundle ─────────────────────────────────────
 // Stores the built widget JS so it can be served from the Convex site URL
-export const uploadBundle = mutation({
+export const uploadBundle = internalMutation({
   args: {
     content: v.string(),
     version: v.string(),
