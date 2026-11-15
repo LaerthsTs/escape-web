@@ -20,7 +20,7 @@ function CheckoutContent() {
   const presetBooking = params.get('booking') || '';
   const { user, isAuthenticated } = useAuth();
   const { lines, clearSeller } = useCart();
-  const shop = useQuery(api.merch.listShop, { userId: (user?.id as any) || undefined });
+  const shop = useQuery(api.merch.listShop, { sessionToken: user?.sessionToken });
   const me = useQuery(api.users.getById, user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip');
   const checkout = useAction(api.merchPayments.checkout);
 
@@ -38,7 +38,7 @@ function CheckoutContent() {
 
   const bookings = useQuery(
     api.merch.pickupBookings,
-    user?.id && canPickup ? { userId: user.id as any, companyId: sellerKey as any } : 'skip'
+    user?.sessionToken && canPickup ? { sessionToken: user.sessionToken, companyId: sellerKey as any } : 'skip'
   );
 
   const [delivery, setDelivery] = useState<'pickup' | 'shipping'>('pickup');
@@ -108,7 +108,7 @@ function CheckoutContent() {
     try {
       const origin = window.location.origin;
       const res = await checkout({
-        userId: user!.id as any,
+        sessionToken: user!.sessionToken,
         items: myLines.map((l) => ({ productId: l.productId as any, variantId: l.variantId, quantity: l.quantity })),
         delivery,
         payment: delivery === 'shipping' ? 'online' : payment,

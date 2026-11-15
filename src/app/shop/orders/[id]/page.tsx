@@ -19,7 +19,7 @@ function OrderContent() {
   const params = useSearchParams();
   const { t, language } = useTranslation();
   const { user, isAuthenticated } = useAuth();
-  const order = useQuery(api.merch.getMyOrder, user?.id ? { userId: user.id as any, orderId: id as any } : 'skip');
+  const order = useQuery(api.merch.getMyOrder, user?.sessionToken ? { sessionToken: user.sessionToken, orderId: id as any } : 'skip');
   const confirmReturn = useAction(api.merchPayments.confirmReturn);
   const retry = useAction(api.merchPayments.retryCheckout);
   const cancel = useMutation(api.merch.cancelMyOrder);
@@ -89,7 +89,7 @@ function OrderContent() {
     try {
       const origin = window.location.origin;
       const { url } = await retry({
-        userId: user!.id as any,
+        sessionToken: user!.sessionToken,
         orderId: order._id as any,
         successUrl: `${origin}/shop/orders/{ORDER_ID}?paid=1`,
         cancelUrl: `${origin}/shop/orders/{ORDER_ID}?cancelled=1`,
@@ -106,7 +106,7 @@ function OrderContent() {
     setBusy(true);
     setErr('');
     try {
-      await cancel({ userId: user!.id as any, orderId: order._id as any });
+      await cancel({ sessionToken: user!.sessionToken, orderId: order._id as any });
     } catch (e) {
       setErr(friendlyError(e, t));
     } finally {

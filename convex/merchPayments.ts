@@ -147,7 +147,7 @@ async function currentRef(ctx: ActionCtx, orderId: Id<"merchOrders">) {
  */
 export const checkout = action({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     items: v.array(v.object({ productId: v.id("merchProducts"), variantId: v.string(), quantity: v.number() })),
     delivery: merchDeliveryV,
     payment: merchPaymentV,
@@ -158,8 +158,9 @@ export const checkout = action({
     cancelUrl: v.string(),
   },
   handler: async (ctx, args): Promise<{ orderId: string; orderCode: string; url: string | null }> => {
-    const { successUrl, cancelUrl, ...rest } = args;
-    const created = await ctx.runMutation(internal.merch.createOrder, rest);
+    const { successUrl, cancelUrl, sessionToken, ...rest } = args;
+    const { userId } = await ctx.runQuery(internal.userSession.verify, { sessionToken });
+    const created = await ctx.runMutation(internal.merch.createOrder, { ...rest, userId });
     if (created.status !== "pending_payment") {
       return { orderId: created.orderId, orderCode: created.orderCode, url: null };
     }
@@ -175,10 +176,11 @@ export const checkout = action({
 
 /** "Pay now" again for an order still waiting for payment. */
 export const retryCheckout = action({
-  args: { userId: v.id("users"), orderId: v.id("merchOrders"), successUrl: v.string(), cancelUrl: v.string() },
+  args: { sessionToken: v.string(), orderId: v.id("merchOrders"), successUrl: v.string(), cancelUrl: v.string() },
   handler: async (ctx, args): Promise<{ url: string }> => {
+    const { userId } = await ctx.runQuery(internal.userSession.verify, { sessionToken: args.sessionToken });
     const info = await ctx.runQuery(internal.merch.getOrderForPayment, { orderId: args.orderId });
-    if (!info || info.order.userId !== args.userId) throw new ConvexError("Order not found");
+    if (!info || info.order.userId !== userId) throw new ConvexError("Order not found");
     if (info.order.status !== "pending_payment" || info.order.paidAt) throw new ConvexError("This order isn't waiting for payment");
     if ((await verifyOrder(ctx, args.orderId)) === "paid") throw new ConvexError("This order is already paid");
     return { url: await openCheckout(ctx, args.orderId, args.successUrl, args.cancelUrl) };

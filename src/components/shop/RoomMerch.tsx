@@ -14,7 +14,7 @@ import { useCart } from './shopUi';
 export function RoomMerchStrip({ roomId }: { roomId: string }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const items = useQuery(api.merch.roomMerch, { roomId: roomId as any, userId: (user?.id as any) || undefined });
+  const items = useQuery(api.merch.roomMerch, { roomId: roomId as any, sessionToken: user?.sessionToken });
   if (!items || items.length === 0) return null;
   const companyId = items[0].companyId;
   return (
@@ -44,7 +44,7 @@ export function MerchAddOn({ roomId, bookingId }: { roomId: string; bookingId: s
   const { t } = useTranslation();
   const { user } = useAuth();
   const { add, lines } = useCart();
-  const items = useQuery(api.merch.roomMerch, roomId ? { roomId: roomId as any, userId: (user?.id as any) || undefined } : 'skip');
+  const items = useQuery(api.merch.roomMerch, roomId ? { roomId: roomId as any, sessionToken: user?.sessionToken } : 'skip');
   const [chosen, setChosen] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<Record<string, boolean>>({});
 

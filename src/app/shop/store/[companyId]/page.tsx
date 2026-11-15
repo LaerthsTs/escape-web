@@ -15,7 +15,7 @@ export default function CompanyStorePage() {
   const { companyId } = useParams() as { companyId: string };
   const { t } = useTranslation();
   const { user } = useAuth();
-  const data = useQuery(api.merch.companyStore, { companyId: companyId as any, userId: (user?.id as any) || undefined });
+  const data = useQuery(api.merch.companyStore, { companyId: companyId as any, sessionToken: user?.sessionToken });
 
   useEffect(() => {
     if (data?.company) document.title = `${data.company.name} merch | UNLOCKED Shop`;

@@ -18,7 +18,7 @@ export default function ProductPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { add } = useCart();
-  const data = useQuery(api.merch.getProduct, { productId: id as any, userId: (user?.id as any) || undefined });
+  const data = useQuery(api.merch.getProduct, { productId: id as any, sessionToken: user?.sessionToken });
   const [img, setImg] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
   const [qty, setQty] = useState(1);

@@ -12,7 +12,7 @@ import { euro } from '@/components/shop/shopUi';
 export default function MyOrdersPage() {
   const { t, language } = useTranslation();
   const { user, isAuthenticated } = useAuth();
-  const orders = useQuery(api.merch.myOrders, user?.id ? { userId: user.id as any } : 'skip');
+  const orders = useQuery(api.merch.myOrders, user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip');
 
   if (!isAuthenticated) {
     return (

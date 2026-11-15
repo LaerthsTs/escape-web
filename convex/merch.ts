@@ -18,6 +18,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { sessionTokenV, requireCompany } from "./companySession";
 import { requireAdminSession } from "./adminSession";
+import { requireUser, optionalUser } from "./userSession";
 import { dateAthens } from "./plans";
 import {
   MAX_ITEMS_PER_ORDER,
@@ -99,8 +100,8 @@ async function meetsUnlock(ctx: Ctx, userId: Id<"users"> | undefined, p: Product
 
 type Viewer = { userId?: Id<"users">; user: Doc<"users"> | null; isPremium: boolean };
 
-async function viewerOf(ctx: Ctx, userId?: Id<"users">): Promise<Viewer> {
-  const user = userId ? await ctx.db.get(userId) : null;
+async function viewerOf(ctx: Ctx, sessionToken?: string): Promise<Viewer> {
+  const user = sessionToken ? await optionalUser(ctx, sessionToken) : null;
   return { userId: user?._id, user, isPremium: isPremiumUser(user) };
 }
 
@@ -248,9 +249,9 @@ async function perksFor(ctx: Ctx, viewer: Viewer) {
 
 /** Everything for the /shop page. */
 export const listShop = query({
-  args: { userId: v.optional(v.id("users")) },
+  args: { sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const viewer = await viewerOf(ctx, args.userId);
+    const viewer = await viewerOf(ctx, args.sessionToken);
     const cache = new Map<string, SellerInfo | null>();
     const products = [];
     for (const p of sortProducts(await listedProducts(ctx))) {
@@ -264,11 +265,11 @@ export const listShop = query({
 });
 
 export const getProduct = query({
-  args: { productId: v.id("merchProducts"), userId: v.optional(v.id("users")) },
+  args: { productId: v.id("merchProducts"), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const p = await ctx.db.get(args.productId);
     if (!p || !isListed(p)) return null;
-    const viewer = await viewerOf(ctx, args.userId);
+    const viewer = await viewerOf(ctx, args.sessionToken);
     const cache = new Map<string, SellerInfo | null>();
     const product = await viewProduct(ctx, p, viewer, cache);
     if (!product) return null;
@@ -288,11 +289,11 @@ export const getProduct = query({
 
 /** Merch shown on a room page: the company's items for this room, plus its "I escaped" items. */
 export const roomMerch = query({
-  args: { roomId: v.id("rooms"), userId: v.optional(v.id("users")) },
+  args: { roomId: v.id("rooms"), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const room = await ctx.db.get(args.roomId);
     if (!room?.companyId) return [];
-    const viewer = await viewerOf(ctx, args.userId);
+    const viewer = await viewerOf(ctx, args.sessionToken);
     const cache = new Map<string, SellerInfo | null>();
     const rows = await ctx.db
       .query("merchProducts")
@@ -311,11 +312,11 @@ export const roomMerch = query({
 
 /** A company's shop page. */
 export const companyStore = query({
-  args: { companyId: v.id("companies"), userId: v.optional(v.id("users")) },
+  args: { companyId: v.id("companies"), sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const c = await ctx.db.get(args.companyId);
     if (!companyIsLive(c)) return null;
-    const viewer = await viewerOf(ctx, args.userId);
+    const viewer = await viewerOf(ctx, args.sessionToken);
     const cache = new Map<string, SellerInfo | null>();
     const rows = await ctx.db
       .query("merchProducts")
@@ -343,18 +344,20 @@ export const companyStore = query({
 });
 
 export const myPerks = query({
-  args: { userId: v.optional(v.id("users")) },
-  handler: async (ctx, args) => perksFor(ctx, await viewerOf(ctx, args.userId)),
+  args: { sessionToken: v.optional(v.string()) },
+  handler: async (ctx, args) => perksFor(ctx, await viewerOf(ctx, args.sessionToken)),
 });
 
 /** Upcoming games at this company, to pick up an order at. */
 export const pickupBookings = query({
-  args: { userId: v.id("users"), companyId: v.id("companies") },
+  args: { sessionToken: v.string(), companyId: v.id("companies") },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
     const today = dateAthens(Date.now());
     const rows = await ctx.db
       .query("bookings")
-      .withIndex("by_user_status", (q) => q.eq("userId", args.userId).eq("status", "upcoming"))
+      .withIndex("by_user_status", (q) => q.eq("userId", me._id).eq("status", "upcoming"))
       .collect();
     const out = [];
     for (const b of rows) {
@@ -411,11 +414,13 @@ async function orderView(ctx: Ctx, o: Order) {
 export type OrderView = Awaited<ReturnType<typeof orderView>>;
 
 export const myOrders = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
     const rows = await ctx.db
       .query("merchOrders")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
       .order("desc")
       .take(100);
     const out = [];
@@ -425,10 +430,12 @@ export const myOrders = query({
 });
 
 export const getMyOrder = query({
-  args: { userId: v.id("users"), orderId: v.id("merchOrders") },
+  args: { sessionToken: v.string(), orderId: v.id("merchOrders") },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return null;
     const o = await ctx.db.get(args.orderId);
-    if (!o || o.userId !== args.userId) return null;
+    if (!o || o.userId !== me._id) return null;
     return await orderView(ctx, o);
   },
 });
@@ -445,10 +452,11 @@ export const getOrderPaymentState = query({
 
 /** Cancel an order that isn't paid yet (pay at pickup, or an abandoned online payment). */
 export const cancelMyOrder = mutation({
-  args: { userId: v.id("users"), orderId: v.id("merchOrders") },
+  args: { sessionToken: v.string(), orderId: v.id("merchOrders") },
   handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.sessionToken);
     const o = await ctx.db.get(args.orderId);
-    if (!o || o.userId !== args.userId) throw new ConvexError("Order not found");
+    if (!o || o.userId !== me._id) throw new ConvexError("Order not found");
     if (o.paidAt) throw new ConvexError("This order is paid. Contact the shop to return it.");
     if (o.status !== "reserved" && o.status !== "pending_payment" && o.status !== "ready") {
       throw new ConvexError("This order can't be cancelled any more");

@@ -16,7 +16,7 @@ type SellerFilter = 'all' | 'platform' | 'company';
 export default function ShopPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const data = useQuery(api.merch.listShop, { userId: (user?.id as any) || undefined });
+  const data = useQuery(api.merch.listShop, { sessionToken: user?.sessionToken });
   const [seller, setSeller] = useState<SellerFilter>('all');
   const [category, setCategory] = useState<string>('all');
   const [q, setQ] = useState('');
