@@ -167,7 +167,9 @@ function BillingContent() {
     );
   }
 
-  const usageCents = usage?.amountCents ?? 0;
+  // The cap is for booking fees only; the merch fee comes on top.
+  const usageCents = usage?.bookingAmountCents ?? usage?.amountCents ?? 0;
+  const merchFee = usage?.merchFeeCents ?? 0;
   const capCents = usage?.capCents ?? PAYG_CAP * 100;
   const capPct = Math.min(100, Math.round((usageCents / capCents) * 100));
 
@@ -244,6 +246,14 @@ function BillingContent() {
                 />
               </div>
               {capPct >= 100 && <p className="text-xs text-purple-400 mt-2">{t('plans.cap_reached')}</p>}
+              {merchFee > 0 && (
+                <p className="text-sm text-brand-text-secondary mt-3">
+                  {t('shop.billing.merch_fee_line', {
+                    fee: euros(merchFee),
+                    sales: euros(usage?.merchSalesCents ?? 0),
+                  })}
+                </p>
+              )}
               <p className="text-xs text-brand-text-secondary mt-3">{t('plans.payg_counted')}</p>
               <p className="text-xs text-brand-text-secondary mt-1">{t('plans.payg_invoice_note')}</p>
             </div>

@@ -17,6 +17,7 @@ function VivaReturnContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const confirmVivaReturn = useAction(api.companyPayments.confirmVivaReturn);
+  const confirmMerchReturn = useAction(api.merchPayments.confirmVivaReturn);
   const [failed, setFailed] = useState(false);
 
   const orderCode = params.get('s') || '';
@@ -28,17 +29,21 @@ function VivaReturnContent() {
       return;
     }
     let cancelled = false;
+    // The same Viva return URL serves bookings and merch orders.
     confirmVivaReturn({ orderCode, transactionId })
-      .then(({ bookingId }) => {
+      .then(async ({ bookingId }) => {
         if (cancelled) return;
-        if (bookingId) router.replace(`/booking/confirmation?booking=${bookingId}`);
+        if (bookingId) return router.replace(`/booking/confirmation?booking=${bookingId}`);
+        const { orderId } = await confirmMerchReturn({ orderCode, transactionId });
+        if (cancelled) return;
+        if (orderId) router.replace(`/shop/orders/${orderId}?paid=1`);
         else setFailed(true);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [orderCode, transactionId, confirmVivaReturn, router]);
+  }, [orderCode, transactionId, confirmVivaReturn, confirmMerchReturn, router]);
 
   if (failed) {
     return (

@@ -15,6 +15,7 @@ export default function TermsPage() {
     { title: t('legal.terms.section4_title'), text: t('legal.terms.section4_text') },
     { title: t('legal.terms.section5_title'), text: t('legal.terms.section5_text') },
     { title: t('legal.terms.section6_title'), text: t('legal.terms.section6_text') },
+    { id: 'merch', title: t('legal.terms.merch_title'), text: t('legal.terms.merch_text') },
   ];
 
   return (
@@ -30,9 +31,9 @@ export default function TermsPage() {
 
         <div className="space-y-8">
           {sections.map((section, i) => (
-            <div key={i}>
+            <div key={i} id={(section as { id?: string }).id} className="scroll-mt-28">
               <h2 className="text-xl font-semibold mb-3">{section.title}</h2>
-              <p className="text-brand-text-secondary leading-relaxed">{section.text}</p>
+              <p className="text-brand-text-secondary leading-relaxed whitespace-pre-line">{section.text}</p>
             </div>
           ))}
         </div>

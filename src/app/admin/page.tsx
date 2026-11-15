@@ -37,15 +37,17 @@ import {
   CreditCard,
   Search,
   Flag,
+  ShoppingBag,
 } from 'lucide-react';
 import { AdminReports } from '@/components/admin/AdminReports';
+import { AdminShop } from '@/components/admin/AdminShop';
 
 export default function AdminPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'bookings' | 'users' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'bookings' | 'users' | 'reports' | 'shop'>('overview');
   const [companySearch, setCompanySearch] = useState('');
   const [expandedCompany, setExpandedCompany] = useState<string | null>(null);
 
@@ -128,6 +130,7 @@ export default function AdminPage() {
     { id: 'bookings' as const, label: t('admin.tab_bookings'), icon: CalendarCheck },
     { id: 'users' as const, label: t('admin.tab_users'), icon: Users },
     { id: 'reports' as const, label: t('admin.tab_reports'), icon: Flag },
+    { id: 'shop' as const, label: t('shop.admin.tab'), icon: ShoppingBag },
   ];
 
   return (
@@ -498,6 +501,8 @@ export default function AdminPage() {
 
         {/* ══════════ REPORTS TAB ══════════ */}
         {activeTab === 'reports' && adminEmail && <AdminReports adminEmail={adminEmail} />}
+
+        {activeTab === 'shop' && adminEmail && <AdminShop adminEmail={adminEmail} />}
 
         {/* ══════════ USERS TAB ══════════ */}
         {activeTab === 'users' && (

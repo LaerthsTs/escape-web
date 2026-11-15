@@ -433,6 +433,8 @@ function BookingDetailModal({
 
           {flag && <PlayerFlagCard flag={flag} />}
 
+          <BookingMerch bookingId={String(initial._id)} />
+
           {booking.status === 'cancelled' && (booking.cancelReason || booking.cancelledBy) && (
             <div className="rounded-xl bg-white/5 p-3 text-sm space-y-1">
               <p className="font-semibold text-red-300">
@@ -1394,6 +1396,37 @@ function ExternalBlockModal({
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+/** Merch the player ordered to collect at this game. */
+function BookingMerch({ bookingId }: { bookingId: string }) {
+  const { t } = useTranslation();
+  const { company } = useCompanyAuth();
+  const orders = useCompanyQuery(
+    api.merch.bookingMerch,
+    company?.id ? { companyId: company.id as any, bookingId: bookingId as any } : 'skip'
+  );
+  if (!orders || orders.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-brand-red/30 bg-brand-red/5 p-3 text-sm space-y-2">
+      <p className="font-semibold">{t('shop.seller.booking_merch_title')}</p>
+      {orders.map((o) => (
+        <div key={o._id}>
+          <p className="text-xs text-brand-text-secondary">
+            <span className="font-mono">{o.orderCode}</span> · {t(`shop.order_status.${o.status}`)} ·{' '}
+            {o.paid ? t('shop.seller.paid') : t('shop.seller.collect_payment', { amount: `€${(o.totalCents / 100).toFixed(2)}` })}
+          </p>
+          <ul className="mt-0.5">
+            {o.items.map((i, k) => (
+              <li key={k}>
+                {i.quantity}× {i.title} <span className="text-brand-text-secondary">({i.variantLabel})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

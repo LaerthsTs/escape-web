@@ -58,6 +58,7 @@ export default function LeaderboardPage() {
     { icon: '🌍', key: 'explorer', name: t('leaderboard.badge_explorer'), desc: t('leaderboard.badge_explorer_desc') },
     { icon: '🎯', key: 'perfectionist', name: t('leaderboard.badge_perfectionist'), desc: t('leaderboard.badge_perfectionist_desc') },
     { icon: '🌙', key: 'night_owl', name: t('leaderboard.badge_night_owl'), desc: t('leaderboard.badge_night_owl_desc') },
+    { icon: '🛍️', key: 'collector', name: t('leaderboard.badge_collector'), desc: t('leaderboard.badge_collector_desc') },
   ];
 
   // Badge stats from backend

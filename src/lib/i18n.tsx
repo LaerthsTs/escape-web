@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { companyTranslations } from './i18nCompany';
+import { shopTranslations } from './i18nShop';
 
 export type Language = 'en' | 'el' | 'nl';
 
@@ -377,7 +378,7 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.privacy.section6_text': 'If you have questions about this Privacy Policy, please contact us at privacy@unlocked.gr.',
 
     'legal.terms.title': 'Terms of Service',
-    'legal.terms.last_updated': 'Last updated: February 2026',
+    'legal.terms.last_updated': 'Last updated: November 2026',
     'legal.terms.intro': 'Please read these Terms of Service carefully before using the unlocked.gr website operated by UNLOCKED.',
     'legal.terms.section1_title': 'Acceptance of Terms',
     'legal.terms.section1_text': 'By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.',
@@ -2451,7 +2452,7 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.privacy.section6_text': 'Εάν έχετε ερωτήσεις σχετικά με αυτήν την Πολιτική Απορρήτου, επικοινωνήστε μαζί μας στο privacy@unlocked.gr.',
 
     'legal.terms.title': 'Όροι Χρήσης',
-    'legal.terms.last_updated': 'Τελευταία ενημέρωση: Φεβρουάριος 2026',
+    'legal.terms.last_updated': 'Τελευταία ενημέρωση: Νοέμβριος 2026',
     'legal.terms.intro': 'Παρακαλούμε διαβάστε προσεκτικά αυτούς τους Όρους Χρήσης πριν χρησιμοποιήσετε τον ιστότοπο unlocked.gr που λειτουργεί από την UNLOCKED.',
     'legal.terms.section1_title': 'Αποδοχή Όρων',
     'legal.terms.section1_text': 'Με την πρόσβαση ή χρήση της Υπηρεσίας μας, συμφωνείτε να δεσμεύεστε από αυτούς τους Όρους. Εάν διαφωνείτε με οποιοδήποτε μέρος, δεν μπορείτε να χρησιμοποιήσετε την Υπηρεσία.',
@@ -4684,7 +4685,7 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.privacy.section6_text': 'Als je vragen hebt over dit Privacybeleid, neem dan contact met ons op via privacy@unlocked.gr.',
 
     'legal.terms.title': 'Algemene Voorwaarden',
-    'legal.terms.last_updated': 'Laatst bijgewerkt: februari 2026',
+    'legal.terms.last_updated': 'Laatst bijgewerkt: november 2026',
     'legal.terms.intro': 'Lees deze Algemene Voorwaarden zorgvuldig door voordat je de website unlocked.gr gebruikt, beheerd door UNLOCKED.',
     'legal.terms.section1_title': 'Aanvaarding van Voorwaarden',
     'legal.terms.section1_text': 'Door toegang te krijgen tot of gebruik te maken van onze Service, ga je akkoord met deze Voorwaarden. Als je het niet eens bent met enig deel van de voorwaarden, mag je de Service niet gebruiken.',
@@ -6172,6 +6173,10 @@ const translations: Record<Language, Record<string, string>> = {
 Object.assign(translations.en, companyTranslations.en);
 Object.assign(translations.el, companyTranslations.el);
 Object.assign(translations.nl, companyTranslations.nl);
+// Merch shop + Premium page texts live in ./i18nShop.
+Object.assign(translations.en, shopTranslations.en);
+Object.assign(translations.el, shopTranslations.el);
+Object.assign(translations.nl, shopTranslations.nl);
 
 interface I18nContextType {
   language: Language;

@@ -42,6 +42,7 @@ export function Navbar() {
     { href: '/map', label: t('nav.map') },
     { href: '/social', label: t('nav.social') },
     { href: '/leaderboard', label: t('nav.leaderboard') },
+    { href: '/shop', label: t('nav.shop') },
     { href: '/contact', label: t('nav.contact') },
   ];
 
