@@ -194,7 +194,9 @@ export const getById = internalQuery({
     return {
       ...photo,
       room: room ? { title: room.title, image: room.image } : null,
-      company: company ? { name: company.name, logo: company.logo } : null,
+      company: company
+        ? { name: company.name, logo: company.logo, onboardingStatus: company.onboardingStatus }
+        : null,
     };
   },
 });
@@ -277,6 +279,18 @@ export const recordEmail = internalMutation({
   },
 });
 
+// ── Emails a company has sent in the last hour (for the hourly cap) ──
+export const recentEmailCount = internalQuery({
+  args: { companyId: v.id("companies"), since: v.number() },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("photoEmails")
+      .withIndex("by_company", (q) => q.eq("companyId", args.companyId).gte("sentAt", args.since))
+      .take(500);
+    return rows.length;
+  },
+});
+
 // ── Get emails for a photo ──
 export const getEmailsByPhoto = query({
   args: { photoId: v.id("standalonePhotos"), sessionToken: sessionTokenV },
@@ -340,16 +354,41 @@ export const sendPhotoToEmails = action({
       throw new Error("Unauthorized");
     }
 
+    // Only approved companies can email through the platform.
+    if ((photo.company?.onboardingStatus ?? "approved") !== "approved") {
+      throw new Error("Your company must be approved before sending photos");
+    }
+
+    // Valid, de-duplicated recipients, a few at a time and a cap per hour,
+    // so this can't be used to mail strangers in bulk.
+    const recipients = Array.from(
+      new Set(args.emails.map((e) => e.trim().toLowerCase()).filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && e.length <= 254))
+    );
+    if (recipients.length === 0) throw new Error("No valid email addresses");
+    if (recipients.length > 10) throw new Error("You can send to up to 10 recipients at a time");
+    const sentLastHour = await ctx.runQuery(internal.standalonePhotos.recentEmailCount, {
+      companyId,
+      since: Date.now() - 60 * 60 * 1000,
+    });
+    if (sentLastHour + recipients.length > 50) {
+      throw new Error("Hourly email limit reached. Please try again later");
+    }
+
+    // The link in the email is always our own photo page, never one the
+    // caller supplies.
+    const siteUrl = (process.env.SITE_URL || "https://unlocked.gr").replace(/\/+$/, "");
+    const photoPageUrl = `${siteUrl}/p/${args.photoId}`;
+
     const photoUrl = photo.processedUrl || photo.originalUrl;
     const companyName = photo.company?.name || "Escape Room";
     const roomTitle = photo.room?.title;
 
-    for (const email of args.emails) {
+    for (const email of recipients) {
       // 1. Send via Resend
       const result = await ctx.runAction(internal.email.sendPhotoEmail, {
         recipientEmail: email,
         photoUrl,
-        photoPageUrl: args.photoPageUrl,
+        photoPageUrl,
         companyName,
         roomTitle,
         teamName: photo.teamName,
@@ -366,7 +405,7 @@ export const sendPhotoToEmails = action({
       });
     }
 
-    return { sent: args.emails.length };
+    return { sent: recipients.length };
   },
 });
 

@@ -37,7 +37,13 @@ function getResend(): Resend | null {
 
 function fromAddr(senderName?: string): string {
   const addr = process.env.EMAIL_FROM || "noreply@unlocked.gr";
-  const name = senderName || process.env.EMAIL_FROM_NAME || "UNLOCKED";
+  // The display name can come from a company: strip anything that could
+  // break out of the header or pretend to be an address.
+  const name = (senderName || process.env.EMAIL_FROM_NAME || "UNLOCKED")
+    .replace(/[<>"\r\n,;@]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60) || "UNLOCKED";
   return `${name} <${addr}>`;
 }
 
@@ -391,30 +397,30 @@ export const sendBookingEmails = internalAction({
       const playerHtml = shell(
         et(lang, "booking.title"),
         et(lang, "booking.subtitle"),
-        `<p style="${S.greeting}">${et(lang, "booking.greeting")} <strong>${d.playerName}</strong>,</p>
+        `<p style="${S.greeting}">${et(lang, "booking.greeting")} <strong>${escHtml(d.playerName)}</strong>,</p>
 <p style="${S.bodyText}">
   ${et(lang, "booking.thankYou")}
 </p>
-<div style="text-align:center;margin:0 0 28px;"><span style="${S.badge}">${d.bookingCode}</span></div>
+<div style="text-align:center;margin:0 0 28px;"><span style="${S.badge}">${escHtml(d.bookingCode)}</span></div>
 ${TABLE(`
-  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${d.roomTitle}</strong>`)}</tr>
+  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${escHtml(d.roomTitle)}</strong>`)}</tr>
   <tr>${TH(et(lang, "booking.date"))}${TD(fDate)}</tr>
-  <tr>${TH(et(lang, "booking.time"))}${TD(d.time)}</tr>
+  <tr>${TH(et(lang, "booking.time"))}${TD(escHtml(d.time))}</tr>
   <tr>${TH(et(lang, "booking.players"))}${TD(String(d.players))}</tr>
   <tr>${TH(et(lang, "booking.total"))}${TD(`<strong>€${d.total.toFixed(2)}</strong>`)}</tr>
   <tr>${TH(et(lang, "booking.payment"))}${TD(`<span style="${S.statusColor(d.paymentStatus)}">${paymentLabel(d.paymentStatus, lang)}</span>`)}</tr>
   ${d.depositPaid ? `<tr>${TH(et(lang, "booking.deposit"))}${TD(`€${d.depositPaid.toFixed(2)}`)}</tr>` : ""}
-  ${d.notes ? `<tr>${TH(et(lang, "booking.notes"))}${TD(d.notes)}</tr>` : ""}
+  ${d.notes ? `<tr>${TH(et(lang, "booking.notes"))}${TD(escHtml(d.notes))}</tr>` : ""}
 `)}
 <div style="${S.divider}"></div>
 <p style="${S.bodyText}">
-  ${et(lang, "booking.keepCode")} <strong style="color:${C.red};">${d.bookingCode}</strong> ${et(lang, "booking.keepCodeSuffix")}
-  ${d.companyPhone ? `${et(lang, "booking.needChanges")} <strong>${d.companyPhone}</strong>.` : ""}
+  ${et(lang, "booking.keepCode")} <strong style="color:${C.red};">${escHtml(d.bookingCode)}</strong> ${et(lang, "booking.keepCodeSuffix")}
+  ${d.companyPhone ? `${et(lang, "booking.needChanges")} <strong>${escHtml(d.companyPhone)}</strong>.` : ""}
 </p>
 <div style="text-align:center;margin:24px 0;">
   <a href="https://unlocked.gr/tickets" style="${S.btn}">${et(lang, "booking.viewTickets")}</a>
 </div>`,
-        `${d.companyName} · ${et(lang, "booking.footer")}`
+        `${escHtml(d.companyName)} · ${et(lang, "booking.footer")}`
       );
 
       promises.push(
@@ -435,10 +441,10 @@ ${TABLE(`
         d.bookingCode,
         `<p style="${S.bodyText}">A new booking has been placed on your room.</p>
 ${TABLE(`
-  <tr>${TH("Booking Code")}${TD(`<strong style="color:${C.red};">${d.bookingCode}</strong>`)}</tr>
-  <tr>${TH("Room")}${TD(`<strong>${d.roomTitle}</strong>`)}</tr>
+  <tr>${TH("Booking Code")}${TD(`<strong style="color:${C.red};">${escHtml(d.bookingCode)}</strong>`)}</tr>
+  <tr>${TH("Room")}${TD(`<strong>${escHtml(d.roomTitle)}</strong>`)}</tr>
   <tr>${TH("Date")}${TD(fmtDate(d.date))}</tr>
-  <tr>${TH("Time")}${TD(d.time)}</tr>
+  <tr>${TH("Time")}${TD(escHtml(d.time))}</tr>
   <tr>${TH("Players")}${TD(String(d.players))}</tr>
   <tr>${TH("Total")}${TD(`<strong>€${d.total.toFixed(2)}</strong>`)}</tr>
   <tr>${TH("Payment")}${TD(`<span style="${S.statusColor(d.paymentStatus)}">${paymentLabel(d.paymentStatus)}</span>`)}</tr>
@@ -446,15 +452,15 @@ ${TABLE(`
 `)}
 <h3 style="${S.sectionTitle}">Customer Details</h3>
 ${TABLE(`
-  <tr>${TH("Name")}${TD(d.playerName)}</tr>
-  <tr>${TH("Email")}${TD(`<a href="mailto:${d.playerContact}" style="color:${C.red};">${d.playerContact}</a>`)}</tr>
-  <tr>${TH("Phone")}${TD(`<a href="tel:${d.playerPhone}" style="color:${C.red};">${d.playerPhone || "—"}</a>`)}</tr>
-  ${d.notes ? `<tr>${TH("Notes")}${TD(d.notes)}</tr>` : ""}
+  <tr>${TH("Name")}${TD(escHtml(d.playerName))}</tr>
+  <tr>${TH("Email")}${TD(`<a href="mailto:${escHtml(d.playerContact)}" style="color:${C.red};">${escHtml(d.playerContact)}</a>`)}</tr>
+  <tr>${TH("Phone")}${TD(`<a href="tel:${escHtml(d.playerPhone)}" style="color:${C.red};">${d.playerPhone ? escHtml(d.playerPhone) : "—"}</a>`)}</tr>
+  ${d.notes ? `<tr>${TH("Notes")}${TD(escHtml(d.notes))}</tr>` : ""}
 `)}
 <div style="text-align:center;margin:24px 0;">
   <a href="https://business.unlocked.gr/bookings" style="${S.btn}">View in Dashboard</a>
 </div>`,
-        `${d.companyName} · UNLOCKED Platform`
+        `${escHtml(d.companyName)} · UNLOCKED Platform`
       );
 
       promises.push(
@@ -491,7 +497,7 @@ export const sendPlayerWelcome = internalAction({
     const html = shell(
       et(lang, "welcome.title"),
       et(lang, "welcome.subtitle"),
-      `<p style="${S.greeting}">${et(lang, "welcome.greeting")} <strong>${args.playerName}</strong>,</p>
+      `<p style="${S.greeting}">${et(lang, "welcome.greeting")} <strong>${escHtml(args.playerName)}</strong>,</p>
 <p style="${S.bodyText}">
   ${et(lang, "welcome.body")}
 </p>
@@ -544,7 +550,7 @@ export const sendCompanyWelcome = internalAction({
     const html = shell(
       "Welcome to UNLOCKED!",
       "Partner with Greece's escape room platform",
-      `<p style="${S.greeting}">Hi <strong>${args.companyName}</strong>,</p>
+      `<p style="${S.greeting}">Hi <strong>${escHtml(args.companyName)}</strong>,</p>
 <p style="${S.bodyText}">
   Thank you for registering on <strong style="color:${C.red};">UNLOCKED</strong>!
   We're excited to have you on board.
@@ -607,7 +613,7 @@ export const sendCompanyApproved = internalAction({
     const html = shell(
       "You're Approved!",
       "Your UNLOCKED account is now active",
-      `<p style="${S.greeting}">Hi <strong>${args.companyName}</strong>,</p>
+      `<p style="${S.greeting}">Hi <strong>${escHtml(args.companyName)}</strong>,</p>
 <p style="${S.bodyText}">
   Great news! Your company has been <strong style="color:#22c55e;">approved</strong> on UNLOCKED.
   You can now start adding your escape rooms and receiving bookings.
@@ -671,18 +677,18 @@ export const sendStripeReceipt = internalAction({
 
     const html = shell(
       et(lang, "receipt.title"),
-      `${et(lang, "receipt.subtitle")} ${d.bookingCode}`,
-      `<p style="${S.greeting}">${et(lang, "receipt.greeting")} <strong>${d.playerName}</strong>,</p>
+      `${et(lang, "receipt.subtitle")} ${escHtml(d.bookingCode)}`,
+      `<p style="${S.greeting}">${et(lang, "receipt.greeting")} <strong>${escHtml(d.playerName)}</strong>,</p>
 <p style="${S.bodyText}">
   ${et(lang, "receipt.body")}
 </p>
 <div style="text-align:center;margin:0 0 28px;">
-  <span style="${S.badge}">${d.bookingCode}</span>
+  <span style="${S.badge}">${escHtml(d.bookingCode)}</span>
 </div>
 ${TABLE(`
-  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${d.roomTitle}</strong>`)}</tr>
+  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${escHtml(d.roomTitle)}</strong>`)}</tr>
   <tr>${TH(et(lang, "booking.date"))}${TD(fDate)}</tr>
-  <tr>${TH(et(lang, "booking.time"))}${TD(d.time)}</tr>
+  <tr>${TH(et(lang, "booking.time"))}${TD(escHtml(d.time))}</tr>
   <tr>${TH(et(lang, "booking.players"))}${TD(String(d.players))}</tr>
   <tr>${TH(et(lang, "receipt.bookingTotal"))}${TD(`€${d.total.toFixed(2)}`)}</tr>
   <tr>${TH(et(lang, "receipt.paymentType"))}${TD(termsLabel)}</tr>
@@ -690,7 +696,7 @@ ${TABLE(`
 `)}
 <div style="${S.divider}"></div>
 <p style="${S.smallText}">
-  ${et(lang, "receipt.notice")} "${d.companyName}".
+  ${et(lang, "receipt.notice")} "${escHtml(d.companyName)}".
   ${et(lang, "receipt.questions")}
 </p>`,
       et(lang, "receipt.footer")
@@ -729,7 +735,7 @@ export const sendSubscriptionReceipt = internalAction({
     const html = shell(
       "Subscription Confirmed",
       `${planLabel(d.plan)} Plan — ${periodLabel}`,
-      `<p style="${S.greeting}">Hi <strong>${d.companyName}</strong>,</p>
+      `<p style="${S.greeting}">Hi <strong>${escHtml(d.companyName)}</strong>,</p>
 <p style="${S.bodyText}">
   Your subscription payment has been processed successfully. Here are the details:
 </p>
@@ -786,32 +792,35 @@ export const sendPhotoEmail = internalAction({
     if (!resend) return { messageId: null };
 
     const d = args;
+    if (!/^https:\/\//i.test(d.photoUrl) || !/^https:\/\//i.test(d.photoPageUrl) || !isEmail(d.recipientEmail)) {
+      return { messageId: null };
+    }
     const escapeBadge = d.escaped !== undefined
       ? d.escaped
-        ? `<span style="display:inline-block;background:#22c55e;color:#fff;padding:6px 16px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.5px;">✓ ESCAPED${d.escapeTime ? ` — ${d.escapeTime}` : ""}</span>`
+        ? `<span style="display:inline-block;background:#22c55e;color:#fff;padding:6px 16px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.5px;">✓ ESCAPED${d.escapeTime ? ` — ${escHtml(d.escapeTime)}` : ""}</span>`
         : `<span style="display:inline-block;background:${C.red};color:#fff;padding:6px 16px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:0.5px;">✗ LOCKED IN</span>`
       : "";
 
     const html = shell(
-      d.teamName ? `${d.teamName}'s Escape Photo` : "Your Escape Room Photo",
-      d.roomTitle ? `${d.roomTitle} — ${d.companyName}` : d.companyName,
+      d.teamName ? `${escHtml(d.teamName)}'s Escape Photo` : "Your Escape Room Photo",
+      d.roomTitle ? `${escHtml(d.roomTitle)} — ${escHtml(d.companyName)}` : escHtml(d.companyName),
       `<p style="${S.bodyText}">
-  Your escape room photo from <strong style="color:${C.red};">${d.companyName}</strong> is ready!
+  Your escape room photo from <strong style="color:${C.red};">${escHtml(d.companyName)}</strong> is ready!
 </p>
-${d.teamName ? `<p style="text-align:center;font-size:18px;font-weight:700;color:${C.text};margin:0 0 8px;">Team: ${d.teamName}</p>` : ""}
+${d.teamName ? `<p style="text-align:center;font-size:18px;font-weight:700;color:${C.text};margin:0 0 8px;">Team: ${escHtml(d.teamName)}</p>` : ""}
 ${escapeBadge ? `<div style="text-align:center;margin:0 0 20px;">${escapeBadge}</div>` : ""}
 <!-- Photo -->
 <div style="text-align:center;margin:20px 0;">
-  <img src="${d.photoUrl}" alt="Escape Room Photo" style="max-width:100%;border-radius:12px;border:2px solid ${C.border};" />
+  <img src="${escHtml(d.photoUrl)}" alt="Escape Room Photo" style="max-width:100%;border-radius:12px;border:2px solid ${C.border};" />
 </div>
 <div style="text-align:center;margin:28px 0;">
-  <a href="${d.photoPageUrl}" style="${S.btn}">View & Download Photo</a>
+  <a href="${escHtml(d.photoPageUrl)}" style="${S.btn}">View & Download Photo</a>
 </div>
 <div style="${S.divider}"></div>
 <p style="${S.smallText};text-align:center;">
-  Share your achievement with friends! This photo was created with ❤️ by ${d.companyName}.
+  Share your achievement with friends! This photo was created with ❤️ by ${escHtml(d.companyName)}.
 </p>`,
-      `${d.companyName} · Powered by UNLOCKED Photos`
+      `${escHtml(d.companyName)} · Powered by UNLOCKED Photos`
     );
 
     const subjectLine = d.teamName
@@ -859,15 +868,15 @@ export const sendSlotAvailableEmail = internalAction({
 
     const html = shell(
       `${et(lang, "slot.title")} 🔔`,
-      `${d.roomTitle} — ${fmtDate(d.date, lang)} ${et(lang, "slot.subtitle")} ${d.time}`,
-      `<p style="${S.greeting}">${et(lang, "slot.greeting")} <strong>${d.playerName}</strong>,</p>
+      `${escHtml(d.roomTitle)} — ${fmtDate(d.date, lang)} ${et(lang, "slot.subtitle")} ${d.time}`,
+      `<p style="${S.greeting}">${et(lang, "slot.greeting")} <strong>${escHtml(d.playerName)}</strong>,</p>
 <p style="${S.bodyText}">
   ${et(lang, "slot.body")}
 </p>
 ${TABLE(`
-  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${d.roomTitle}</strong>`)}</tr>
+  <tr>${TH(et(lang, "booking.room"))}${TD(`<strong style="color:${C.red};">${escHtml(d.roomTitle)}</strong>`)}</tr>
   <tr>${TH(et(lang, "booking.date"))}${TD(fmtDate(d.date, lang))}</tr>
-  <tr>${TH(et(lang, "booking.time"))}${TD(`<strong>${d.time}</strong>`)}</tr>
+  <tr>${TH(et(lang, "booking.time"))}${TD(`<strong>${escHtml(d.time)}</strong>`)}</tr>
 `)}
 <p style="${S.bodyText}">
   ${et(lang, "slot.hurry")}
@@ -911,10 +920,10 @@ export const sendNewApplicationNotification = internalAction({
       "A new company is waiting for your review",
       `<h2 style="color:#E53E3E; margin:0 0 16px">New Application Submitted</h2>
 <p style="color:#ccc; font-size:15px; margin:0 0 8px">
-  <strong>${d.companyName}</strong> has submitted a new application and is waiting for review.
+  <strong>${escHtml(d.companyName)}</strong> has submitted a new application and is waiting for review.
 </p>
-<p style="color:#999; font-size:14px; margin:0 0 4px">Email: ${d.companyEmail}</p>
-<p style="color:#999; font-size:14px; margin:0 0 20px">Plan: ${d.plan}</p>
+<p style="color:#999; font-size:14px; margin:0 0 4px">Email: ${escHtml(d.companyEmail)}</p>
+<p style="color:#999; font-size:14px; margin:0 0 20px">Plan: ${escHtml(d.plan)}</p>
 <a href="https://business.unlocked.gr/admin" style="display:inline-block; background:#E53E3E; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600;">
   Review Application
 </a>`,
