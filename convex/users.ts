@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
@@ -354,7 +354,7 @@ export const updateStats = mutation({
   },
 });
 
-export const setAdmin = mutation({
+export const setAdmin = internalMutation({
   args: {
     userId: v.id("users"),
     isAdmin: v.boolean(),
