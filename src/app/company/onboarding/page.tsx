@@ -128,6 +128,13 @@ export default function CompanyOnboardingPage() {
     }
   }, []);
 
+ 
+  // If the terms already fit without scrolling (tall screens), allow accepting right away.
+  useEffect(() => {
+    const el = termsRef.current;
+    if (el && el.scrollHeight <= el.clientHeight + 40) setScrolledToEnd(true);
+  });
+
   if (!companyData) {
     return (
       <div className="min-h-screen bg-brand-bg flex items-center justify-center">
