@@ -29,17 +29,6 @@ import {
 
 const clientV = v.optional(v.union(v.literal("web"), v.literal("app")));
 
-// ─── Admin helper: verify the calling user has isAdmin ───
-export const ADMIN_EMAILS = ['apple_001386.f@private.relay', 'apple_001386.8@private.relay', 'dstroumpakos@planeraai.app'];
-
-async function requireAdmin(ctx: any, userId: string) {
-  const user = await ctx.db.get(userId);
-  if (!user || (!user.isAdmin && !ADMIN_EMAILS.includes(user.email))) {
-    throw new Error("Unauthorized: admin access required");
-  }
-  return user;
-}
-
 // ─── Auth ───
 export const login = query({
   args: { email: v.string(), password: v.string() },
@@ -839,10 +828,9 @@ export const redeemDiscountCode = internalMutation({
 });
 
 // Admin: list all pending review companies
-export const getPendingReview = query({
+export const getPendingReview = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.userId);
     const all = await ctx.db.query("companies").collect();
     return all
       .filter((c) => c.onboardingStatus === "pending_review")
@@ -851,10 +839,9 @@ export const getPendingReview = query({
 });
 
 // Admin: list all companies for management
-export const getAllCompanies = query({
+export const getAllCompanies = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.userId);
     const all = await ctx.db.query("companies").collect();
     return all.map(({ password: _pw, ...c }) => ({ ...c, onboardingStatus: c.onboardingStatus || "approved" }));
   },
@@ -1306,21 +1293,6 @@ export const updateBookingNotes = mutation({
   },
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ADMIN — Platform-wide login & dashboard
-// ═══════════════════════════════════════════════════════════════
-
-/** Admin login — email-only, no password needed (email must be in ADMIN_EMAILS) */
-export const adminLogin = mutation({
-  args: { email: v.string() },
-  handler: async (ctx, args) => {
-    const email = args.email.toLowerCase().trim();
-    if (!ADMIN_EMAILS.includes(email)) {
-      throw new Error("Not an admin email");
-    }
-    return { email, isAdmin: true };
-  },
-});
 
 /** Full platform dashboard — returns every metric the admin needs */
 export const getAdminDashboard = query({
