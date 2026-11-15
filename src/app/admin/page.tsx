@@ -46,6 +46,7 @@ export default function AdminPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'bookings' | 'users' | 'reports' | 'shop'>('overview');
   const [companySearch, setCompanySearch] = useState('');
@@ -57,6 +58,7 @@ export default function AdminPage() {
       try {
         const data = JSON.parse(stored);
         setAdminEmail(data.email);
+        setAdminToken(data.token ?? null);
       } catch {
         localStorage.removeItem('unlocked_admin');
       }
@@ -66,7 +68,7 @@ export default function AdminPage() {
 
   const dashboard = useQuery(
     api.companies.getAdminDashboard,
-    adminEmail ? { adminEmail } : 'skip'
+        adminToken ? { sessionToken: adminToken } : 'skip'
   );
 
   const approveCompany = useMutation(api.companies.approveCompany);
@@ -75,6 +77,7 @@ export default function AdminPage() {
   const handleLogout = () => {
     localStorage.removeItem('unlocked_admin');
     setAdminEmail(null);
+    setAdminToken(null);
     router.replace('https://business.unlocked.gr/login');
   };
 

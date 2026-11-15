@@ -14,6 +14,7 @@ import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 import { nt } from "./notificationTexts";
 import { clampDepositPercent } from "./companyPaymentsData";
 import { normalizePlan } from "./plans";
+import { requireAdminSession } from "./adminSession";
 import {
   sessionTokenV,
   createCompanySession,
@@ -1325,12 +1326,9 @@ export const adminLogin = mutation({
 
 /** Full platform dashboard — returns every metric the admin needs */
 export const getAdminDashboard = query({
-  args: { adminEmail: v.string() },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const email = args.adminEmail.toLowerCase().trim();
-    if (!ADMIN_EMAILS.includes(email)) {
-      throw new Error("Unauthorized");
-    }
+    await requireAdminSession(ctx, args.sessionToken);
 
     // ── Companies ──
     const allCompanies = await ctx.db.query("companies").collect();

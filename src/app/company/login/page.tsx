@@ -23,7 +23,7 @@ export default function CompanyLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const adminLogin = useMutation(api.companies.adminLogin);
+  const adminLogin = useMutation(api.adminSession.login);
   const [justRegistered, setJustRegistered] = useState(false);
 
   useEffect(() => {
@@ -43,9 +43,12 @@ export default function CompanyLoginPage() {
     try {
       // Try admin login first
       try {
-        const adminResult = await adminLogin({ email });
-        if (adminResult?.isAdmin) {
-          localStorage.setItem('unlocked_admin', JSON.stringify(adminResult));
+               const adminResult = await adminLogin({ email, password });
+        if (adminResult?.token) {
+          localStorage.setItem(
+            'unlocked_admin',
+            JSON.stringify({ email: adminResult.email, token: adminResult.token, isAdmin: true })
+          );
           router.replace('/admin');
           return;
         }
