@@ -175,9 +175,9 @@ export default function NotificationsPage() {
                   setActionLoading(n._id + action);
                   try {
                     if (action === 'accept') {
-                      await acceptFriend({ friendshipId: n.data.friendshipId, userId: user.id as any });
+                      await acceptFriend({ friendshipId: n.data.friendshipId, sessionToken: user.sessionToken });
                     } else {
-                      await declineFriend({ friendshipId: n.data.friendshipId, userId: user.id as any });
+                      await declineFriend({ friendshipId: n.data.friendshipId, sessionToken: user.sessionToken });
                     }
                     setActionDone((prev) => ({ ...prev, [n._id]: action }));
                     if (!n.read) await markAsRead({ id: n._id, sessionToken: user.sessionToken });
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
                   try {
                     await respondBookingInvite({
                       inviteId: n.data.bookingInviteId,
-                      userId: user.id as any,
+                      sessionToken: user.sessionToken,
                       response: action,
                     });
                     setActionDone((prev) => ({ ...prev, [n._id]: action }));

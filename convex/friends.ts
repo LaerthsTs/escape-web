@@ -1,14 +1,18 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { nt } from "./notificationTexts";
+import { requireUser, optionalUser } from "./userSession";
 
 // ─── Search users by name (for adding friends) ───
 export const searchUsers = query({
   args: {
-    currentUserId: v.id("users"),
+    sessionToken: v.string(),
     searchTerm: v.string(),
   },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
+    const currentUserId = me._id;
     if (args.searchTerm.trim().length < 3) return [];
 
     const term = args.searchTerm.trim().toLowerCase();
@@ -19,7 +23,7 @@ export const searchUsers = query({
     const results = allUsers
       .filter(
         (u) =>
-          u._id !== args.currentUserId &&
+          u._id !== currentUserId &&
           u.name.toLowerCase().includes(term)
       )
       .slice(0, 20);
@@ -30,15 +34,15 @@ export const searchUsers = query({
     const [sentRequests, receivedRequests, blockedUsers] = await Promise.all([
       ctx.db
         .query("friendships")
-        .withIndex("by_requester", (q) => q.eq("requesterId", args.currentUserId))
+        .withIndex("by_requester", (q) => q.eq("requesterId", currentUserId))
         .collect(),
       ctx.db
         .query("friendships")
-        .withIndex("by_receiver", (q) => q.eq("receiverId", args.currentUserId))
+        .withIndex("by_receiver", (q) => q.eq("receiverId", currentUserId))
         .collect(),
       ctx.db
         .query("blockedUsers")
-        .withIndex("by_blocker", (q) => q.eq("blockerId", args.currentUserId))
+        .withIndex("by_blocker", (q) => q.eq("blockerId", currentUserId))
         .collect(),
     ]);
 
@@ -69,7 +73,7 @@ export const searchUsers = query({
           if (friendship.status === "accepted") friendshipStatus = "friends";
           else if (friendship.status === "pending") {
             friendshipStatus =
-              friendship.requesterId === args.currentUserId
+              friendship.requesterId === currentUserId
                 ? "request_sent"
                 : "request_received";
           }
@@ -93,24 +97,26 @@ export const searchUsers = query({
 // ─── Send friend request ───
 export const sendRequest = mutation({
   args: {
-    requesterId: v.id("users"),
+    sessionToken: v.string(),
     receiverId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    if (args.requesterId === args.receiverId)
+    const requesterUser = await requireUser(ctx, args.sessionToken);
+    const requesterId = requesterUser._id;
+    if (requesterId === args.receiverId)
       throw new Error("Cannot send a friend request to yourself");
 
     // Check if already friends or request exists
     const existing1 = await ctx.db
       .query("friendships")
       .withIndex("by_pair", (q) =>
-        q.eq("requesterId", args.requesterId).eq("receiverId", args.receiverId)
+        q.eq("requesterId", requesterId).eq("receiverId", args.receiverId)
       )
       .first();
     const existing2 = await ctx.db
       .query("friendships")
       .withIndex("by_pair", (q) =>
-        q.eq("requesterId", args.receiverId).eq("receiverId", args.requesterId)
+        q.eq("requesterId", args.receiverId).eq("receiverId", requesterId)
       )
       .first();
 
@@ -121,20 +127,20 @@ export const sendRequest = mutation({
     const blocked = await ctx.db
       .query("blockedUsers")
       .withIndex("by_blocker_blocked", (q) =>
-        q.eq("blockerId", args.receiverId).eq("blockedUserId", args.requesterId)
+        q.eq("blockerId", args.receiverId).eq("blockedUserId", requesterId)
       )
       .first();
     if (blocked) throw new Error("Cannot send friend request");
 
     const id = await ctx.db.insert("friendships", {
-      requesterId: args.requesterId,
+      requesterId,
       receiverId: args.receiverId,
       status: "pending",
       createdAt: Date.now(),
     });
 
     // Send notification to receiver
-    const requester = await ctx.db.get(args.requesterId);
+    const requester = requesterUser;
     const receiver = await ctx.db.get(args.receiverId);
     const lang = receiver?.language;
     await ctx.db.insert("notifications", {
@@ -144,7 +150,7 @@ export const sendRequest = mutation({
       message: nt(lang, "friend_request.message", { name: requester?.name ?? "Someone" }),
       read: false,
       createdAt: Date.now(),
-      data: { friendshipId: id, requesterId: args.requesterId },
+      data: { friendshipId: id, requesterId },
     });
 
     return id;
@@ -155,12 +161,13 @@ export const sendRequest = mutation({
 export const acceptRequest = mutation({
   args: {
     friendshipId: v.id("friendships"),
-    userId: v.id("users"), // the receiver accepting
+    sessionToken: v.string(), // the receiver accepting
   },
   handler: async (ctx, args) => {
+    const receiver = await requireUser(ctx, args.sessionToken);
     const friendship = await ctx.db.get(args.friendshipId);
     if (!friendship) throw new Error("Friend request not found");
-    if (friendship.receiverId !== args.userId)
+    if (friendship.receiverId !== receiver._id)
       throw new Error("Only the receiver can accept");
     if (friendship.status !== "pending")
       throw new Error("Request already handled");
@@ -171,7 +178,6 @@ export const acceptRequest = mutation({
     });
 
     // Notify the requester
-    const receiver = await ctx.db.get(args.userId);
     const requesterUser = await ctx.db.get(friendship.requesterId);
     const lang = requesterUser?.language;
     await ctx.db.insert("notifications", {
@@ -190,12 +196,13 @@ export const acceptRequest = mutation({
 export const declineRequest = mutation({
   args: {
     friendshipId: v.id("friendships"),
-    userId: v.id("users"),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const friendship = await ctx.db.get(args.friendshipId);
     if (!friendship) throw new Error("Friend request not found");
-    if (friendship.receiverId !== args.userId)
+    if (friendship.receiverId !== user._id)
       throw new Error("Only the receiver can decline");
     if (friendship.status !== "pending")
       throw new Error("Request already handled");
@@ -211,14 +218,15 @@ export const declineRequest = mutation({
 export const removeFriend = mutation({
   args: {
     friendshipId: v.id("friendships"),
-    userId: v.id("users"),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const friendship = await ctx.db.get(args.friendshipId);
     if (!friendship) throw new Error("Friendship not found");
     if (
-      friendship.requesterId !== args.userId &&
-      friendship.receiverId !== args.userId
+      friendship.requesterId !== user._id &&
+      friendship.receiverId !== user._id
     )
       throw new Error("Not part of this friendship");
 
@@ -228,17 +236,20 @@ export const removeFriend = mutation({
 
 // ─── Get friends list ───
 export const listFriends = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
+    const userId = me._id;
     // Friendships where current user is requester
     const asSender = await ctx.db
       .query("friendships")
-      .withIndex("by_requester", (q) => q.eq("requesterId", args.userId))
+      .withIndex("by_requester", (q) => q.eq("requesterId", userId))
       .collect();
     // Friendships where current user is receiver
     const asReceiver = await ctx.db
       .query("friendships")
-      .withIndex("by_receiver", (q) => q.eq("receiverId", args.userId))
+      .withIndex("by_receiver", (q) => q.eq("receiverId", userId))
       .collect();
 
     const accepted = [...asSender, ...asReceiver].filter(
@@ -248,7 +259,7 @@ export const listFriends = query({
     const friends = await Promise.all(
       accepted.map(async (f) => {
         const friendId =
-          f.requesterId === args.userId ? f.receiverId : f.requesterId;
+          f.requesterId === userId ? f.receiverId : f.requesterId;
         const friend = await ctx.db.get(friendId);
         if (!friend) return null;
 
@@ -276,12 +287,14 @@ export const listFriends = query({
 
 // ─── Get pending requests (incoming) ───
 export const pendingRequests = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
     const pending = await ctx.db
       .query("friendships")
       .withIndex("by_receiver_status", (q) =>
-        q.eq("receiverId", args.userId).eq("status", "pending")
+        q.eq("receiverId", me._id).eq("status", "pending")
       )
       .collect();
 
@@ -316,21 +329,27 @@ export const pendingRequests = query({
 export const inviteToBooking = mutation({
   args: {
     bookingId: v.id("bookings"),
-    inviterId: v.id("users"),
+    sessionToken: v.string(),
     inviteeId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    const inviter = await requireUser(ctx, args.sessionToken);
+    const inviterId = inviter._id;
+    // Only the booking's owner can invite people to it
+    const ownBooking = await ctx.db.get(args.bookingId);
+    if (!ownBooking || ownBooking.userId !== inviterId)
+      throw new Error("Booking not found");
     // Verify they are friends
     const asReq = await ctx.db
       .query("friendships")
       .withIndex("by_pair", (q) =>
-        q.eq("requesterId", args.inviterId).eq("receiverId", args.inviteeId)
+        q.eq("requesterId", inviterId).eq("receiverId", args.inviteeId)
       )
       .first();
     const asRec = await ctx.db
       .query("friendships")
       .withIndex("by_pair", (q) =>
-        q.eq("requesterId", args.inviteeId).eq("receiverId", args.inviterId)
+        q.eq("requesterId", args.inviteeId).eq("receiverId", inviterId)
       )
       .first();
     const friendship = asReq || asRec;
@@ -349,11 +368,10 @@ export const inviteToBooking = mutation({
     if (!booking) throw new Error("Booking not found");
 
     const room = await ctx.db.get(booking.roomId);
-    const inviter = await ctx.db.get(args.inviterId);
 
     const id = await ctx.db.insert("bookingInvites", {
       bookingId: args.bookingId,
-      inviterId: args.inviterId,
+      inviterId,
       inviteeId: args.inviteeId,
       status: "pending",
       createdAt: Date.now(),
@@ -391,13 +409,14 @@ export const inviteToBooking = mutation({
 export const respondToBookingInvite = mutation({
   args: {
     inviteId: v.id("bookingInvites"),
-    userId: v.id("users"),
+    sessionToken: v.string(),
     response: v.union(v.literal("accepted"), v.literal("declined")),
   },
   handler: async (ctx, args) => {
+    const invitee = await requireUser(ctx, args.sessionToken);
     const invite = await ctx.db.get(args.inviteId);
     if (!invite) throw new Error("Invite not found");
-    if (invite.inviteeId !== args.userId)
+    if (invite.inviteeId !== invitee._id)
       throw new Error("Not your invite");
     if (invite.status !== "pending")
       throw new Error("Already responded");
@@ -408,7 +427,6 @@ export const respondToBookingInvite = mutation({
     });
 
     // Notify the inviter
-    const invitee = await ctx.db.get(args.userId);
     const booking = await ctx.db.get(invite.bookingId);
     const room = booking ? await ctx.db.get(booking.roomId) : null;
     const inviterUser = await ctx.db.get(invite.inviterId);
@@ -436,11 +454,13 @@ export const respondToBookingInvite = mutation({
 
 // ─── Get booking invites for a user (incoming pending) ───
 export const getBookingInvites = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
     const invites = await ctx.db
       .query("bookingInvites")
-      .withIndex("by_invitee", (q) => q.eq("inviteeId", args.userId))
+      .withIndex("by_invitee", (q) => q.eq("inviteeId", me._id))
       .collect();
 
     const enriched = await Promise.all(
@@ -490,8 +510,12 @@ export const getBookingInvites = query({
 
 // ─── Get invites sent for a specific booking (for the booking owner) ───
 export const getBookingInvitesByBooking = query({
-  args: { bookingId: v.id("bookings") },
+  args: { bookingId: v.id("bookings"), sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
+    const ownBooking = await ctx.db.get(args.bookingId);
+    if (!ownBooking || ownBooking.userId !== me._id) return [];
     const invites = await ctx.db
       .query("bookingInvites")
       .withIndex("by_booking", (q) => q.eq("bookingId", args.bookingId))
@@ -520,15 +544,17 @@ export const getBookingInvitesByBooking = query({
 
 // ─── Get friend count ───
 export const friendCount = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return 0;
     const asSender = await ctx.db
       .query("friendships")
-      .withIndex("by_requester", (q) => q.eq("requesterId", args.userId))
+      .withIndex("by_requester", (q) => q.eq("requesterId", me._id))
       .collect();
     const asReceiver = await ctx.db
       .query("friendships")
-      .withIndex("by_receiver", (q) => q.eq("receiverId", args.userId))
+      .withIndex("by_receiver", (q) => q.eq("receiverId", me._id))
       .collect();
     return [...asSender, ...asReceiver].filter((f) => f.status === "accepted")
       .length;

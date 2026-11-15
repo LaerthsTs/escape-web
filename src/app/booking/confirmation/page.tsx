@@ -100,23 +100,25 @@ function ConfirmationContent() {
   // Friends for invite
   const friends = useQuery(
     api.friends.listFriends,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const bookingForInvite = stripeBooking || null;
   const bookingIdForInvite = bookingForInvite?._id ?? null;
   const existingInvites = useQuery(
     api.friends.getBookingInvitesByBooking,
-    bookingIdForInvite ? { bookingId: bookingIdForInvite as any } : 'skip'
+    bookingIdForInvite && user?.sessionToken
+      ? { bookingId: bookingIdForInvite as any, sessionToken: user.sessionToken }
+      : 'skip'
   );
   const inviteToBooking = useMutation(api.friends.inviteToBooking);
 
   const handleInviteFriend = async (friendId: string) => {
-    if (!bookingIdForInvite || !user?.id) return;
+    if (!bookingIdForInvite || !user?.sessionToken) return;
     setInviteLoading(friendId);
     try {
       await inviteToBooking({
         bookingId: bookingIdForInvite as any,
-        inviterId: user.id as any,
+        sessionToken: user.sessionToken,
         inviteeId: friendId as any,
       });
       setInviteSent((prev) => ({ ...prev, [friendId]: true }));

@@ -44,18 +44,18 @@ export default function FriendsPage() {
 
   const friends = useQuery(
     api.friends.listFriends,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const pendingRequests = useQuery(
     api.friends.pendingRequests,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const searchResults = useQuery(
     api.friends.searchUsers,
-    user?.id && debouncedSearch.trim().length >= 2
-      ? { currentUserId: user.id as any, searchTerm: debouncedSearch }
+    user?.sessionToken && debouncedSearch.trim().length >= 2
+      ? { sessionToken: user.sessionToken, searchTerm: debouncedSearch }
       : 'skip'
   );
 
@@ -82,7 +82,7 @@ export default function FriendsPage() {
     setActionLoading(receiverId);
     try {
       await sendRequest({
-        requesterId: user.id as any,
+        sessionToken: user.sessionToken,
         receiverId: receiverId as any,
       });
     } catch (err) {
@@ -96,7 +96,7 @@ export default function FriendsPage() {
     try {
       await acceptRequest({
         friendshipId: friendshipId as any,
-        userId: user.id as any,
+        sessionToken: user.sessionToken,
       });
     } catch (err) {
       console.error(err);
@@ -109,7 +109,7 @@ export default function FriendsPage() {
     try {
       await declineRequest({
         friendshipId: friendshipId as any,
-        userId: user.id as any,
+        sessionToken: user.sessionToken,
       });
     } catch (err) {
       console.error(err);
@@ -123,7 +123,7 @@ export default function FriendsPage() {
     try {
       await removeFriend({
         friendshipId: friendshipId as any,
-        userId: user.id as any,
+        sessionToken: user.sessionToken,
       });
     } catch (err) {
       console.error(err);
