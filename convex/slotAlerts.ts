@@ -1,21 +1,23 @@
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUser, optionalUser } from "./userSession";
 
 // ── Toggle alert for a specific slot ──
 // If the user already has an alert for this slot, remove it; otherwise create one.
 export const toggle = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
     date: v.string(),
     time: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const existing = await ctx.db
       .query("slotAlerts")
       .withIndex("by_user_slot", (q) =>
         q
-          .eq("userId", args.userId)
+          .eq("userId", user._id)
           .eq("roomId", args.roomId)
           .eq("date", args.date)
           .eq("time", args.time)
@@ -28,7 +30,7 @@ export const toggle = mutation({
     }
 
     await ctx.db.insert("slotAlerts", {
-      userId: args.userId,
+      userId: user._id,
       roomId: args.roomId,
       date: args.date,
       time: args.time,
@@ -42,14 +44,16 @@ export const toggle = mutation({
 // ── Get all alerts the current user has for a given room + date ──
 export const getByUserRoomDate = query({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
     date: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const all = await ctx.db
       .query("slotAlerts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     // Filter to this room + date
     return all.filter(
@@ -93,11 +97,13 @@ export const markNotified = internalMutation({
 // ── Get all active (un-notified) alerts for a user ──
 // Used by the notification watcher to detect when watched slots become available.
 export const getByUser = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const all = await ctx.db
       .query("slotAlerts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     return all.filter((a) => !a.notified);
   },
@@ -106,11 +112,13 @@ export const getByUser = query({
 // ── Get recently notified alerts for a user (notified = true) ──
 // The client uses this to detect newly-notified alerts and fire device notifications.
 export const getNotifiedByUser = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const all = await ctx.db
       .query("slotAlerts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
     return all.filter((a) => a.notified);
   },
@@ -118,10 +126,13 @@ export const getNotifiedByUser = query({
 
 // ── Delete old notified alerts (cleanup) ──
 export const deleteNotified = mutation({
-  args: { ids: v.array(v.id("slotAlerts")) },
+  args: { ids: v.array(v.id("slotAlerts")), sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     for (const id of args.ids) {
-      await ctx.db.delete(id);
+      const alert = await ctx.db.get(id);
+      // Only your own alerts.
+      if (alert && alert.userId === user._id) await ctx.db.delete(id);
     }
   },
 });

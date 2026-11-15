@@ -70,8 +70,8 @@ export default function BookingPage() {
   // Slot alerts for current user + room + date
   const slotAlerts = useQuery(
     api.slotAlerts.getByUserRoomDate,
-    user?.id && roomId && selectedDate
-      ? { userId: user.id as any, roomId: roomId as any, date: selectedDate }
+    user?.sessionToken && roomId && selectedDate
+      ? { sessionToken: user.sessionToken, roomId: roomId as any, date: selectedDate }
       : 'skip'
   );
   const toggleSlotAlert = useMutation(api.slotAlerts.toggle);
@@ -189,7 +189,7 @@ export default function BookingPage() {
     setAlertLoading(time);
     try {
       await toggleSlotAlert({
-        userId: user.id as any,
+        sessionToken: user.sessionToken,
         roomId: roomId as any,
         date: selectedDate,
         time,

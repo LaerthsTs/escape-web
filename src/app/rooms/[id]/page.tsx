@@ -45,8 +45,8 @@ export default function RoomDetailsPage() {
   const reviews = useQuery(api.reviews.getByRoom, roomId ? { roomId: roomId as any } : 'skip');
   const canReviewData = useQuery(
     api.reviews.canReview,
-    isAuthenticated && user?.id && roomId
-      ? { userId: user.id as any, roomId: roomId as any }
+    isAuthenticated && user?.sessionToken && roomId
+      ? { sessionToken: user.sessionToken, roomId: roomId as any }
       : 'skip'
   );
   const submitReview = useMutation(api.reviews.submit);
@@ -445,7 +445,7 @@ export default function RoomDetailsPage() {
                     setReviewSubmitting(true);
                     try {
                       await submitReview({
-                        userId: user.id as any,
+                        sessionToken: user.sessionToken,
                         roomId: roomId as any,
                         bookingId: canReviewData.bookingId as any,
                         rating: reviewRating,

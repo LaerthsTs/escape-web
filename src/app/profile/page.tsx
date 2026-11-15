@@ -44,7 +44,7 @@ export default function ProfilePage() {
 
   const badgesData = useQuery(
     api.badges.getUserBadges,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const userBadges = convexUser?.badges ?? [];

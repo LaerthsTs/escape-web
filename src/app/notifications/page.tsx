@@ -58,7 +58,7 @@ export default function NotificationsPage() {
 
   const notifications = useQuery(
     api.notifications.getByUser,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const markAsRead = useMutation(api.notifications.markAsRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
@@ -89,7 +89,7 @@ export default function NotificationsPage() {
   const handleMarkAllRead = async () => {
     if (!user?.id) return;
     try {
-      await markAllRead({ userId: user.id as any });
+      await markAllRead({ sessionToken: user.sessionToken });
     } catch (err) {
       console.error(err);
     }
@@ -97,7 +97,7 @@ export default function NotificationsPage() {
 
   const handleMarkRead = async (id: string) => {
     try {
-      await markAsRead({ id: id as any });
+      await markAsRead({ id: id as any, sessionToken: user.sessionToken });
     } catch (err) {
       console.error(err);
     }
@@ -180,7 +180,7 @@ export default function NotificationsPage() {
                       await declineFriend({ friendshipId: n.data.friendshipId, userId: user.id as any });
                     }
                     setActionDone((prev) => ({ ...prev, [n._id]: action }));
-                    if (!n.read) await markAsRead({ id: n._id });
+                    if (!n.read) await markAsRead({ id: n._id, sessionToken: user.sessionToken });
                   } catch (err) {
                     console.error(err);
                   }
@@ -197,7 +197,7 @@ export default function NotificationsPage() {
                       response: action,
                     });
                     setActionDone((prev) => ({ ...prev, [n._id]: action }));
-                    if (!n.read) await markAsRead({ id: n._id });
+                    if (!n.read) await markAsRead({ id: n._id, sessionToken: user.sessionToken });
                   } catch (err) {
                     console.error(err);
                   }

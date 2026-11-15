@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany } from "./companySession";
+import { requireUser, optionalUser } from "./userSession";
 import { merchOrderCount } from "./merch";
 
 // ═══════════════════════════════════════════════════════════════
@@ -26,24 +27,27 @@ export const BADGE_DEFS = [
 // ═══════════════════════════════════════════════════════════════
 
 export const getUserBadges = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
+    const userId = user._id;
     // Fetch earned badges
     const earnedBadges = await ctx.db
       .query("badges")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
     // Fetch performance records
     const performances = await ctx.db
       .query("bookingPerformance")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
     // Fetch user's completed bookings
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     const completedBookings = bookings.filter((b) => b.status === "completed");
 
@@ -123,7 +127,7 @@ export const getUserBadges = query({
       explorer: explorerProgress,
       perfectionist: perfectionistProgress,
       night_owl: nightOwlProgress,
-      collector: await merchOrderCount(ctx, args.userId),
+      collector: await merchOrderCount(ctx, userId),
     };
 
     // Build result with all 8 badges

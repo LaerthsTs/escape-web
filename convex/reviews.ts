@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUser, optionalUser } from "./userSession";
 
 // ─── Get reviews for a room (newest first) ───
 export const getByRoom = query({
@@ -53,30 +54,34 @@ export const getRoomStats = query({
 // ─── Check if user already reviewed a booking ───
 export const getUserReviewForBooking = query({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     bookingId: v.id("bookings"),
   },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return null;
     const existing = await ctx.db
       .query("reviews")
       .withIndex("by_booking", (q) => q.eq("bookingId", args.bookingId))
       .first();
 
-    return existing;
+    return existing && existing.userId === user._id ? existing : null;
   },
 });
 
 // ─── Check if user can review a room (has completed booking, hasn't reviewed it) ───
 export const canReview = query({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return { canReview: false, bookingId: null };
     // Get completed bookings for this room by this user
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
     const completedForRoom = bookings.filter(
@@ -106,13 +111,14 @@ export const canReview = query({
 // ─── Submit a review ───
 export const submit = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     roomId: v.id("rooms"),
     bookingId: v.id("bookings"),
     rating: v.number(),
     text: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     // Validate rating
     if (args.rating < 1 || args.rating > 5) {
       throw new Error("Rating must be between 1 and 5");
@@ -121,7 +127,7 @@ export const submit = mutation({
     // Verify the booking exists and belongs to the user
     const booking = await ctx.db.get(args.bookingId);
     if (!booking) throw new Error("Booking not found");
-    if (booking.userId !== args.userId) throw new Error("Not your booking");
+    if (booking.userId !== user._id) throw new Error("Not your booking");
     if (booking.roomId !== args.roomId) throw new Error("Booking is for a different room");
     if (booking.status !== "completed") throw new Error("Booking is not completed");
 
@@ -134,7 +140,7 @@ export const submit = mutation({
 
     // Insert review
     await ctx.db.insert("reviews", {
-      userId: args.userId,
+      userId: user._id,
       roomId: args.roomId,
       bookingId: args.bookingId,
       rating: args.rating,
@@ -150,8 +156,9 @@ export const submit = mutation({
         .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
         .collect();
 
-      const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0) + args.rating;
-      const newCount = allReviews.length + 1;
+      // allReviews already includes the review inserted above.
+      const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+      const newCount = allReviews.length;
       const avgRating = Math.round((totalRating / newCount) * 10) / 10;
 
       await ctx.db.patch(args.roomId, {

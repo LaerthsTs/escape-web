@@ -1,10 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUser, optionalUser } from "./userSession";
 
 // ─── Create a notification ───
 export const create = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     type: v.union(
       v.literal("booking"),
       v.literal("cancelled"),
@@ -23,8 +24,10 @@ export const create = mutation({
     data: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    // A notification can only be created for yourself.
+    const user = await requireUser(ctx, args.sessionToken);
     return await ctx.db.insert("notifications", {
-      userId: args.userId,
+      userId: user._id,
       type: args.type,
       title: args.title,
       message: args.message,
@@ -37,11 +40,13 @@ export const create = mutation({
 
 // ─── Get all notifications for a user (newest first, limited) ───
 export const getByUser = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     return await ctx.db
       .query("notifications")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .order("desc")
       .take(50);
   },
@@ -49,19 +54,23 @@ export const getByUser = query({
 
 // ─── Mark one notification as read ───
 export const markAsRead = mutation({
-  args: { id: v.id("notifications") },
+  args: { id: v.id("notifications"), sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
+    const n = await ctx.db.get(args.id);
+    if (!n || n.userId !== user._id) return;
     await ctx.db.patch(args.id, { read: true });
   },
 });
 
 // ─── Mark all notifications as read for a user ───
 export const markAllRead = mutation({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const unread = await ctx.db
       .query("notifications")
-      .withIndex("by_user_read", (q) => q.eq("userId", args.userId).eq("read", false))
+      .withIndex("by_user_read", (q) => q.eq("userId", user._id).eq("read", false))
       .collect();
     for (const n of unread) {
       await ctx.db.patch(n._id, { read: true });
@@ -71,11 +80,13 @@ export const markAllRead = mutation({
 
 // ─── Get unread count ───
 export const unreadCount = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return 0;
     const unread = await ctx.db
       .query("notifications")
-      .withIndex("by_user_read", (q) => q.eq("userId", args.userId).eq("read", false))
+      .withIndex("by_user_read", (q) => q.eq("userId", user._id).eq("read", false))
       .collect();
     return unread.length;
   },
