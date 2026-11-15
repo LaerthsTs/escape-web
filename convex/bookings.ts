@@ -1,4 +1,4 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { assertSlotStillBookable } from "./slotRules";
@@ -97,7 +97,7 @@ export const create = mutation({
   },
 });
 
-export const getById = query({
+export const getById = internalQuery({
   args: { bookingId: v.id("bookings") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.bookingId);
@@ -251,7 +251,7 @@ export const complete = mutation({
 });
 
 // ── Lookup booking by code (for QR scanner validation) ──
-export const getByCode = query({
+export const getByCode = internalQuery({
   args: { bookingCode: v.string() },
   handler: async (ctx, args) => {
     const booking = await ctx.db
@@ -379,6 +379,18 @@ export const getByStripeSession = query({
       .first();
     if (!booking) return null;
     const room = await ctx.db.get(booking.roomId);
-    return { ...booking, room };
+    // Only what the confirmation page needs: no email/phone/userId/Stripe ids.
+    return {
+      _id: booking._id,
+      bookingCode: booking.bookingCode,
+      roomId: booking.roomId,
+      date: booking.date,
+      time: booking.time,
+      players: booking.players,
+      total: booking.total,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      room,
+    };
   },
 });

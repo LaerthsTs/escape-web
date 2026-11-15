@@ -7,7 +7,7 @@
  * on external websites. They support guest bookings (no userId required).
  */
 
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
@@ -302,7 +302,7 @@ export const createGuestBooking = mutation({
 });
 
 // ─── Lookup Booking by Code (for confirmation page) ──────────
-export const getBookingByCode = query({
+export const getBookingByCode = internalQuery({
   args: { bookingCode: v.string() },
   handler: async (ctx, args) => {
     const all = await ctx.db.query("bookings").collect();
@@ -364,7 +364,7 @@ export const createGuestSlotAlert = mutation({
 
 // ─── Upload Widget Bundle ─────────────────────────────────────
 // Stores the built widget JS so it can be served from the Convex site URL
-export const uploadBundle = internalMutation({
+export const uploadBundle = mutation({
   args: {
     content: v.string(),
     version: v.string(),
