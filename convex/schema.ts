@@ -98,6 +98,23 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_company", ["companyId"]),
 
+  // Platform admins (password login). Created only from a terminal. See adminSession.ts.
+  admins: defineTable({
+    email: v.string(),
+    passwordHash: v.string(),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  // Admin login sessions. Only the SHA-256 of the token is stored.
+  adminSessions: defineTable({
+    adminId: v.id("admins"),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_admin", ["adminId"]),
+
   // Business-portal login sessions. Only the SHA-256 of the token is stored;
   // the raw token lives on the client. See companySession.ts.
   companySessions: defineTable({
