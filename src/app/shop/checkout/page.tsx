@@ -21,7 +21,7 @@ function CheckoutContent() {
   const { user, isAuthenticated } = useAuth();
   const { lines, clearSeller } = useCart();
   const shop = useQuery(api.merch.listShop, { userId: (user?.id as any) || undefined });
-  const me = useQuery(api.users.getById, user?.id ? { userId: user.id as any } : 'skip');
+  const me = useQuery(api.users.getById, user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip');
   const checkout = useAction(api.merchPayments.checkout);
 
   const myLines = lines.filter((l) => l.sellerKey === sellerKey);

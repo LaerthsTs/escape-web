@@ -209,15 +209,15 @@ http.route({ path: "/stripe-webhook", method: "POST", handler: stripeWebhook });
 // ── Update Language Preference ──
 const updateLanguageHandler = httpAction(async (ctx, request) => {
   try {
-    const { userId, language } = await request.json();
-    if (!userId || !language) {
+    const { sessionToken, language } = await request.json();
+    if (!sessionToken || !language) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       });
     }
     await ctx.runMutation(api.users.updateLanguage, {
-      userId,
+      sessionToken,
       language,
     });
     return new Response(JSON.stringify({ ok: true }), {

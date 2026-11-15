@@ -6236,7 +6236,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const userStr = typeof window !== 'undefined' ? localStorage.getItem('unlocked_user') : null;
       if (userStr) {
         const user = JSON.parse(userStr);
-        if (user?.id) {
+        if (user?.sessionToken) {
           // Fire-and-forget: call the Convex HTTP endpoint or use the mutation directly
           // We use fetch to the Convex API to avoid needing the mutation hook here
           const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -6244,7 +6244,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
             fetch(`${convexUrl.replace('.cloud', '.site')}/updateLanguage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id, language: lang }),
+              body: JSON.stringify({ sessionToken: user.sessionToken, language: lang }),
             }).catch(() => {});
           }
         }

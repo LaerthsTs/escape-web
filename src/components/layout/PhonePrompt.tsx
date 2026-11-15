@@ -21,7 +21,7 @@ export function PhonePrompt() {
 
   const convexUser = useQuery(
     api.users.getById,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const updateProfile = useMutation(api.users.updateProfile);
@@ -45,7 +45,7 @@ export function PhonePrompt() {
     if (!trimmed || !user?.id) return;
     setSaving(true);
     try {
-      await updateProfile({ userId: user.id as any, phone: trimmed });
+      await updateProfile({ sessionToken: user.sessionToken, phone: trimmed });
       setShow(false);
     } catch {
       // ignore

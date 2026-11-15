@@ -89,7 +89,7 @@ export default function RoomDetailsPage() {
   const handleWishlist = async () => {
     if (!isAuthenticated || !user) return;
     try {
-      await toggleWishlist({ userId: user.id as any, roomId: roomId as any });
+      await toggleWishlist({ sessionToken: user.sessionToken, roomId: roomId as any });
     } catch (err) {
       console.error('Failed to toggle wishlist:', err);
     }

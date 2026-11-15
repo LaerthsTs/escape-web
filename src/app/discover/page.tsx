@@ -36,7 +36,7 @@ export default function DiscoverPage() {
   // Query user's premium status from Convex
   const convexUser = useQuery(
     api.users.getById,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const isPremium = !!(convexUser as any)?.isPremium;
 

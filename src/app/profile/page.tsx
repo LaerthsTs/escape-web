@@ -39,7 +39,7 @@ export default function ProfilePage() {
 
   const convexUser = useQuery(
     api.users.getById,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
 
   const badgesData = useQuery(
@@ -75,7 +75,7 @@ export default function ProfilePage() {
   const handleSaveName = async () => {
     if (!newName.trim() || !user?.id) return;
     try {
-      await updateProfile({ userId: user.id as any, name: newName.trim() });
+      await updateProfile({ sessionToken: user.sessionToken, name: newName.trim() });
       setShowEditName(false);
     } catch (err) {
       console.error(err);
@@ -85,7 +85,7 @@ export default function ProfilePage() {
   const handleSavePhone = async () => {
     if (!newPhone.trim() || !user?.id) return;
     try {
-      await updateProfile({ userId: user.id as any, phone: newPhone.trim() });
+      await updateProfile({ sessionToken: user.sessionToken, phone: newPhone.trim() });
       setShowEditPhone(false);
     } catch (err) {
       console.error(err);

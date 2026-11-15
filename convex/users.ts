@@ -2,7 +2,7 @@ import { query, mutation, internalMutation, internalQuery } from "./_generated/s
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
-import { createUserSession } from "./userSession";
+import { createUserSession, requireUser, optionalUser } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 
 export const getByEmail = internalQuery({
@@ -64,9 +64,10 @@ function getPlayerRank(completed: number): string {
 }
 
 export const getById = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    // Own profile only: the user comes from the session, never from an argument.
+    const user = await optionalUser(ctx, args.sessionToken);
     if (!user) return null;
 
     // Resolve avatar from storage each time (signed URLs expire)
@@ -273,31 +274,29 @@ export const loginWithApple = mutation({
 });
 
 export const toggleWishlist = mutation({
-  args: { userId: v.id("users"), roomId: v.id("rooms") },
+  args: { sessionToken: v.string(), roomId: v.id("rooms") },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
     const wishlist = user.wishlist.includes(args.roomId)
       ? user.wishlist.filter((id) => id !== args.roomId)
       : [...user.wishlist, args.roomId];
 
-    await ctx.db.patch(args.userId, { wishlist });
+    await ctx.db.patch(user._id, { wishlist });
     return wishlist;
   },
 });
 
 export const updateProfile = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     name: v.optional(v.string()),
     phone: v.optional(v.string()),
     avatar: v.optional(v.string()),
     avatarStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
     const updates: Record<string, any> = {};
     if (args.name !== undefined) updates.name = args.name;
@@ -314,26 +313,27 @@ export const updateProfile = mutation({
       updates.avatarStorageId = undefined;
     }
 
-    await ctx.db.patch(args.userId, updates);
-    return args.userId;
+    await ctx.db.patch(user._id, updates);
+    return user._id;
   },
 });
 
 // ─── Update language preference ───
 export const updateLanguage = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     language: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
-    await ctx.db.patch(args.userId, { language: args.language });
+    const user = await requireUser(ctx, args.sessionToken);
+    await ctx.db.patch(user._id, { language: args.language });
   },
 });
 
 export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    await requireUser(ctx, args.sessionToken);
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -345,7 +345,7 @@ export const getStorageUrl = query({
   },
 });
 
-export const updateStats = mutation({
+export const updateStats = internalMutation({
   args: {
     userId: v.id("users"),
     played: v.number(),
@@ -373,21 +373,20 @@ export const setAdmin = internalMutation({
 
 export const updateLocation = mutation({
   args: {
-    userId: v.id("users"),
+    sessionToken: v.string(),
     latitude: v.number(),
     longitude: v.number(),
     city: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
 
-    await ctx.db.patch(args.userId, {
+    await ctx.db.patch(user._id, {
       latitude: args.latitude,
       longitude: args.longitude,
       city: args.city,
     });
-    return args.userId;
+    return user._id;
   },
 });
 
@@ -397,29 +396,36 @@ export const updateLocation = mutation({
    This permanently removes the user and all associated data.
    ═══════════════════════════════════════════════════════════ */
 export const deleteAccount = mutation({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new Error("User not found");
+    const user = await requireUser(ctx, args.sessionToken);
+    const userId = user._id;
+
+    // 0. End every login session of this account
+    const sessions = await ctx.db
+      .query("userSessions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const sess of sessions) await ctx.db.delete(sess._id);
 
     // 1. Delete badges
     const badges = await ctx.db
       .query("badges")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const b of badges) await ctx.db.delete(b._id);
 
     // 2. Delete bookings
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const b of bookings) await ctx.db.delete(b._id);
 
     // 3. Delete posts and their likes/comments
     const posts = await ctx.db
       .query("posts")
-      .withIndex("by_author_user", (q) => q.eq("authorUserId", args.userId))
+      .withIndex("by_author_user", (q) => q.eq("authorUserId", userId))
       .collect();
     for (const p of posts) {
       const pComments = await ctx.db
@@ -439,7 +445,7 @@ export const deleteAccount = mutation({
     const userLikes = await ctx.db
       .query("postLikes")
       .withIndex("by_user_post")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .filter((q) => q.eq(q.field("userId"), userId))
       .collect();
     for (const l of userLikes) {
       const post = await ctx.db.get(l.postId);
@@ -452,54 +458,54 @@ export const deleteAccount = mutation({
     // 5. Delete comments by user
     const userComments = await ctx.db
       .query("postComments")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .filter((q) => q.eq(q.field("userId"), userId))
       .collect();
     for (const c of userComments) await ctx.db.delete(c._id);
 
     // 6. Delete slot alerts
     const slotAlerts = await ctx.db
       .query("slotAlerts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const a of slotAlerts) await ctx.db.delete(a._id);
 
     // 7. Delete notifications
     const notifications = await ctx.db
       .query("notifications")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const n of notifications) await ctx.db.delete(n._id);
 
     // 8. Delete premium subscriptions
     const premiumSubs = await ctx.db
       .query("premiumSubscriptions")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const s of premiumSubs) await ctx.db.delete(s._id);
 
     // 9. Delete friendships
     const friendsAsSender = await ctx.db
       .query("friendships")
-      .withIndex("by_requester", (q) => q.eq("requesterId", args.userId))
+      .withIndex("by_requester", (q) => q.eq("requesterId", userId))
       .collect();
     for (const f of friendsAsSender) await ctx.db.delete(f._id);
     const friendsAsReceiver = await ctx.db
       .query("friendships")
-      .withIndex("by_receiver", (q) => q.eq("receiverId", args.userId))
+      .withIndex("by_receiver", (q) => q.eq("receiverId", userId))
       .collect();
     for (const f of friendsAsReceiver) await ctx.db.delete(f._id);
 
     // 9b. Delete booking invites
     const invitesAsInvitee = await ctx.db
       .query("bookingInvites")
-      .withIndex("by_invitee", (q) => q.eq("inviteeId", args.userId))
+      .withIndex("by_invitee", (q) => q.eq("inviteeId", userId))
       .collect();
     for (const inv of invitesAsInvitee) await ctx.db.delete(inv._id);
 
     // 9c. Delete reports filed by or about this player (and report photos)
     const roomReports = await ctx.db
       .query("roomReports")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const r of roomReports) {
       for (const sid of r.photoStorageIds) await ctx.storage.delete(sid).catch(() => {});
@@ -507,30 +513,30 @@ export const deleteAccount = mutation({
     }
     const playerReports = await ctx.db
       .query("playerReports")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     for (const r of playerReports) await ctx.db.delete(r._id);
 
     // 10. Delete blocked-users entries (as blocker or blocked)
     const blocksAsBlocker = await ctx.db
       .query("blockedUsers")
-      .withIndex("by_blocker", (q) => q.eq("blockerId", args.userId))
+      .withIndex("by_blocker", (q) => q.eq("blockerId", userId))
       .collect();
     for (const b of blocksAsBlocker) await ctx.db.delete(b._id);
 
     const allBlocks = await ctx.db.query("blockedUsers").collect();
     for (const b of allBlocks) {
-      if (b.blockedUserId === args.userId) await ctx.db.delete(b._id);
+      if (b.blockedUserId === userId) await ctx.db.delete(b._id);
     }
 
     // 11. Delete reports made by user
     const reports = await ctx.db.query("reports").collect();
     for (const r of reports) {
-      if (r.reporterId === args.userId) await ctx.db.delete(r._id);
+      if (r.reporterId === userId) await ctx.db.delete(r._id);
     }
 
     // 12. Delete the user record itself
-    await ctx.db.delete(args.userId);
+    await ctx.db.delete(userId);
 
     return { success: true };
   },

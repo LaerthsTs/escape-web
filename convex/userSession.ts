@@ -73,6 +73,14 @@ export async function requireUser(ctx: Ctx, token: string | undefined): Promise<
   return user;
 }
 
+/** Like requireUser but returns null instead of throwing: for queries, so an expired session shows a logged-out view instead of crashing the page. */
+export async function optionalUser(ctx: Ctx, token: string | undefined): Promise<Doc<"users"> | null> {
+  if (!token) return null;
+  const session = await findUserSession(ctx, token);
+  if (!session) return null;
+  return await ctx.db.get(session.userId);
+}
+
 /** Ends the session for this token. Never fails: an unknown token is already logged out. */
 export const logout = mutation({
   args: { sessionToken: v.string() },

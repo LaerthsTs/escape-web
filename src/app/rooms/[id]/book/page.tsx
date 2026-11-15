@@ -50,7 +50,7 @@ export default function BookingPage() {
   // Fetch user data (to check phone)
   const convexUser = useQuery(
     api.users.getById,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const updateProfile = useMutation(api.users.updateProfile);
   const userHasPhone = !!(convexUser as any)?.phone;
@@ -469,7 +469,7 @@ export default function BookingPage() {
                           if (!phoneInput.trim() || !user?.id) return;
                           setSavingPhone(true);
                           try {
-                            await updateProfile({ userId: user.id as any, phone: phoneInput.trim() });
+                            await updateProfile({ sessionToken: user.sessionToken, phone: phoneInput.trim() });
                           } catch { /* ignore */ }
                           setSavingPhone(false);
                         }}
