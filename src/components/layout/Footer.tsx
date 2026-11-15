@@ -58,6 +58,8 @@ export function Footer() {
       { label: t('footer.browse_rooms'), href: '/#rooms' },
       { label: t('footer.how_it_works'), href: '/#how-it-works' },
       { label: t('footer.leaderboard'), href: '/leaderboard' },
+      { label: t('nav.shop'), href: '/shop' },
+      { label: t('footer.premium'), href: '/premium' },
       { label: t('footer.download_app'), href: '/#download' },
     ],
     company: [

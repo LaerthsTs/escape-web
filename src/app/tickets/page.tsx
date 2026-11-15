@@ -32,6 +32,14 @@ import {
 import { RoomReportModal } from '@/components/reports/RoomReportModal';
 import { slotStart } from '@/lib/slotTime';
 import { ROOM_REPORT_WINDOW_MS } from '../../../convex/reportRules';
+import {
+  LATE_CANCEL_FLAG_THRESHOLD,
+  LATE_CANCEL_LOOKBACK_DAYS,
+  LATE_CANCEL_WINDOW_MS,
+  PLAYER_CANCEL_REASONS,
+  type CancelReason,
+} from '../../../convex/cancelRules';
+import { CancelReasonDialog } from '@/components/CancelReasonDialog';
 
 type TabType = 'upcoming' | 'past';
 
@@ -58,6 +66,11 @@ export default function TicketsPage() {
   const [reportSent, setReportSent] = useState(false);
 
   const cancelBooking = useMutation(api.bookings.cancel);
+  const [cancelTarget, setCancelTarget] = useState<any>(null);
+  const lateCancels = useQuery(
+    api.cancellations.myLateCancels,
+    user?.id ? { userId: user.id as any } : 'skip'
+  );
   const retryPayment = useAction(api.stripe.retryBookingPayment);
 
   // Photos for completed bookings
@@ -84,17 +97,27 @@ export default function TicketsPage() {
   const past = (bookings ?? []).filter((b: any) => b.status !== 'upcoming' && b.status !== 'pending_payment');
   const displayed = activeTab === 'upcoming' ? upcoming : past;
 
-  const handleCancel = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
-    setCancelling(bookingId);
+  const handleCancel = (bookingId: string) => {
+    const booking = (bookings ?? []).find((b: any) => b._id === bookingId);
+    if (booking) setCancelTarget(booking);
+  };
+
+  const confirmCancel = async (reason: CancelReason, note: string) => {
+    if (!cancelTarget) return;
+    setCancelling(cancelTarget._id);
     try {
-      await cancelBooking({ id: bookingId as any });
-    } catch (err) {
-      console.error('Failed to cancel booking:', err);
+      await cancelBooking({ id: cancelTarget._id, userId: user.id as any, reason, note });
+      setCancelTarget(null);
     } finally {
       setCancelling(null);
     }
   };
+
+  // Late = an upcoming (not unpaid) booking that starts in less than 24h.
+  const cancelIsLate =
+    !!cancelTarget &&
+    cancelTarget.status === 'upcoming' &&
+    slotStart(cancelTarget.date, cancelTarget.time).getTime() - Date.now() < LATE_CANCEL_WINDOW_MS;
 
   const handleRetryPayment = async (bookingId: string) => {
     setPayingBooking(bookingId);
@@ -499,6 +522,35 @@ export default function TicketsPage() {
             </a>
           </div>
         </div>
+      )}
+
+      {cancelTarget && (
+        <CancelReasonDialog
+          title={t('cancel.player.title')}
+          reasons={PLAYER_CANCEL_REASONS}
+          warning={
+            cancelIsLate ? (
+              <>
+                <p className="font-semibold">{t('cancel.player.late_title')}</p>
+                <p>
+                  {t('cancel.player.late_body', {
+                    threshold: String(LATE_CANCEL_FLAG_THRESHOLD),
+                    days: String(LATE_CANCEL_LOOKBACK_DAYS),
+                  })}
+                </p>
+                {!!lateCancels?.count && (
+                  <p>
+                    {t(lateCancels.count === 1 ? 'cancel.player.late_count_one' : 'cancel.player.late_count_many', {
+                      count: String(lateCancels.count),
+                    })}
+                  </p>
+                )}
+              </>
+            ) : undefined
+          }
+          onConfirm={confirmCancel}
+          onClose={() => setCancelTarget(null)}
+        />
       )}
 
       {reporting && (

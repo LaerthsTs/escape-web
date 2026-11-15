@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
-import { ShieldAlert, MessageSquare } from 'lucide-react';
+import { ShieldAlert, MessageSquare, CalendarX } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
 import { friendlyError } from '@/lib/errors';
@@ -40,6 +40,46 @@ export function ReportsAboutMe({ userId }: { userId: string }) {
             ))}
           </ul>
           <p className="text-xs text-brand-text-muted">{t('reports.me.privacy')}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The player's late cancellations. Shows nothing until they have one; says
+ * when businesses start seeing a warning and when the oldest one stops counting.
+ */
+export function LateCancelsAboutMe({ userId }: { userId: string }) {
+  const { t, language } = useTranslation();
+  const late = useQuery(api.cancellations.myLateCancels, { userId: userId as any });
+  if (!late || late.count === 0) return null;
+  const expires = late.oldestExpiresAt
+    ? new Date(late.oldestExpiresAt).toLocaleDateString(language, { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
+  return (
+    <section className="pb-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          className={`rounded-2xl border p-5 space-y-2 ${
+            late.flagged ? 'border-orange-500/40 bg-orange-500/10' : 'border-white/10 bg-white/5'
+          }`}
+        >
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <CalendarX className={`w-5 h-5 ${late.flagged ? 'text-orange-400' : 'text-brand-text-secondary'}`} />
+            {t(late.count === 1 ? 'cancel.me.title_one' : 'cancel.me.title_many', {
+              count: String(late.count),
+              days: String(late.lookbackDays),
+            })}
+          </h2>
+          <p className="text-sm text-brand-text-secondary">
+            {t(late.flagged ? 'cancel.me.flagged' : 'cancel.me.not_flagged', {
+              threshold: String(late.threshold),
+              days: String(late.lookbackDays),
+            })}
+          </p>
+          {expires && <p className="text-xs text-brand-text-muted">{t('cancel.me.expires', { date: expires })}</p>}
         </div>
       </div>
     </section>

@@ -40,6 +40,14 @@ import {
 import { useTranslation } from '@/lib/i18n';
 import { GameQr } from '@/components/company/GameQr';
 import { useBookingFlags, PlayerFlagCard, ReportPlayerSection, FlagIcon } from '@/components/company/PlayerReports';
+import { CancelReasonDialog } from '@/components/CancelReasonDialog';
+import { slotStart } from '@/lib/slotTime';
+import {
+  COMPANY_CANCEL_REASONS,
+  LATE_CANCEL_WINDOW_MS,
+  companyReasonCountsAgainstPlayer,
+  type CancelReason,
+} from '../../../../convex/cancelRules';
 
 const VIEW_KEY = 'unlocked_bookings_view';
 
@@ -118,17 +126,27 @@ export default function CompanyBookingsPage() {
 
   const days = useMemo(() => viewDays(view, anchor), [view, anchor]);
 
-  const handleCancel = async (bookingId: string) => {
-    if (!confirm(t('company.bookings.confirm_cancel'))) return false;
-    try {
-      await cancelBooking({ companyId: companyId as any, bookingId: bookingId as any });
-      toast({ kind: 'success', message: t('cx.bookings.cancelled') });
-      return true;
-    } catch (err) {
-      toast({ kind: 'error', message: friendlyError(err, t) });
-      return false;
-    }
+  const [cancelFor, setCancelFor] = useState<any>(null);
+
+  // Errors are shown inside the dialog, so this only throws.
+  const confirmCancel = async (reason: CancelReason, note: string) => {
+    if (!cancelFor) return;
+    const res = await cancelBooking({
+      companyId: companyId as any,
+      bookingId: cancelFor._id as any,
+      reason,
+      note,
+    });
+    toast({ kind: 'success', message: t(res?.lateCancel ? 'cancel.company.done_late' : 'cx.bookings.cancelled') });
+    setCancelFor(null);
+    setSelected(null);
   };
+
+  // Late = less than 24h before the slot (or after it started), for a booking by an UNLOCKED player.
+  const cancelIsLate =
+    !!cancelFor?.userId &&
+    cancelFor.status === 'upcoming' &&
+    slotStart(cancelFor.date, cancelFor.time).getTime() - Date.now() < LATE_CANCEL_WINDOW_MS;
 
   const onFreeSlot = ({ room, date, slot }: FreeSlotClick) =>
     setCreateFor({ roomId: room._id, time: slot.time, date, price: slot.price, pricePerGroup: slot.pricePerGroup || room.pricePerGroup });
@@ -187,9 +205,19 @@ export default function CompanyBookingsPage() {
             setSelected(null);
             setShowRescheduleModal(b);
           }}
-          onCancel={async (b) => {
-            if (await handleCancel(b._id)) setSelected(null);
-          }}
+          onCancel={(b) => setCancelFor(b)}
+        />
+      )}
+
+      {cancelFor && (
+        <CancelReasonDialog
+          title={t('cancel.company.title')}
+          reasons={COMPANY_CANCEL_REASONS}
+          reasonHint={(r) =>
+            cancelIsLate && companyReasonCountsAgainstPlayer(r) ? t('cancel.company.counts_hint') : null
+          }
+          onConfirm={confirmCancel}
+          onClose={() => setCancelFor(null)}
         />
       )}
 
@@ -405,6 +433,21 @@ function BookingDetailModal({
           </div>
 
           {flag && <PlayerFlagCard flag={flag} />}
+
+          <BookingMerch bookingId={String(initial._id)} />
+
+          {booking.status === 'cancelled' && (booking.cancelReason || booking.cancelledBy) && (
+            <div className="rounded-xl bg-white/5 p-3 text-sm space-y-1">
+              <p className="font-semibold text-red-300">
+                {t(booking.cancelledBy === 'player' ? 'cancel.info.by_player' : booking.cancelledBy === 'system' ? 'cancel.info.by_system' : 'cancel.info.by_company')}
+                {booking.cancelReason ? ` · ${t(`cancel.reason.${booking.cancelReason}`)}` : ''}
+              </p>
+              {booking.cancelNote && (
+                <p className="text-xs italic text-white/90 whitespace-pre-wrap break-words">{booking.cancelNote}</p>
+              )}
+              {booking.lateCancel && <p className="text-xs text-amber-300">{t('cancel.info.late')}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -1384,6 +1427,37 @@ function ExternalBlockModal({
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+/** Merch the player ordered to collect at this game. */
+function BookingMerch({ bookingId }: { bookingId: string }) {
+  const { t } = useTranslation();
+  const { company } = useCompanyAuth();
+  const orders = useCompanyQuery(
+    api.merch.bookingMerch,
+    company?.id ? { companyId: company.id as any, bookingId: bookingId as any } : 'skip'
+  );
+  if (!orders || orders.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-brand-red/30 bg-brand-red/5 p-3 text-sm space-y-2">
+      <p className="font-semibold">{t('shop.seller.booking_merch_title')}</p>
+      {orders.map((o) => (
+        <div key={o._id}>
+          <p className="text-xs text-brand-text-secondary">
+            <span className="font-mono">{o.orderCode}</span> · {t(`shop.order_status.${o.status}`)} ·{' '}
+            {o.paid ? t('shop.seller.paid') : t('shop.seller.collect_payment', { amount: `€${(o.totalCents / 100).toFixed(2)}` })}
+          </p>
+          <ul className="mt-0.5">
+            {o.items.map((i, k) => (
+              <li key={k}>
+                {i.quantity}× {i.title} <span className="text-brand-text-secondary">({i.variantLabel})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

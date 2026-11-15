@@ -8,6 +8,7 @@ import { api } from '../../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { themeLabel } from '@/lib/roomThemes';
+import { RoomMerchStrip } from '@/components/shop/RoomMerch';
 import {
   Star,
   Skull,
@@ -367,6 +368,8 @@ export default function RoomDetailsPage() {
               </div>
             )}
           </div>
+
+          <RoomMerchStrip roomId={roomId} />
 
           {/* ═══ Reviews Section ═══ */}
           <div className="panel p-6 md:p-10 mt-6">

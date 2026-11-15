@@ -7,6 +7,7 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
+import { MerchAddOn } from '@/components/shop/RoomMerch';
 import {
   CheckCircle,
   Calendar,
@@ -343,6 +344,9 @@ function ConfirmationContent() {
             </div>
           </div>
         )}
+
+        {/* Merch to collect at the game */}
+        {!isCancelled && finalRoomId && <MerchAddOn roomId={finalRoomId} bookingId={bookingIdForInvite} />}
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

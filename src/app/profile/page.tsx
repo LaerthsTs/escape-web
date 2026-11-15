@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
-import { ReportsAboutMe } from '@/components/reports/ReportsAboutMe';
+import { ReportsAboutMe, LateCancelsAboutMe } from '@/components/reports/ReportsAboutMe';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
 import {
@@ -189,6 +189,7 @@ export default function ProfilePage() {
 
       {/* Reports businesses filed about this player (only while active) */}
       {user?.id && <ReportsAboutMe userId={user.id} />}
+      {user?.id && <LateCancelsAboutMe userId={user.id} />}
 
       {/* Badges */}
       <section className="pb-6">
