@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 // ── Toggle alert for a specific slot ──
@@ -60,7 +60,7 @@ export const getByUserRoomDate = query({
 
 // ── Get pending (un-notified) alerts for a specific slot ──
 // Called when a slot becomes available again to find who to notify.
-export const getPendingForSlot = query({
+export const getPendingForSlot = internalQuery({
   args: {
     roomId: v.id("rooms"),
     date: v.string(),
@@ -81,7 +81,7 @@ export const getPendingForSlot = query({
 });
 
 // ── Mark alerts as notified ──
-export const markNotified = mutation({
+export const markNotified = internalMutation({
   args: { ids: v.array(v.id("slotAlerts")) },
   handler: async (ctx, args) => {
     for (const id of args.ids) {

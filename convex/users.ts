@@ -1,10 +1,10 @@
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 
-export const getByEmail = query({
+export const getByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db

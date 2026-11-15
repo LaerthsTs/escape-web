@@ -9,9 +9,9 @@ export const searchUsers = query({
     searchTerm: v.string(),
   },
   handler: async (ctx, args) => {
-    if (args.searchTerm.trim().length < 2) return [];
+    if (args.searchTerm.trim().length < 3) return [];
 
-    const term = args.searchTerm.toLowerCase();
+    const term = args.searchTerm.trim().toLowerCase();
 
     // Get all users and filter by name (Convex doesn't have text search)
     const allUsers = await ctx.db.query("users").collect();
@@ -20,8 +20,7 @@ export const searchUsers = query({
       .filter(
         (u) =>
           u._id !== args.currentUserId &&
-          (u.name.toLowerCase().includes(term) ||
-            u.email.toLowerCase().includes(term))
+          u.name.toLowerCase().includes(term)
       )
       .slice(0, 20);
 
@@ -79,7 +78,6 @@ export const searchUsers = query({
         return {
           _id: u._id,
           name: u.name,
-          email: u.email,
           avatar,
           title: u.title,
           friendshipStatus,
