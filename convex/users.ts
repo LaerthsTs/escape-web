@@ -1,4 +1,6 @@
-import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalQuery } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { verifyAppleIdentityToken } from "./appleAuth";
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
@@ -175,30 +177,58 @@ export const register = mutation({
   },
 });
 
-export const login = mutation({
+// Wrong-password limiter: this many failures within the window locks the
+// email for LOCK_MS. (Per email, so a stranger can't guess forever.)
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
+
+type LoginResult =
+  | { ok: true; userId: Id<"users">; sessionToken: string }
+  | { ok: false; code: string };
+
+/**
+ * The real login work. It returns a failure instead of throwing, because a
+ * thrown error rolls the mutation back and the failed attempt would never be
+ * counted. The public `login` action below turns a failure into an error.
+ */
+export const loginAttempt = internalMutation({
   args: {
     email: v.string(),
     password: v.string(),
-    client: v.optional(v.string()), // "web" | "app"
+    client: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<LoginResult> => {
+    const email = args.email.toLowerCase();
+    const now = Date.now();
+    const attempt = await ctx.db
+      .query("loginAttempts")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+    if (attempt?.lockedUntil && attempt.lockedUntil > now) {
+      return { ok: false, code: "TOO_MANY_ATTEMPTS" };
+    }
+
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
 
-    if (!user) {
-      throw new ConvexError("INVALID_CREDENTIALS");
+    const valid = user?.password ? await verifyPassword(args.password, user.password) : false;
+    if (!user || !user.password || !valid) {
+      const inWindow = attempt && now - attempt.windowStart < LOGIN_WINDOW_MS;
+      const failures = (inWindow ? attempt.failures : 0) + 1;
+      const fields = {
+        failures,
+        windowStart: inWindow ? attempt.windowStart : now,
+        lockedUntil: failures >= LOGIN_MAX_FAILURES ? now + LOGIN_LOCK_MS : undefined,
+      };
+      if (attempt) await ctx.db.patch(attempt._id, fields);
+      else await ctx.db.insert("loginAttempts", { email, ...fields });
+      return { ok: false, code: "INVALID_CREDENTIALS" };
     }
 
-    if (!user.password) {
-      throw new ConvexError("INVALID_CREDENTIALS");
-    }
-
-    const valid = await verifyPassword(args.password, user.password);
-    if (!valid) {
-      throw new ConvexError("INVALID_CREDENTIALS");
-    }
+    if (attempt) await ctx.db.delete(attempt._id);
 
     // Upgrade legacy plaintext passwords to hashed on successful login
     if (!user.password.includes(":")) {
@@ -206,19 +236,61 @@ export const login = mutation({
       await ctx.db.patch(user._id, { password: hashed });
     }
 
-    return { userId: user._id, sessionToken: await createUserSession(ctx, user._id, args.client) };
+    return { ok: true, userId: user._id, sessionToken: await createUserSession(ctx, user._id, args.client) };
   },
 });
 
-export const loginWithApple = mutation({
+export const login = action({
   args: {
-    appleId: v.string(),
-    email: v.optional(v.string()),
+    email: v.string(),
+    password: v.string(),
+    client: v.optional(v.string()), // "web" | "app"
+  },
+  handler: async (ctx, args): Promise<{ userId: Id<"users">; sessionToken: string }> => {
+    const r = await ctx.runMutation(internal.users.loginAttempt, args);
+    if (!r.ok) throw new ConvexError(r.code);
+    return { userId: r.userId, sessionToken: r.sessionToken };
+  },
+});
+
+/**
+ * Sign in with Apple. The app sends Apple's signed identity token; the
+ * Apple user id and email come from the verified token, never from the
+ * client's say-so.
+ */
+export const loginWithApple = action({
+  args: {
+    identityToken: v.string(),
     fullName: v.optional(v.string()),
     lang: v.optional(v.string()),
     client: v.optional(v.string()), // "web" | "app"
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ userId: Id<"users">; sessionToken: string }> => {
+    let identity;
+    try {
+      identity = await verifyAppleIdentityToken(args.identityToken);
+    } catch (e: any) {
+      throw new ConvexError(typeof e?.message === "string" && e.message.startsWith("APPLE_") ? e.message : "APPLE_TOKEN_INVALID");
+    }
+    return await ctx.runMutation(internal.users.appleLogin, {
+      appleId: identity.sub,
+      email: identity.emailVerified ? identity.email : undefined,
+      fullName: args.fullName,
+      lang: args.lang,
+      client: args.client,
+    });
+  },
+});
+
+export const appleLogin = internalMutation({
+  args: {
+    appleId: v.string(),
+    email: v.optional(v.string()), // only passed when Apple verified it
+    fullName: v.optional(v.string()),
+    lang: v.optional(v.string()),
+    client: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<{ userId: Id<"users">; sessionToken: string }> => {
     // Check if user already exists with this Apple ID
     const existingByApple = await ctx.db
       .query("users")

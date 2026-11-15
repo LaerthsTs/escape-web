@@ -115,6 +115,14 @@ export default defineSchema({
     .index("by_tokenHash", ["tokenHash"])
     .index("by_admin", ["adminId"]),
 
+  // Failed password attempts per email (see users.loginAttempt).
+  loginAttempts: defineTable({
+    email: v.string(),
+    failures: v.number(),
+    windowStart: v.number(),
+    lockedUntil: v.optional(v.number()),
+  }).index("by_email", ["email"]),
+
   // Player login sessions. Only the SHA-256 of the token is stored; the raw
   // token lives on the client. See userSession.ts.
   userSessions: defineTable({

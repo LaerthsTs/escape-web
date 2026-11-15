@@ -34,7 +34,9 @@ export default function LoginPage() {
       // Redirect handled by useEffect above
     } catch (err: any) {
       const code = err?.data ?? '';
-      if (code === 'INVALID_CREDENTIALS') {
+      if (code === 'TOO_MANY_ATTEMPTS') {
+        setError('Too many failed attempts. Please try again in 15 minutes. / Πολλές αποτυχημένες προσπάθειες. Δοκιμάστε ξανά σε 15 λεπτά.');
+      } else if (code === 'INVALID_CREDENTIALS') {
         setError(t('auth.error_invalid'));
       } else {
         setError(t('auth.error_invalid'));

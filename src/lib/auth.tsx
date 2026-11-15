@@ -13,7 +13,7 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useTranslation } from './i18n';
 
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const registerMutation = useMutation(api.users.register);
-  const loginMutation = useMutation(api.users.login);
+  const loginMutation = useAction(api.users.login);
   const logoutMutation = useMutation(api.userSession.logout);
   const { language } = useTranslation();
 
