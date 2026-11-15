@@ -21,6 +21,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  sessionToken: string;
   avatar: string;
   title: string;
   played: number;
@@ -52,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation(api.users.register);
   const loginMutation = useMutation(api.users.login);
+  const logoutMutation = useMutation(api.userSession.logout);
   const { language } = useTranslation();
 
   // Hydrate session from localStorage on mount.
@@ -72,7 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('unlocked_user');
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Saved before server sessions existed: ask for a fresh login.
+        if (parsed?.sessionToken) setUser(parsed);
+        else localStorage.removeItem('unlocked_user');
       } catch {
         localStorage.removeItem('unlocked_user');
       }
@@ -87,11 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const userId = await loginMutation({ email, password });
+      const { userId, sessionToken } = await loginMutation({ email, password, client: 'web' });
       const authUser: AuthUser = {
         id: userId as string,
         name: '',
         email: email.toLowerCase(),
+        sessionToken,
         avatar: '',
         title: '',
         played: 0,
@@ -105,11 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(
     async (name: string, email: string, password: string) => {
-      const userId = await registerMutation({ name, email, password, lang: language });
+      const { userId, sessionToken } = await registerMutation({ name, email, password, lang: language, client: 'web' });
       const authUser: AuthUser = {
         id: userId as string,
         name,
         email: email.toLowerCase(),
+        sessionToken,
         avatar: '',
         title: 'Escape Rookie',
         played: 0,
@@ -122,9 +129,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    const token = user?.sessionToken;
+    if (token) logoutMutation({ sessionToken: token }).catch(() => {});
     setUser(null);
     localStorage.removeItem('unlocked_user');
-  }, []);
+  }, [user, logoutMutation]);
 
   return (
     <AuthContext.Provider

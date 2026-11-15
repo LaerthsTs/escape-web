@@ -115,6 +115,18 @@ export default defineSchema({
     .index("by_tokenHash", ["tokenHash"])
     .index("by_admin", ["adminId"]),
 
+  // Player login sessions. Only the SHA-256 of the token is stored; the raw
+  // token lives on the client. See userSession.ts.
+  userSessions: defineTable({
+    userId: v.id("users"),
+    tokenHash: v.string(),
+    client: v.optional(v.string()), // "web" | "app"
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_user", ["userId"]),
+
   // Business-portal login sessions. Only the SHA-256 of the token is stored;
   // the raw token lives on the client. See companySession.ts.
   companySessions: defineTable({

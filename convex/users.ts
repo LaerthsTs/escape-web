@@ -2,6 +2,7 @@ import { query, mutation, internalMutation, internalQuery } from "./_generated/s
 import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
+import { createUserSession } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 
 export const getByEmail = internalQuery({
@@ -119,6 +120,7 @@ export const register = mutation({
     email: v.string(),
     password: v.string(),
     lang: v.optional(v.string()),
+    client: v.optional(v.string()), // "web" | "app"
   },
   handler: async (ctx, args) => {
     // Validate inputs
@@ -168,7 +170,7 @@ export const register = mutation({
       lang: args.lang || "en",
     });
 
-    return userId;
+    return { userId, sessionToken: await createUserSession(ctx, userId, args.client) };
   },
 });
 
@@ -176,6 +178,7 @@ export const login = mutation({
   args: {
     email: v.string(),
     password: v.string(),
+    client: v.optional(v.string()), // "web" | "app"
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -202,7 +205,7 @@ export const login = mutation({
       await ctx.db.patch(user._id, { password: hashed });
     }
 
-    return user._id;
+    return { userId: user._id, sessionToken: await createUserSession(ctx, user._id, args.client) };
   },
 });
 
@@ -212,6 +215,7 @@ export const loginWithApple = mutation({
     email: v.optional(v.string()),
     fullName: v.optional(v.string()),
     lang: v.optional(v.string()),
+    client: v.optional(v.string()), // "web" | "app"
   },
   handler: async (ctx, args) => {
     // Check if user already exists with this Apple ID
@@ -220,7 +224,7 @@ export const loginWithApple = mutation({
       .withIndex("by_apple_id", (q) => q.eq("appleId", args.appleId))
       .first();
     if (existingByApple) {
-      return existingByApple._id;
+      return { userId: existingByApple._id, sessionToken: await createUserSession(ctx, existingByApple._id, args.client) };
     }
 
     // Check if user exists with same email
@@ -232,7 +236,7 @@ export const loginWithApple = mutation({
       if (existingByEmail) {
         // Link Apple ID to existing account
         await ctx.db.patch(existingByEmail._id, { appleId: args.appleId });
-        return existingByEmail._id;
+        return { userId: existingByEmail._id, sessionToken: await createUserSession(ctx, existingByEmail._id, args.client) };
       }
     }
 
@@ -264,7 +268,7 @@ export const loginWithApple = mutation({
       });
     }
 
-    return userId;
+    return { userId, sessionToken: await createUserSession(ctx, userId, args.client) };
   },
 });
 
