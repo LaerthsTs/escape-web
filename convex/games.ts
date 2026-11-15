@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireUser, optionalUser } from "./userSession";
 import {
   sessionTokenV,
   requireCompany,
@@ -174,20 +175,18 @@ export const previewClaim = query({
 
 /** A player scans the room's QR and the game enters their profile. */
 export const claimSeat = mutation({
-  args: { token: v.string(), userId: v.id("users") },
+  args: { token: v.string(), sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const game = await ctx.db
       .query("gameSessions")
       .withIndex("by_claimToken", (q) => q.eq("claimToken", args.token))
       .first();
     if (!game) throw new ConvexError("This QR code is not valid");
 
-    const user = await ctx.db.get(args.userId);
-    if (!user) throw new ConvexError("User not found");
-
     const already = await ctx.db
       .query("gameParticipants")
-      .withIndex("by_game_user", (q) => q.eq("gameId", game._id).eq("userId", args.userId))
+      .withIndex("by_game_user", (q) => q.eq("gameId", game._id).eq("userId", user._id))
       .first();
     if (already) return { result: "already_in" as const, gameId: game._id };
 
@@ -196,7 +195,7 @@ export const claimSeat = mutation({
 
     await ctx.db.insert("gameParticipants", {
       gameId: game._id,
-      userId: args.userId,
+      userId: user._id,
       roomId: game.roomId,
       companyId: game.companyId,
       status: "confirmed",
@@ -209,11 +208,13 @@ export const claimSeat = mutation({
 
 /** A player's shared game history (games they booked and games they scanned into). */
 export const listForUser = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const me = await optionalUser(ctx, args.sessionToken);
+    if (!me) return [];
     const rows = await ctx.db
       .query("gameParticipants")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", me._id))
       .collect();
     const out = [];
     for (const p of rows) {

@@ -52,7 +52,7 @@ export default function CreatePostPage() {
         // Local preview
         const preview = URL.createObjectURL(webFile);
         // Upload to Convex
-        const uploadUrl = await generateUploadUrl();
+        const uploadUrl = await generateUploadUrl({ sessionToken: user?.sessionToken ?? '' });
         const result = await fetch(uploadUrl, {
           method: 'POST',
           headers: { 'Content-Type': webFile.type },
@@ -83,8 +83,7 @@ export default function CreatePostPage() {
     setError('');
     try {
       await createPost({
-        authorType: 'user',
-        authorUserId: user.id as any,
+        sessionToken: user.sessionToken,
         text: text.trim(),
         mediaStorageIds: mediaFiles.map((m) => ({ type: 'image' as const, storageId: m.storageId as any })),
         roomId: selectedRoomId ? (selectedRoomId as any) : undefined,

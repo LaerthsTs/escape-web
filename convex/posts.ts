@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { filterContent } from "./moderation";
+import { requireUser, optionalUser } from "./userSession";
 
 /* ── Feed Queries ── */
 
@@ -95,11 +96,13 @@ export const getFeed = query({
 });
 
 export const getUserLikes = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const likes = await ctx.db
       .query("postLikes")
-      .withIndex("by_user_post", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_post", (q) => q.eq("userId", user._id))
       .collect();
     return likes.map((l) => l.postId);
   },
@@ -133,9 +136,7 @@ export const getComments = query({
 
 export const createPost = mutation({
   args: {
-    authorType: v.union(v.literal("user"), v.literal("company")),
-    authorUserId: v.optional(v.id("users")),
-    authorCompanyId: v.optional(v.id("companies")),
+    sessionToken: v.string(),
     text: v.string(),
     mediaStorageIds: v.array(v.object({
       type: v.union(v.literal("image"), v.literal("video")),
@@ -145,6 +146,8 @@ export const createPost = mutation({
     rating: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
+    if (args.text.length > 5000) throw new Error("Your post is too long.");
     // Content filtering (Apple Guideline 1.2 — filter objectionable material)
     const blockedWord = filterContent(args.text);
     if (blockedWord) {
@@ -164,9 +167,8 @@ export const createPost = mutation({
     );
 
     const postId = await ctx.db.insert("posts", {
-      authorType: args.authorType,
-      authorUserId: args.authorUserId,
-      authorCompanyId: args.authorCompanyId,
+      authorType: "user" as const,
+      authorUserId: user._id,
       text: args.text,
       media,
       roomId: args.roomId,
@@ -182,13 +184,14 @@ export const createPost = mutation({
 export const toggleLike = mutation({
   args: {
     postId: v.id("posts"),
-    userId: v.id("users"),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
     const existing = await ctx.db
       .query("postLikes")
       .withIndex("by_user_post", (q) =>
-        q.eq("userId", args.userId).eq("postId", args.postId)
+        q.eq("userId", user._id).eq("postId", args.postId)
       )
       .unique();
 
@@ -202,7 +205,7 @@ export const toggleLike = mutation({
     } else {
       await ctx.db.insert("postLikes", {
         postId: args.postId,
-        userId: args.userId,
+        userId: user._id,
         createdAt: Date.now(),
       });
       await ctx.db.patch(args.postId, { likes: post.likes + 1 });
@@ -214,10 +217,13 @@ export const toggleLike = mutation({
 export const addComment = mutation({
   args: {
     postId: v.id("posts"),
-    userId: v.id("users"),
+    sessionToken: v.string(),
     text: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
+    if (!(await ctx.db.get(args.postId))) throw new Error("Post not found");
+    if (args.text.length > 2000) throw new Error("Your comment is too long.");
     // Content filtering (Apple Guideline 1.2)
     const blockedWord = filterContent(args.text);
     if (blockedWord) {
@@ -226,7 +232,7 @@ export const addComment = mutation({
 
     return await ctx.db.insert("postComments", {
       postId: args.postId,
-      userId: args.userId,
+      userId: user._id,
       text: args.text,
       createdAt: Date.now(),
     });
@@ -234,8 +240,12 @@ export const addComment = mutation({
 });
 
 export const deletePost = mutation({
-  args: { postId: v.id("posts") },
+  args: { postId: v.id("posts"), sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await requireUser(ctx, args.sessionToken);
+    const existingPost = await ctx.db.get(args.postId);
+    if (!existingPost) return;
+    if (existingPost.authorUserId !== user._id) throw new Error("You can only delete your own posts");
     // Delete comments
     const comments = await ctx.db
       .query("postComments")
@@ -256,7 +266,9 @@ export const deletePost = mutation({
 });
 
 export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    await requireUser(ctx, args.sessionToken);
     return await ctx.storage.generateUploadUrl();
   },
 });

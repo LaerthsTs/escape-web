@@ -22,7 +22,7 @@ export default function ClaimGamePage() {
     setBusy(true);
     setError('');
     try {
-      const r = await claim({ token, userId: user.id as any });
+      const r = await claim({ token, sessionToken: user.sessionToken });
       setResult(r.result);
     } catch (err: any) {
       setError(typeof err?.data === 'string' ? err.data : 'Κάτι πήγε στραβά. Δοκίμασε ξανά.');

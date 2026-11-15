@@ -28,7 +28,7 @@ export default function SocialPage() {
   const feed = useQuery(api.posts.getFeed);
   const userLikes = useQuery(
     api.posts.getUserLikes,
-    user?.id ? { userId: user.id as any } : 'skip'
+    user?.sessionToken ? { sessionToken: user.sessionToken } : 'skip'
   );
   const toggleLike = useMutation(api.posts.toggleLike);
 
@@ -44,7 +44,7 @@ export default function SocialPage() {
       return;
     }
     try {
-      await toggleLike({ postId: postId as any, userId: user.id as any });
+      await toggleLike({ postId: postId as any, sessionToken: user.sessionToken });
     } catch (err) {
       console.error(err);
     }
@@ -242,7 +242,7 @@ export default function SocialPage() {
 
                   {/* Comments Section */}
                   {expandedComments === post._id && (
-                    <CommentsSection postId={post._id} userId={user?.id} />
+                    <CommentsSection postId={post._id} sessionToken={user?.sessionToken} />
                   )}
                 </div>
               ))}
@@ -254,7 +254,7 @@ export default function SocialPage() {
   );
 }
 
-function CommentsSection({ postId, userId }: { postId: string; userId?: string }) {
+function CommentsSection({ postId, sessionToken }: { postId: string; sessionToken?: string }) {
   const { t } = useTranslation();
   const comments = useQuery(api.posts.getComments, { postId: postId as any });
   const addComment = useMutation(api.posts.addComment);
@@ -262,10 +262,10 @@ function CommentsSection({ postId, userId }: { postId: string; userId?: string }
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async () => {
-    if (!text.trim() || !userId) return;
+    if (!text.trim() || !sessionToken) return;
     setSending(true);
     try {
-      await addComment({ postId: postId as any, userId: userId as any, text: text.trim() });
+      await addComment({ postId: postId as any, sessionToken, text: text.trim() });
       setText('');
     } catch (err) {
       console.error(err);
@@ -302,7 +302,7 @@ function CommentsSection({ postId, userId }: { postId: string; userId?: string }
         </div>
       ))}
 
-      {userId && (
+      {sessionToken && (
         <div className="flex items-center gap-2">
           <input
             type="text"

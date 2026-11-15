@@ -1,5 +1,6 @@
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireUser, optionalUser } from "./userSession";
 
 /* ════════════════════════════════════════════════════════════
    Content Moderation — Reports, Blocks, and Filtering
@@ -33,7 +34,7 @@ export function filterContent(text: string): string | null {
 export const reportPost = mutation({
   args: {
     postId: v.id("posts"),
-    reporterId: v.id("users"),
+    sessionToken: v.string(),
     reason: v.union(
       v.literal("spam"),
       v.literal("harassment"),
@@ -44,18 +45,19 @@ export const reportPost = mutation({
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const reporter = await requireUser(ctx, args.sessionToken);
     // Prevent duplicate reports from same user on same post
     const existing = await ctx.db
       .query("reports")
       .withIndex("by_reporter_post", q =>
-        q.eq("reporterId", args.reporterId).eq("postId", args.postId)
+        q.eq("reporterId", reporter._id).eq("postId", args.postId)
       )
       .first();
     if (existing) throw new Error("You have already reported this post.");
 
     return await ctx.db.insert("reports", {
       postId: args.postId,
-      reporterId: args.reporterId,
+      reporterId: reporter._id,
       reason: args.reason,
       details: args.details,
       status: "pending",
@@ -68,7 +70,7 @@ export const reportPost = mutation({
 export const reportComment = mutation({
   args: {
     commentId: v.id("postComments"),
-    reporterId: v.id("users"),
+    sessionToken: v.string(),
     reason: v.union(
       v.literal("spam"),
       v.literal("harassment"),
@@ -79,17 +81,18 @@ export const reportComment = mutation({
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const reporter = await requireUser(ctx, args.sessionToken);
     const existing = await ctx.db
       .query("reports")
       .withIndex("by_reporter_comment", q =>
-        q.eq("reporterId", args.reporterId).eq("commentId", args.commentId)
+        q.eq("reporterId", reporter._id).eq("commentId", args.commentId)
       )
       .first();
     if (existing) throw new Error("You have already reported this comment.");
 
     return await ctx.db.insert("reports", {
       commentId: args.commentId,
-      reporterId: args.reporterId,
+      reporterId: reporter._id,
       reason: args.reason,
       details: args.details,
       status: "pending",
@@ -101,24 +104,25 @@ export const reportComment = mutation({
 /* ── Block a User ── */
 export const blockUser = mutation({
   args: {
-    blockerId: v.id("users"),
+    sessionToken: v.string(),
     blockedUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    if (args.blockerId === args.blockedUserId) {
+    const blocker = await requireUser(ctx, args.sessionToken);
+    if (blocker._id === args.blockedUserId) {
       throw new Error("Cannot block yourself.");
     }
 
     const existing = await ctx.db
       .query("blockedUsers")
       .withIndex("by_blocker_blocked", q =>
-        q.eq("blockerId", args.blockerId).eq("blockedUserId", args.blockedUserId)
+        q.eq("blockerId", blocker._id).eq("blockedUserId", args.blockedUserId)
       )
       .first();
     if (existing) return existing._id; // already blocked
 
     return await ctx.db.insert("blockedUsers", {
-      blockerId: args.blockerId,
+      blockerId: blocker._id,
       blockedUserId: args.blockedUserId,
       createdAt: Date.now(),
     });
@@ -128,14 +132,15 @@ export const blockUser = mutation({
 /* ── Unblock a User ── */
 export const unblockUser = mutation({
   args: {
-    blockerId: v.id("users"),
+    sessionToken: v.string(),
     blockedUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
+    const blocker = await requireUser(ctx, args.sessionToken);
     const entry = await ctx.db
       .query("blockedUsers")
       .withIndex("by_blocker_blocked", q =>
-        q.eq("blockerId", args.blockerId).eq("blockedUserId", args.blockedUserId)
+        q.eq("blockerId", blocker._id).eq("blockedUserId", args.blockedUserId)
       )
       .first();
     if (entry) await ctx.db.delete(entry._id);
@@ -144,11 +149,13 @@ export const unblockUser = mutation({
 
 /* ── Get Blocked User IDs (for feed filtering) ── */
 export const getBlockedUserIds = query({
-  args: { userId: v.id("users") },
+  args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
+    const user = await optionalUser(ctx, args.sessionToken);
+    if (!user) return [];
     const blocks = await ctx.db
       .query("blockedUsers")
-      .withIndex("by_blocker", q => q.eq("blockerId", args.userId))
+      .withIndex("by_blocker", q => q.eq("blockerId", user._id))
       .collect();
     return blocks.map(b => b.blockedUserId);
   },
