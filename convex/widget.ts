@@ -14,6 +14,7 @@ import { validateEmail } from "./validation";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
+import { assertRoomOpen, companyIsPublic } from "./companyRules";
 
 // ─── Get Widget Configuration ─────────────────────────────────
 // Returns company info + its active rooms for the widget to render
@@ -22,6 +23,10 @@ export const getConfig = query({
   handler: async (ctx, args) => {
     const company = await ctx.db.get(args.companyId);
     if (!company) throw new Error("Company not found");
+    // Not approved yet (or declined): the widget shows no rooms.
+    if (!companyIsPublic(company)) {
+      return { company: { name: company.name, logo: company.logo, phone: "", address: "", city: "" }, rooms: [] };
+    }
 
     // Get active rooms for this company
     const allRooms = await ctx.db
@@ -208,6 +213,8 @@ export const createGuestBooking = mutation({
     const room = await ctx.db.get(args.roomId);
     if (!room) throw new Error("Room not found");
     if (room.isActive === false) throw new Error("Room is not available");
+    // Only rooms of companies the UNLOCKED team approved can be booked.
+    await assertRoomOpen(ctx, room);
 
     // Validate player count
     if (args.players < room.playersMin || args.players > room.playersMax) {
@@ -371,6 +378,9 @@ export const createGuestSlotAlert = mutation({
     contact: v.string(),
   },
   handler: async (ctx, args) => {
+    const alertRoom = await ctx.db.get(args.roomId);
+    if (!alertRoom) throw new Error("Room not found");
+    await assertRoomOpen(ctx, alertRoom);
     // Check if this contact already has an alert for this exact slot
     const existing = await ctx.db
       .query("guestSlotAlerts")

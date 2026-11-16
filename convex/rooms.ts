@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { companyIsPublic } from "./companyRules";
 
 // Helper: batch-enrich rooms with company partner info
 // Loads all unique companies in ONE pass, then maps them
@@ -20,6 +21,8 @@ async function batchEnrichRooms(ctx: any, rooms: any[]) {
     if (!room.companyId) return true; // non-company rooms always visible
     const company = companyMap.get(room.companyId as string);
     if (!company) return true;
+    // Not approved yet, or declined: hidden from the public site (companyRules.ts).
+    if (!companyIsPublic(company)) return false;
     return company.platformPlan !== "free";
   });
 

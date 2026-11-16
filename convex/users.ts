@@ -12,6 +12,7 @@ import { sendUserVerification } from "./emailVerify";
 import { startPendingSignup, takePendingSignup, requireLegacySignupAllowed } from "./signupCodes";
 import type { MutationCtx } from "./_generated/server";
 import { assertUpload, MAX_IMAGE_BYTES, UPLOADS_PER_HOUR_USER } from "./uploads";
+import { filterPublicRooms } from "./companyRules";
 
 export const getByEmail = internalQuery({
   args: { email: v.string() },
@@ -814,7 +815,7 @@ export async function computeLeaderboard(ctx: QueryCtx, max: number) {
     const allBadgesCount = (await ctx.db.query("badges").collect()).length;
 
     // ── Per-room escape stats (computed from bookings) ──
-    const allRooms = await ctx.db.query("rooms").collect();
+    const allRooms = await filterPublicRooms(ctx, await ctx.db.query("rooms").collect());
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
     // Use ALL bookings (not just completed) for room stats — load non-cancelled

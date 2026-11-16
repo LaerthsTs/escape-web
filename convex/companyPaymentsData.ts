@@ -19,6 +19,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { verifyPassword } from "./passwordUtils";
 import { assertSlotStillBookable } from "./slotRules";
 import { sessionTokenV, requireCompany } from "./companySession";
+import { assertRoomOpen } from "./companyRules";
 
 export const DEFAULT_DEPOSIT_PERCENT = 20;
 export const MAX_BOOKING_FEE = 20; // euros
@@ -248,6 +249,7 @@ export const createPendingBooking = internalMutation({
     if (!user) throw new ConvexError("User not found");
     const room = await ctx.db.get(args.roomId);
     if (!room || room.isActive === false) throw new ConvexError("Room is not available");
+    await assertRoomOpen(ctx, room);
     const company = room.companyId ? await ctx.db.get(room.companyId) : null;
     if (!company?.paymentProvider) {
       throw new ConvexError("This escape room doesn't take online payments yet. Choose pay at the venue.");

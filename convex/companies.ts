@@ -32,6 +32,7 @@ import { UPLOADS_PER_HOUR_COMPANY } from "./uploads";
 
 // One message for wrong email and wrong password (don't reveal which emails exist).
 const INVALID_LOGIN = "Incorrect email or password";
+import { companyIsPublic } from "./companyRules";
 import {
   sessionTokenV,
   createCompanySession,
@@ -531,7 +532,8 @@ export const createRoom = mutation({
     });
 
     // ── Notify premium users about the new room (EA Partner Benefit) ──
-    if (company.subscriptionEnabled) {
+    // Only approved companies may notify Premium players about new rooms.
+    if (company.subscriptionEnabled && companyIsPublic(company)) {
       const premiumUsers = await ctx.db
         .query("users")
         .withIndex("by_premium", (q) => q.eq("isPremium", true))

@@ -7,6 +7,7 @@ import { roomTotal } from "./companyPaymentsData";
 import { requireVerifiedEmail } from "./emailVerify";
 import { slotStartMs } from "./reportRules";
 import { PLAYER_CANCEL_REASONS, cancelReasonV, cleanCancelNote, isLateCancel } from "./cancelRules";
+import { assertRoomOpen } from "./companyRules";
 
 export const create = mutation({
   args: {
@@ -35,6 +36,8 @@ export const create = mutation({
     // The room decides the price and the group size, not the client.
     const room = await ctx.db.get(args.roomId);
     if (!room || room.isActive === false) throw new ConvexError("Room is not available");
+    // Only rooms of companies the UNLOCKED team approved can be booked.
+    await assertRoomOpen(ctx, room);
     if (
       !Number.isInteger(args.players) ||
       args.players < room.playersMin ||

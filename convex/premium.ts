@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireUser, optionalUser } from "./userSession";
+import { filterPublicRooms } from "./companyRules";
 
 const PREMIUM_PRICES = {
   monthly: 4.99,
@@ -185,7 +186,8 @@ export const cancel = mutation({
 export const getVisibleRooms = query({
   args: { sessionToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const allRooms = await ctx.db.query("rooms").collect();
+    // Only rooms of approved companies (companyRules.ts).
+    const allRooms = await filterPublicRooms(ctx, await ctx.db.query("rooms").collect());
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
@@ -230,7 +232,8 @@ export const getEarlyAccessRooms = query({
     const isPremium = user?.isPremium === true && (user?.premiumExpiresAt ?? 0) > Date.now();
     if (!isPremium) return [];
 
-    const allRooms = await ctx.db.query("rooms").collect();
+    // Only rooms of approved companies (companyRules.ts).
+    const allRooms = await filterPublicRooms(ctx, await ctx.db.query("rooms").collect());
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const earlyAccessDate = new Date(now);
