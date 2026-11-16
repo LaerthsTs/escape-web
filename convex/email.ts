@@ -601,19 +601,25 @@ export const sendSignupCode = internalAction({
     code: v.string(),
     lang: v.optional(v.string()),
     kind: v.union(v.literal("player"), v.literal("company")),
+    // "signup" (default) or "reset" (forgot password, see passwordReset.ts)
+    purpose: v.optional(v.union(v.literal("signup"), v.literal("reset"))),
   },
   handler: async (_ctx, args) => {
     const resend = getResend();
+    const isReset = args.purpose === "reset";
     if (!resend) {
       // Dev without RESEND_API_KEY: the code shows in the Convex logs instead.
-      console.log(`[Email] Sign-up code for ${args.to}: ${args.code}`);
+      console.log(`[Email] ${isReset ? "Password reset" : "Sign-up"} code for ${args.to}: ${args.code}`);
       return;
     }
     const el = args.lang === "el";
     const title = el ? "Ο κωδικός επιβεβαίωσης" : "Your confirmation code";
     const subtitle = el ? "Ισχύει για 15 λεπτά" : "Valid for 15 minutes";
-    const intro =
-      args.kind === "company"
+    const intro = isReset
+      ? el
+        ? "Γράψτε αυτόν τον κωδικό για να ορίσετε νέο κωδικό πρόσβασης στο Unlocked."
+        : "Enter this code to set a new password for your Unlocked account."
+      : args.kind === "company"
         ? el
           ? "Γράψτε αυτόν τον κωδικό για να ολοκληρώσετε την εγγραφή της επιχείρησής σας στο Unlocked."
           : "Enter this code to finish registering your business on Unlocked."

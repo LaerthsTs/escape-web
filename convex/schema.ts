@@ -148,6 +148,15 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_kind_email", ["kind", "email"]),
 
+  // Forgot-password codes (see passwordReset.ts). Only a hash of the code.
+  passwordResets: defineTable({
+    kind: v.union(v.literal("player"), v.literal("company")),
+    email: v.string(),
+    codeHash: v.string(),
+    expiresAt: v.number(),
+    attempts: v.number(),
+  }).index("by_kind_email", ["kind", "email"]),
+
   // Precomputed public data (leaderboard, homepage stats), refreshed by a
   // cron so public queries don't load whole tables. See publicCache.ts.
   publicCache: defineTable({
