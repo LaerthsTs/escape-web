@@ -33,7 +33,7 @@ import { UPLOADS_PER_HOUR_COMPANY, isOwnStorageUrl } from "./uploads";
 
 // One message for wrong email and wrong password (don't reveal which emails exist).
 const INVALID_LOGIN = "Incorrect email or password";
-import { companyIsPublic } from "./companyRules";
+import { companyIsPublic, checkRoomInput } from "./companyRules";
 import {
   sessionTokenV,
   createCompanySession,
@@ -512,6 +512,7 @@ export const createRoom = mutation({
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     const company = await requireCompany(ctx, { companyId: args.companyId, sessionToken }, "companies:createRoom");
+    checkRoomInput(args);
     // ── Enforce room limit based on plan ──
     const limit = getRoomLimit(company.platformPlan);
     const existingRooms = await ctx.db
@@ -599,6 +600,11 @@ export const updateRoom = mutation({
     const { roomId, sessionToken, ...fields } = args;
     const caller = await optionalCompany(ctx, sessionToken, "companies:updateRoom");
     const room = await requireRoomOf(ctx, caller, roomId);
+    checkRoomInput(fields);
+    // The pair is checked against what the room already has.
+    const min = fields.playersMin ?? room.playersMin;
+    const max = fields.playersMax ?? room.playersMax;
+    if (min > max) throw new ConvexError("Minimum players can't be more than maximum players");
 
     // Remove undefined fields
     const updates: Record<string, unknown> = {};
