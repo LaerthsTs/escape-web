@@ -1,0 +1,17 @@
+# Weekly dependency update PRs (security checklist item 29).
+# Security fixes come as soon as GitHub knows about them; other updates are
+# grouped so there is at most one minor/patch PR per week.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Major upgrades (e.g. a new Expo SDK / Next.js major) are done by hand.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
