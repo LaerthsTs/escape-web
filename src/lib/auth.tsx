@@ -34,7 +34,11 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Step 1 of sign-up: checks the form and emails a 6-digit code (no account yet). */
   signup: (name: string, email: string, password: string) => Promise<void>;
+  /** Step 2: the code from the email. Creates the account and logs in. Returns an error code or null. */
+  confirmSignup: (email: string, code: string) => Promise<string | null>;
+  resendSignupCode: (email: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -44,6 +48,8 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: async () => {},
   signup: async () => {},
+  confirmSignup: async () => null,
+  resendSignupCode: async () => {},
   logout: () => {},
 });
 
@@ -51,7 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const registerMutation = useMutation(api.users.register);
+  const startRegister = useMutation(api.users.startRegister);
+  const confirmRegister = useMutation(api.users.confirmRegister);
+  const resendCode = useMutation(api.signupCodes.resend);
   const loginMutation = useAction(api.users.login);
   const logoutMutation = useMutation(api.userSession.logout);
   const { language } = useTranslation();
@@ -111,21 +119,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(
     async (name: string, email: string, password: string) => {
-      const { userId, sessionToken } = await registerMutation({ name, email, password, lang: language, client: 'web' });
-      const authUser: AuthUser = {
-        id: userId as string,
-        name,
-        email: email.toLowerCase(),
-        sessionToken,
+      await startRegister({ name, email, password, lang: language });
+    },
+    [startRegister, language]
+  );
+
+  const confirmSignup = useCallback(
+    async (email: string, code: string): Promise<string | null> => {
+      const r = await confirmRegister({ email, code, client: 'web' });
+      if ('error' in r) return r.error;
+      persistUser({
+        id: r.userId as string,
+        name: '',
+        email: email.trim().toLowerCase(),
+        sessionToken: r.sessionToken,
         avatar: '',
         title: 'Escape Rookie',
         played: 0,
         escaped: 0,
         awards: 0,
-      };
-      persistUser(authUser);
+      });
+      return null;
     },
-    [registerMutation, persistUser, language]
+    [confirmRegister, persistUser]
+  );
+
+  const resendSignupCode = useCallback(
+    async (email: string) => {
+      await resendCode({ kind: 'player', email });
+    },
+    [resendCode]
   );
 
   const logout = useCallback(() => {
@@ -143,6 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         login,
         signup,
+        confirmSignup,
+        resendSignupCode,
         logout,
       }}
     >

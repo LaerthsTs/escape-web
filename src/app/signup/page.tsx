@@ -19,7 +19,11 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [agreed, setAgreed] = useState(false);
   const router = useRouter();
-  const { signup, isAuthenticated } = useAuth();
+  const { signup, confirmSignup, resendSignupCode, isAuthenticated } = useAuth();
+  // Step 2 of sign-up: the 6-digit code we emailed (convex/signupCodes.ts)
+  const [step, setStep] = useState<'form' | 'code'>('form');
+  const [code, setCode] = useState('');
+  const [info, setInfo] = useState('');
 
   // Redirect to home once authenticated
   useEffect(() => {
@@ -51,7 +55,10 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       await signup(name, email, password);
-      // Redirect handled by useEffect above
+      // Code emailed: ask for it (the account is created after that)
+      setCode('');
+      setInfo('');
+      setStep('code');
     } catch (err: any) {
       // ConvexError puts the error code in err.data
       const code = err?.data ?? '';
@@ -75,6 +82,9 @@ export default function SignupPage() {
         case 'PASSWORD_NUMBER':
           setError(t('auth.error_password_number'));
           break;
+        case 'TOO_MANY_ATTEMPTS':
+          setError(t('auth.code_too_many'));
+          break;
         default:
           // Fallback: check message string for older error format
           const msg = [err?.message, err?.data, err?.toString?.()].filter(Boolean).join(' ');
@@ -88,6 +98,41 @@ export default function SignupPage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const CODE_ERRORS: Record<string, string> = {
+    CODE_INVALID: 'auth.code_invalid',
+    CODE_EXPIRED: 'auth.code_expired',
+    TOO_MANY_ATTEMPTS: 'auth.code_too_many',
+    EMAIL_EXISTS: 'auth.error_email_exists',
+  };
+
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+    setIsLoading(true);
+    try {
+      const err = await confirmSignup(email, code);
+      if (err) setError(t(CODE_ERRORS[err] ?? 'auth.error_generic'));
+      // Success: logged in, the useEffect above redirects
+    } catch {
+      setError(t('auth.error_generic'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError('');
+    setInfo('');
+    try {
+      await resendSignupCode(email);
+      setCode('');
+      setInfo(t('auth.code_resent'));
+    } catch (err: any) {
+      setError(t(err?.data === 'TOO_MANY_ATTEMPTS' ? 'auth.code_too_many' : 'auth.error_generic'));
     }
   };
 
@@ -115,6 +160,48 @@ export default function SignupPage() {
 
         {/* Form */}
         <div className="card p-6 md:p-8">
+          {step === 'code' ? (
+            <form onSubmit={handleConfirm} className="space-y-5">
+              <div className="text-center">
+                <Mail className="w-10 h-10 mx-auto mb-3 text-brand-red-light" />
+                <h2 className="text-lg font-bold mb-1">{t('auth.code_title')}</h2>
+                <p className="text-sm text-brand-text-secondary">{t('auth.code_sent', { email: email.trim().toLowerCase() })}</p>
+              </div>
+              {error && (
+                <div className="bg-red-900/20 border border-red-800/30 text-red-400 text-sm rounded-xl px-4 py-3">{error}</div>
+              )}
+              {info && (
+                <div className="bg-emerald-900/20 border border-emerald-800/30 text-emerald-400 text-sm rounded-xl px-4 py-3">{info}</div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-brand-text-secondary">{t('auth.code_label')}</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="input-field text-center text-2xl tracking-[0.5em] font-mono"
+                  autoFocus
+                  required
+                />
+              </div>
+              <button type="submit" disabled={isLoading || code.length !== 6} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+                {isLoading ? '…' : t('auth.code_confirm')}
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
+              </button>
+              <div className="flex justify-between text-sm">
+                <button type="button" onClick={() => { setStep('form'); setError(''); setInfo(''); }} className="text-brand-text-secondary hover:text-white">
+                  {t('auth.code_back')}
+                </button>
+                <button type="button" onClick={handleResend} className="text-brand-red-light hover:underline">
+                  {t('auth.code_resend')}
+                </button>
+              </div>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="bg-red-900/20 border border-red-800/30 text-red-400 text-sm rounded-xl px-4 py-3">
@@ -263,6 +350,7 @@ export default function SignupPage() {
               )}
             </button>
           </form>
+          )}
 
           {/* Login link */}
           <p className="text-center text-sm text-brand-text-secondary mt-6">
