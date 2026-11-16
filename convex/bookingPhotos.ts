@@ -1,5 +1,6 @@
 import { query, mutation, internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import { checkLengths } from "./validation";
 import { api, internal } from "./_generated/api";
 import { nt } from "./notificationTexts";
 import { optionalUser } from "./userSession";
@@ -44,6 +45,7 @@ export const savePreset = mutation({
     logoScale: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Color", args.brandColor, 30], ["Text", args.textTemplate, 300]]);
     await requireCompany(ctx, args, "bookingPhotos:savePreset");
     await assertOptionalImage(ctx, args.logoStorageId);
     await assertOptionalImage(ctx, args.overlayStorageId);

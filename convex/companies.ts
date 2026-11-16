@@ -10,7 +10,7 @@ import {
   isLateCancel,
 } from "./cancelRules";
 import { hashPassword, verifyPassword } from "./passwordUtils";
-import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
+import { validateEmail, validatePassword, requireNonEmpty, checkLengths } from "./validation";
 import { nt } from "./notificationTexts";
 import { clampDepositPercent } from "./companyPaymentsData";
 import { normalizePlan } from "./plans";
@@ -28,7 +28,7 @@ import {
   MINUTE,
 } from "./rateLimit";
 
-import { UPLOADS_PER_HOUR_COMPANY } from "./uploads";
+import { UPLOADS_PER_HOUR_COMPANY, isOwnStorageUrl } from "./uploads";
 
 // One message for wrong email and wrong password (don't reveal which emails exist).
 const INVALID_LOGIN = "Incorrect email or password";
@@ -234,6 +234,9 @@ export const updateProfile = mutation({
     autoTranslateEnabled: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Name", args.name, 120], ["Phone", args.phone, 40], ["Address", args.address, 200], ["City", args.city, 100], ["VAT number", args.vatNumber, 40], ["Description", args.description, 2000], ["Logo", args.logo, 1000]]);
+    // Logo: only one of our own stored files (shown publicly in the widget and photos).
+    if (args.logo && !isOwnStorageUrl(args.logo)) throw new ConvexError("Please upload the logo");
     const { id, sessionToken, ...fields } = args;
     const company = await requireCompany(ctx, { companyId: id, sessionToken }, "companies:updateProfile");
     await ctx.db.patch(company._id, fields);
@@ -1159,6 +1162,7 @@ export const createAdminBooking = mutation({
     total: v.number(),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Name", args.playerName, 100], ["Phone", args.playerPhone, 30], ["Notes", args.notes, 2000]]);
     await requireCompany(ctx, args, "companies:createAdminBooking");
     await guardCompanyOwnsRoom(ctx, args.companyId, args.roomId);
 
@@ -1238,6 +1242,7 @@ export const createExternalBlock = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Source", args.externalSource, 100], ["Name", args.playerName, 100], ["Notes", args.notes, 2000]]);
     await requireCompany(ctx, args, "companies:createExternalBlock");
     await guardCompanyOwnsRoom(ctx, args.companyId, args.roomId);
 
@@ -1370,6 +1375,7 @@ export const updateBookingNotes = mutation({
     notes: v.string(),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Notes", args.notes, 2000]]);
     await requireCompany(ctx, args, "companies:updateBookingNotes");
     await guardCompanyOwnsBooking(ctx, args.companyId, args.bookingId);
     await ctx.db.patch(args.bookingId, { notes: args.notes });

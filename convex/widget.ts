@@ -10,7 +10,7 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { rateLimit, HOUR } from "./rateLimit";
 import { sendGuestBookingConfirmation } from "./emailVerify";
-import { validateEmail } from "./validation";
+import { validateEmail, checkLengths } from "./validation";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
@@ -203,6 +203,7 @@ export const createGuestBooking = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Name", args.playerName, 100], ["Email", args.playerContact, 200], ["Phone", args.playerPhone, 30], ["Notes", args.notes, 1000]]);
     // Validate player name & contact
     if (!args.playerName.trim()) throw new Error("Name is required");
     if (!args.playerContact.trim()) throw new Error("Email is required");

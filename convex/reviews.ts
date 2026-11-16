@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { checkLengths } from "./validation";
 import { requireUser, optionalUser } from "./userSession";
 
 // ─── Get reviews for a room (newest first) ───
@@ -118,6 +119,7 @@ export const submit = mutation({
     text: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Review", args.text, 2000]]);
     const user = await requireUser(ctx, args.sessionToken);
     // Validate rating
     if (args.rating < 1 || args.rating > 5) {

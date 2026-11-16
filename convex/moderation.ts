@@ -1,5 +1,6 @@
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { checkLengths } from "./validation";
 import { requireUser, optionalUser } from "./userSession";
 
 /* ════════════════════════════════════════════════════════════
@@ -45,6 +46,7 @@ export const reportPost = mutation({
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Details", args.details, 1000]]);
     const reporter = await requireUser(ctx, args.sessionToken);
     // Prevent duplicate reports from same user on same post
     const existing = await ctx.db
@@ -81,6 +83,7 @@ export const reportComment = mutation({
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Details", args.details, 1000]]);
     const reporter = await requireUser(ctx, args.sessionToken);
     const existing = await ctx.db
       .query("reports")

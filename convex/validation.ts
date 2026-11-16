@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 /**
  * Input validation utilities for Convex backend.
  * Provides server-side validation for user inputs.
@@ -33,5 +34,16 @@ export function requireNonEmpty(value: string, fieldName: string): string {
 export function validateRange(value: number, min: number, max: number, fieldName: string): void {
   if (value < min || value > max) {
     throw new Error(`${fieldName} must be between ${min} and ${max}`);
+  }
+}
+
+/**
+ * Throws if any text is longer than its limit (checklist D: public forms
+ * could otherwise store megabytes of text, which also go out in emails).
+ * Each entry: [label shown to the user, value, max characters].
+ */
+export function checkLengths(fields: Array<[string, string | undefined | null, number]>): void {
+  for (const [label, value, max] of fields) {
+    if (value && value.length > max) throw new ConvexError(`${label} is too long (max ${max} characters)`);
   }
 }

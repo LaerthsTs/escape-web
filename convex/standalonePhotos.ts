@@ -2,6 +2,7 @@ import { query, mutation, action, internalQuery, internalMutation } from "./_gen
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
+import { checkLengths } from "./validation";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany, optionalCompany, ACCESS_DENIED } from "./companySession";
 import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES, storageUrl, presetImageUrl } from "./uploads";
@@ -32,6 +33,7 @@ export const create = mutation({
     escapeTime: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Team name", args.teamName, 100]]);
     await requireCompany(ctx, args, "standalonePhotos:create");
     await assertOwnRoom(ctx, args.roomId, args.companyId);
     await assertUpload(ctx, args.originalStorageId, "image", MAX_PHOTO_BYTES);
@@ -119,6 +121,7 @@ export const updateMeta = mutation({
     escapeTime: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Team name", args.teamName, 100]]);
     await requireCompany(ctx, args, "standalonePhotos:updateMeta");
     await assertOwnRoom(ctx, args.roomId, args.companyId);
     const photo = await ctx.db.get(args.photoId);
@@ -441,6 +444,7 @@ export const createSimpleRoom = mutation({
     title: v.string(),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Room name", args.title, 120]]);
     await requireCompany(ctx, args, "standalonePhotos:createSimpleRoom");
     const company = await ctx.db.get(args.companyId);
     if (!company) throw new Error("Company not found");
@@ -589,6 +593,7 @@ export const saveRoomPreset = mutation({
     logoScale: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    checkLengths([["Color", args.brandColor, 30], ["Text", args.textTemplate, 300], ["Filter", args.defaultFilter, 50]]);
     await requireCompany(ctx, args, "standalonePhotos:saveRoomPreset");
     await assertOptionalImage(ctx, args.logoStorageId);
     await assertOptionalImage(ctx, args.overlayStorageId);
