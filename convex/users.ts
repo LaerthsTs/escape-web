@@ -11,7 +11,7 @@ import { rateLimit, HOUR } from "./rateLimit";
 import { sendUserVerification } from "./emailVerify";
 import { startPendingSignup, takePendingSignup, requireLegacySignupAllowed } from "./signupCodes";
 import type { MutationCtx } from "./_generated/server";
-import { assertUpload, MAX_IMAGE_BYTES, UPLOADS_PER_HOUR_USER } from "./uploads";
+import { assertUpload, MAX_IMAGE_BYTES, UPLOADS_PER_HOUR_USER, isOwnStorageUrl } from "./uploads";
 import { filterPublicRooms } from "./companyRules";
 
 export const getByEmail = internalQuery({
@@ -124,6 +124,30 @@ export const getById = query({
   },
 });
 
+// ─── Player names (shown to other players: posts, friends, leaderboard) ───
+// Short, and nothing that looks like the UNLOCKED team.
+const NAME_MAX = 50;
+const RESERVED_NAME_WORDS = ["unlocked", "admin", "support", "moderator", "staff"];
+const NAME_MESSAGES: Record<string, string> = {
+  NAME_REQUIRED: "Please enter your name",
+  NAME_TOO_LONG: `Your name can be up to ${NAME_MAX} characters`,
+  NAME_RESERVED: "This name is not allowed",
+};
+
+function normalizeName(raw: string): string {
+  return raw.trim().split(/\s+/).join(" ");
+}
+
+/** null if fine, else an error code (NAME_REQUIRED / NAME_TOO_LONG / NAME_RESERVED). */
+function playerNameProblem(raw: string): string | null {
+  const name = normalizeName(raw);
+  if (!name) return "NAME_REQUIRED";
+  if (name.length > NAME_MAX) return "NAME_TOO_LONG";
+  const lower = name.toLowerCase();
+  if (RESERVED_NAME_WORDS.some((w) => lower.includes(w))) return "NAME_RESERVED";
+  return null;
+}
+
 // ─── Player sign-up with a 6-digit email code (see signupCodes.ts) ───
 
 /** Checks the sign-up form. Throws the same error codes the clients already show. */
@@ -131,8 +155,9 @@ async function checkPlayerSignup(
   ctx: MutationCtx,
   args: { name: string; email: string; password: string }
 ): Promise<{ name: string; email: string }> {
-  const name = args.name.trim().slice(0, 80);
-  if (!name) throw new ConvexError("NAME_REQUIRED");
+  const problem = playerNameProblem(args.name);
+  if (problem) throw new ConvexError(problem);
+  const name = normalizeName(args.name);
   const email = args.email.trim().toLowerCase();
   if (!validateEmail(email)) throw new ConvexError("INVALID_EMAIL");
   const pwError = validatePassword(args.password);
@@ -407,7 +432,7 @@ export const appleLogin = internalMutation({
     const memberSince = `Member since ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
     const userId = await ctx.db.insert("users", {
-      name: args.fullName || "Escape Fan",
+      name: args.fullName && !playerNameProblem(args.fullName) ? normalizeName(args.fullName) : "Escape Fan",
       email: args.email || `apple_${args.appleId.slice(0, 8)}@private.relay`,
       appleId: args.appleId,
       avatar: "",
@@ -459,8 +484,16 @@ export const updateProfile = mutation({
     const user = await requireUser(ctx, args.sessionToken);
 
     const updates: Record<string, any> = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.phone !== undefined) updates.phone = args.phone;
+    if (args.name !== undefined) {
+      const problem = playerNameProblem(args.name);
+      if (problem) throw new ConvexError(NAME_MESSAGES[problem]);
+      updates.name = normalizeName(args.name);
+    }
+    if (args.phone !== undefined) {
+      const phone = args.phone.trim();
+      if (phone.length > 30 || !/^[+0-9 ()-]*$/.test(phone)) throw new ConvexError("Please enter a valid phone number");
+      updates.phone = phone;
+    }
 
     // Store the storageId persistently — URL is resolved at query time
     if (args.avatarStorageId) {
@@ -469,6 +502,9 @@ export const updateProfile = mutation({
       // Also set avatar to empty so the storageId path is used
       updates.avatar = "";
     } else if (args.avatar !== undefined) {
+      // Only clearing it, or one of our own stored files: never a link to
+      // another site (it would see the IP of everyone who views the profile).
+      if (args.avatar !== "" && !isOwnStorageUrl(args.avatar)) throw new ConvexError("Please upload a photo");
       updates.avatar = args.avatar;
       // Clear storageId when avatar is explicitly set/cleared
       updates.avatarStorageId = undefined;

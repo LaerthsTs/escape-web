@@ -82,6 +82,12 @@ export default function SignupPage() {
         case 'PASSWORD_NUMBER':
           setError(t('auth.error_password_number'));
           break;
+        case 'NAME_RESERVED':
+          setError(t('auth.error_name_reserved'));
+          break;
+        case 'NAME_TOO_LONG':
+          setError(t('auth.error_name_too_long'));
+          break;
         case 'TOO_MANY_ATTEMPTS':
           setError(t('auth.code_too_many'));
           break;

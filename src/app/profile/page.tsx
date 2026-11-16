@@ -7,6 +7,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
 import { ChangePasswordForm } from '@/components/auth/PasswordForms';
+import { cleanError } from '@/lib/errors';
 import { ReportsAboutMe, LateCancelsAboutMe } from '@/components/reports/ReportsAboutMe';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
@@ -79,7 +80,8 @@ export default function ProfilePage() {
       await updateProfile({ sessionToken: user.sessionToken, name: newName.trim() });
       setShowEditName(false);
     } catch (err) {
-      console.error(err);
+      // e.g. "This name is not allowed" (convex/users.ts)
+      window.alert(cleanError(err) || t('auth.error_generic'));
     }
   };
 
@@ -89,7 +91,7 @@ export default function ProfilePage() {
       await updateProfile({ sessionToken: user.sessionToken, phone: newPhone.trim() });
       setShowEditPhone(false);
     } catch (err) {
-      console.error(err);
+      window.alert(cleanError(err) || t('auth.error_generic'));
     }
   };
 
