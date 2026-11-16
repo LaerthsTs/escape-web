@@ -225,7 +225,10 @@ export const loginAttempt = internalMutation({
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
 
-    const valid = user?.password ? await verifyPassword(args.password, user.password) : false;
+    // Same amount of work whether or not the email exists (timing).
+    const valid = user?.password
+      ? await verifyPassword(args.password, user.password)
+      : (await hashPassword(args.password), false);
     if (!user || !user.password || !valid) {
       const inWindow = attempt && now - attempt.windowStart < LOGIN_WINDOW_MS;
       const failures = (inWindow ? attempt.failures : 0) + 1;
@@ -240,12 +243,6 @@ export const loginAttempt = internalMutation({
     }
 
     if (attempt) await ctx.db.delete(attempt._id);
-
-    // Upgrade legacy plaintext passwords to hashed on successful login
-    if (!user.password.includes(":")) {
-      const hashed = await hashPassword(args.password);
-      await ctx.db.patch(user._id, { password: hashed });
-    }
 
     return { ok: true, userId: user._id, sessionToken: await createUserSession(ctx, user._id, args.client) };
   },

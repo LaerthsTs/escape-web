@@ -695,12 +695,6 @@ export const loginCompany = mutation({
     }
     await clearFailures(ctx, attempt);
 
-    // Upgrade legacy plaintext passwords on successful login
-    if (!company.password.includes(":")) {
-      const hashed = await hashPassword(args.password);
-      await ctx.db.patch(company._id, { password: hashed });
-    }
-
     // Auto-patch old companies that existed before onboarding flow
     if (!company.onboardingStatus) {
       await ctx.db.patch(company._id, { onboardingStatus: "approved" });

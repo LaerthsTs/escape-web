@@ -1,4 +1,5 @@
 import { internalMutation } from "./_generated/server";
+import { hashPassword } from "./passwordUtils";
 
 const ROOM_IMAGES = [
   "https://images.unsplash.com/photo-1509248961085-879c6c3c7b05?w=600&q=80",
@@ -132,7 +133,7 @@ export const seed = internalMutation({
     const userId = await ctx.db.insert("users", {
       name: "Alex Rivera",
       email: "alex@escapist.com",
-      password: "password123",
+      password: await hashPassword("password123"),
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80",
       title: "Pro Escapist",
       memberSince: "Member since 2025",

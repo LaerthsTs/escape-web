@@ -41,16 +41,19 @@ export async function hashPassword(password: string): Promise<string> {
   return `${saltHex}:${hashHex}`;
 }
 
+/** A stored value from hashPassword ("salt:hash", both hex). */
+export function isHashedPassword(stored: string): boolean {
+  return /^[0-9a-f]{32}:[0-9a-f]{64}$/.test(stored);
+}
+
 /** Verify a plaintext password against a stored hash */
 export async function verifyPassword(
   password: string,
   storedHash: string
 ): Promise<boolean> {
-  // Support legacy plaintext passwords (no colon separator)
-  if (!storedHash.includes(":")) {
-    // Legacy plaintext comparison — will be upgraded on next login
-    return password === storedHash;
-  }
+  // Plaintext passwords are no longer accepted (checklist item 20). Old ones
+  // are converted by migrations:hashLegacyPasswords.
+  if (!isHashedPassword(storedHash)) return false;
 
   const [saltHex, hashHex] = storedHash.split(":");
   const encoder = new TextEncoder();
