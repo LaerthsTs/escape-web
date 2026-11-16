@@ -12,6 +12,7 @@ import { rateLimit, HOUR } from "./rateLimit";
 import { sendGuestBookingConfirmation } from "./emailVerify";
 import { validateEmail, checkLengths } from "./validation";
 import { v } from "convex/values";
+import { newBookingCode } from "./codes";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
 import { assertRoomOpen, companyIsPublic } from "./companyRules";
@@ -261,7 +262,7 @@ export const createGuestBooking = mutation({
     const depositPaid: number | undefined = undefined;
 
     // Generate booking code
-    const bookingCode = `WEB-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const bookingCode = await newBookingCode(ctx, "WEB");
 
     const id = await ctx.db.insert("bookings", {
       roomId: args.roomId,

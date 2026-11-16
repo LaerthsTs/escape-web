@@ -23,6 +23,7 @@ import { dateAthens } from "./plans";
 import { rateLimit, HOUR } from "./rateLimit";
 import { slotStartMs } from "./reportRules";
 import { isOwnStorageUrl } from "./uploads";
+import { randomCode } from "./codes";
 import {
   MAX_ITEMS_PER_ORDER,
   MAX_PRICE_CENTS,
@@ -473,8 +474,8 @@ export const cancelMyOrder = mutation({
 const cartItemV = v.object({ productId: v.id("merchProducts"), variantId: v.string(), quantity: v.number() });
 
 function orderCode() {
-  const rand = Math.floor(Math.random() * 36 ** 3).toString(36).padStart(3, "0");
-  return `MER-${Date.now().toString(36).toUpperCase().slice(-4)}${rand.toUpperCase()}`;
+  // Random (see codes.ts), not from the clock.
+  return randomCode("MER");
 }
 
 function cleanAddress(a: Doc<"merchOrders">["shippingAddress"]) {

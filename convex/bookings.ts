@@ -1,6 +1,7 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { requireUser, optionalUser } from "./userSession";
 import { ConvexError, v } from "convex/values";
+import { newBookingCode } from "./codes";
 import { internal } from "./_generated/api";
 import { assertSlotStillBookable } from "./slotRules";
 import { roomTotal } from "./companyPaymentsData";
@@ -72,7 +73,7 @@ export const create = mutation({
     const paymentStatus: 'paid' | 'deposit' | 'unpaid' = 'unpaid';
     const depositPaid: number | undefined = undefined;
 
-    const bookingCode = `UNL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const bookingCode = await newBookingCode(ctx, "UNL");
     const id = await ctx.db.insert("bookings", {
       userId: user._id,
       roomId: args.roomId,

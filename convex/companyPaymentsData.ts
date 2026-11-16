@@ -14,6 +14,7 @@
  */
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
+import { newBookingCode } from "./codes";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { verifyPassword } from "./passwordUtils";
@@ -280,7 +281,7 @@ export const createPendingBooking = internalMutation({
     const charge = chargeFor(total, args.paymentTerms, depositPercent, bookingFee);
     if (charge.dueCents < 50) throw new ConvexError("The amount is too small to pay online");
 
-    const bookingCode = `UNL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const bookingCode = await newBookingCode(ctx, "UNL");
     const bookingId = await ctx.db.insert("bookings", {
       userId: args.userId,
       roomId: args.roomId,

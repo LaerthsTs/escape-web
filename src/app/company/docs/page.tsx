@@ -245,8 +245,8 @@ export default function DocsPage() {
           </p>
 
           <Card title={g('Κωδικοί κράτησης', 'Booking codes')}>
-            <InfoRow label={g('Εφαρμογή & ιστοσελίδα', 'App & website')} value="UNL-XXXXXX" />
-            <InfoRow label="Widget" value="WEB-XXXXXX" />
+            <InfoRow label={g('Εφαρμογή & ιστοσελίδα', 'App & website')} value="UNL-XXXXXXXX" />
+            <InfoRow label="Widget" value="WEB-XXXXXXXX" />
           </Card>
 
           <Card title={g('Καταστάσεις κράτησης', 'Booking statuses')}>

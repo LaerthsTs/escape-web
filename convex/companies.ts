@@ -1,5 +1,6 @@
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import { newBookingCode } from "./codes";
 import { internal } from "./_generated/api";
 import { slotStartMs } from "./reportRules";
 import {
@@ -1178,7 +1179,7 @@ export const createAdminBooking = mutation({
     );
     if (conflict) throw new Error("This time slot is already booked");
 
-    const bookingCode = `UNL-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const bookingCode = await newBookingCode(ctx, "UNL");
     const id = await ctx.db.insert("bookings", {
       roomId: args.roomId,
       date: args.date,
@@ -1258,7 +1259,7 @@ export const createExternalBlock = mutation({
     );
     if (conflict) throw new Error("This time slot is already booked or blocked");
 
-    const bookingCode = `EXT-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+    const bookingCode = await newBookingCode(ctx, "EXT");
     const id = await ctx.db.insert("bookings", {
       roomId: args.roomId,
       date: args.date,
