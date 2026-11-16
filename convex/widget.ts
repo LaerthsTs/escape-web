@@ -341,8 +341,10 @@ export const sendGuestBookingEmails = internalMutation({
 export const getBookingByCode = internalQuery({
   args: { bookingCode: v.string() },
   handler: async (ctx, args) => {
-    const all = await ctx.db.query("bookings").collect();
-    const booking = all.find((b) => b.bookingCode === args.bookingCode);
+    const booking = await ctx.db
+      .query("bookings")
+      .withIndex("by_bookingCode", (q) => q.eq("bookingCode", args.bookingCode))
+      .first();
     if (!booking) return null;
 
     const room = await ctx.db.get(booking.roomId);

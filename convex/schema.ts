@@ -135,6 +135,14 @@ export default defineSchema({
     .index("by_tokenHash", ["tokenHash"])
     .index("by_user", ["userId"]),
 
+  // Precomputed public data (leaderboard, homepage stats), refreshed by a
+  // cron so public queries don't load whole tables. See publicCache.ts.
+  publicCache: defineTable({
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
   // Fixed-window counters for rate limits (see rateLimit.ts).
   rateLimits: defineTable({
     key: v.string(),
@@ -288,7 +296,10 @@ export default defineSchema({
     // Yearly Premium welcome gift: the Official order it shipped with.
     merchWelcomeGiftOrderId: v.optional(v.id("merchOrders")),
   }).index("by_email", ["email"])
-    .index("by_apple_id", ["appleId"]),
+    .index("by_apple_id", ["appleId"])
+    .index("by_premium", ["isPremium"])
+    // Friend search (friends.searchUsers) without loading every user.
+    .searchIndex("search_name", { searchField: "name" }),
 
   badges: defineTable({
     userId: v.id("users"),
@@ -581,7 +592,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_blocker", ["blockerId"])
-    .index("by_blocker_blocked", ["blockerId", "blockedUserId"]),
+    .index("by_blocker_blocked", ["blockerId", "blockedUserId"])
+    .index("by_blocked", ["blockedUserId"]),
 
   // ─── Friendships ───
   friendships: defineTable({

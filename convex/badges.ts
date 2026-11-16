@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, type QueryCtx } from "./_generated/server";
+import { readPublicCache } from "./publicCache";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany } from "./companySession";
 import { requireUser, optionalUser } from "./userSession";
@@ -332,6 +333,12 @@ export const submitPerformance = mutation({
 export const badgeLeaderboard = query({
   args: {},
   handler: async (ctx) => {
+    // Read from the cache the cron fills (publicCache.ts).
+    return (await readPublicCache<Awaited<ReturnType<typeof computeBadgeLeaderboard>>>(ctx, "badgeLeaderboard")) ?? (await computeBadgeLeaderboard(ctx));
+  },
+});
+
+export async function computeBadgeLeaderboard(ctx: QueryCtx) {
     const allBadges = await ctx.db.query("badges").collect();
     const earned = allBadges.filter((b) => b.earned);
 
@@ -345,8 +352,7 @@ export const badgeLeaderboard = query({
       icon: def.icon,
       earnedCount: counts[def.key] || 0,
     }));
-  },
-});
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Manual badge award — company awards specific badges to a player

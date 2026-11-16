@@ -1,4 +1,5 @@
-import { query } from "./_generated/server";
+import { query, type QueryCtx } from "./_generated/server";
+import { readPublicCache } from "./publicCache";
 
 /**
  * Returns platform-wide public statistics.
@@ -8,6 +9,12 @@ import { query } from "./_generated/server";
 export const getPlatformStats = query({
   args: {},
   handler: async (ctx) => {
+    // Read from the cache the cron fills (publicCache.ts).
+    return (await readPublicCache<Awaited<ReturnType<typeof computePlatformStats>>>(ctx, "platformStats")) ?? (await computePlatformStats(ctx));
+  },
+});
+
+export async function computePlatformStats(ctx: QueryCtx) {
     // Run independent queries in parallel
     const [users, rooms, completedBookings, approvedCompanies] = await Promise.all([
       // ── Active Players (total registered users) ──
@@ -40,5 +47,4 @@ export const getPlatformStats = query({
       completedEscapes: completedBookings.length,
       partnerVenues: approvedCompanies.length,
     };
-  },
-});
+}

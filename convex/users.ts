@@ -1,4 +1,5 @@
-import { query, mutation, action, internalMutation, internalQuery } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
+import { readPublicCache } from "./publicCache";
 import type { Id } from "./_generated/dataModel";
 import { verifyAppleIdentityToken } from "./appleAuth";
 import { v, ConvexError } from "convex/values";
@@ -614,16 +615,18 @@ export const deleteAccount = mutation({
       .collect();
     for (const b of blocksAsBlocker) await ctx.db.delete(b._id);
 
-    const allBlocks = await ctx.db.query("blockedUsers").collect();
-    for (const b of allBlocks) {
-      if (b.blockedUserId === userId) await ctx.db.delete(b._id);
-    }
+    const blocksAsBlocked = await ctx.db
+      .query("blockedUsers")
+      .withIndex("by_blocked", (q) => q.eq("blockedUserId", userId))
+      .collect();
+    for (const b of blocksAsBlocked) await ctx.db.delete(b._id);
 
     // 11. Delete reports made by user
-    const reports = await ctx.db.query("reports").collect();
-    for (const r of reports) {
-      if (r.reporterId === userId) await ctx.db.delete(r._id);
-    }
+    const reports = await ctx.db
+      .query("reports")
+      .withIndex("by_reporter_post", (q) => q.eq("reporterId", userId))
+      .collect();
+    for (const r of reports) await ctx.db.delete(r._id);
 
     // 12. Delete the user record itself
     await ctx.db.delete(userId);
@@ -637,7 +640,16 @@ export const deleteAccount = mutation({
 export const leaderboard = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const max = args.limit ?? 20;
+    // Read from the cache the cron fills (publicCache.ts); compute live only
+    // if it hasn't run yet.
+    const max = Math.min(Math.max(Math.floor(args.limit ?? 20), 1), 100);
+    const full = (await readPublicCache<Awaited<ReturnType<typeof computeLeaderboard>>>(ctx, "leaderboard")) ?? (await computeLeaderboard(ctx, 100));
+    return { ...full, players: full.players.slice(0, max) };
+  },
+});
+
+export async function computeLeaderboard(ctx: QueryCtx, max: number) {
+    
 
     // Fetch all users and only completed bookings (use status index)
     const [allUsers, completedBookings] = await Promise.all([
@@ -790,5 +802,4 @@ export const leaderboard = query({
         totalBadges: allBadgesCount,
       },
     };
-  },
-});
+}

@@ -274,8 +274,10 @@ export const getDashboardStats = query({
     let fullAnalytics = null;
     {
       // Count platform subscribers (app users with isPremium)
-      const allUsers = await ctx.db.query("users").collect();
-      const premiumUsers = allUsers.filter((u) => u.isPremium === true);
+      const premiumUsers = await ctx.db
+        .query("users")
+        .withIndex("by_premium", (q) => q.eq("isPremium", true))
+        .collect();
       const activeSubscribers = premiumUsers.filter(
         (u) => !u.premiumExpiresAt || u.premiumExpiresAt > Date.now()
       ).length;
@@ -497,8 +499,10 @@ export const createRoom = mutation({
 
     // ── Notify premium users about the new room (EA Partner Benefit) ──
     if (company.subscriptionEnabled) {
-      const allUsers = await ctx.db.query("users").collect();
-      const premiumUsers = allUsers.filter((u) => u.isPremium);
+      const premiumUsers = await ctx.db
+        .query("users")
+        .withIndex("by_premium", (q) => q.eq("isPremium", true))
+        .collect();
       for (const premiumUser of premiumUsers) {
         const lang = premiumUser.language;
         await ctx.db.insert("notifications", {

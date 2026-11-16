@@ -18,16 +18,14 @@ export const searchUsers = query({
 
     const term = args.searchTerm.trim().toLowerCase();
 
-    // Get all users and filter by name (Convex doesn't have text search)
-    const allUsers = await ctx.db.query("users").collect();
+    // Full-text search index on the name (schema.ts), so we never load every
+    // user. It matches whole words and the start of the last word typed.
+    const found = await ctx.db
+      .query("users")
+      .withSearchIndex("search_name", (q) => q.search("name", term))
+      .take(25);
 
-    const results = allUsers
-      .filter(
-        (u) =>
-          u._id !== currentUserId &&
-          u.name.toLowerCase().includes(term)
-      )
-      .slice(0, 20);
+    const results = found.filter((u) => u._id !== currentUserId).slice(0, 20);
 
     if (results.length === 0) return [];
 

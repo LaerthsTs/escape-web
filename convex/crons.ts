@@ -28,4 +28,7 @@ crons.daily(
   {}
 );
 
+// Leaderboard and homepage stats (see publicCache.ts).
+crons.interval("refresh public cache", { minutes: 10 }, internal.publicCache.refresh, {});
+
 export default crons;
