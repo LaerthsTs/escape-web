@@ -6,6 +6,7 @@ import { api, internal } from "./_generated/api";
 import Stripe from "stripe";
 import { startCheckoutImpl, retryCheckoutImpl } from "./companyPayments";
 import { UNLIMITED_PRICE_CENTS } from "./plans";
+import { checkReturnUrl } from "./returnUrls";
 
 // The only subscription plan is Unlimited (plans.ts); pay-as-you-go needs no
 // checkout and is invoiced monthly by billingStripe.ts.
@@ -141,8 +142,8 @@ export const createCheckoutSession = action({
       ],
       metadata: sessionMetadata,
       subscription_data: subscriptionData,
-      success_url: args.successUrl,
-      cancel_url: args.cancelUrl,
+      success_url: checkReturnUrl(args.successUrl),
+      cancel_url: checkReturnUrl(args.cancelUrl),
     });
 
     if (!session.url) throw new Error("Failed to create checkout session");
@@ -186,7 +187,7 @@ export const createPortalSession = action({
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: args.returnUrl,
+      return_url: checkReturnUrl(args.returnUrl),
     });
 
     return session.url;

@@ -19,6 +19,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import Stripe from "stripe";
 import crypto from "node:crypto";
+import { checkReturnUrl } from "./returnUrls";
 
 /** Same window as companyPaymentsData.PAYMENT_WINDOW_MS. */
 const PAYMENT_WINDOW_MS = 30 * 60 * 1000;
@@ -294,9 +295,9 @@ export const disconnect = action({
 
 // ─── Checkout ───
 
+// Only our own site/app as return address (see returnUrls.ts).
 export function checkUrl(url: string) {
-  if (!/^(https?:\/\/|[a-z][a-z0-9+.-]*:\/\/)/i.test(url)) throw new ConvexError("Invalid return URL");
-  return url;
+  return checkReturnUrl(url);
 }
 
 /**
