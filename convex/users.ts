@@ -6,6 +6,7 @@ import { internal } from "./_generated/api";
 import { hashPassword, verifyPassword } from "./passwordUtils";
 import { createUserSession, requireUser, optionalUser } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
+import { rateLimit, HOUR } from "./rateLimit";
 
 export const getByEmail = internalQuery({
   args: { email: v.string() },
@@ -146,6 +147,9 @@ export const register = mutation({
     if (existing) {
       throw new ConvexError("EMAIL_EXISTS");
     }
+
+    // Site-wide cap on new player accounts (no IP in mutations; see rateLimit.ts).
+    await rateLimit(ctx, "playerRegister", 60, HOUR);
 
     const now = new Date();
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

@@ -24,6 +24,8 @@ export function cleanError(err: unknown): string {
 const KNOWN: Record<string, string> = {
   'No business account found with this email': 'cx.err.no_account',
   'Incorrect password': 'cx.err.wrong_password',
+  'Incorrect email or password': 'cx.err.login_failed',
+  TOO_MANY_ATTEMPTS: 'cx.err.too_many_attempts',
   'Email already registered': 'cx.err.email_taken',
   'Invalid email format': 'cx.err.invalid_email',
   'This time slot is already booked': 'cx.err.slot_taken',

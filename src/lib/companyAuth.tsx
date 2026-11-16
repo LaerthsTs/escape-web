@@ -126,6 +126,8 @@ export function CompanyAuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation({ email, password, client: 'web' });
+      // Wrong password / locked out come back as { error } (see companies.loginCompany).
+      if ('error' in result) throw new Error(result.error);
       const companyUser: CompanyUser = {
         id: result._id as string,
         sessionToken: result.sessionToken,

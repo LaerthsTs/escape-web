@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { nt } from "./notificationTexts";
 import { requireUser, optionalUser } from "./userSession";
+import { rateLimit, HOUR } from "./rateLimit";
 
 // ─── Search users by name (for adding friends) ───
 export const searchUsers = query({
@@ -105,6 +106,7 @@ export const sendRequest = mutation({
     const requesterId = requesterUser._id;
     if (requesterId === args.receiverId)
       throw new Error("Cannot send a friend request to yourself");
+    await rateLimit(ctx, `friendRequest:${requesterId}`, 30, HOUR);
 
     // Check if already friends or request exists
     const existing1 = await ctx.db
@@ -339,6 +341,7 @@ export const inviteToBooking = mutation({
     const ownBooking = await ctx.db.get(args.bookingId);
     if (!ownBooking || ownBooking.userId !== inviterId)
       throw new Error("Booking not found");
+    await rateLimit(ctx, `bookingInvite:${inviterId}`, 30, HOUR);
     // Verify they are friends
     const asReq = await ctx.db
       .query("friendships")

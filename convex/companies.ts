@@ -15,6 +15,19 @@ import { nt } from "./notificationTexts";
 import { clampDepositPercent } from "./companyPaymentsData";
 import { normalizePlan } from "./plans";
 import { requireAdminSession } from "./adminSession";
+import type { QueryCtx } from "./_generated/server";
+import {
+  rateLimit,
+  failureLock,
+  recordFailure,
+  clearFailures,
+  TOO_MANY_ATTEMPTS,
+  HOUR,
+  MINUTE,
+} from "./rateLimit";
+
+// One message for wrong email and wrong password (don't reveal which emails exist).
+const INVALID_LOGIN = "Incorrect email or password";
 import {
   sessionTokenV,
   createCompanySession,
@@ -30,23 +43,8 @@ import {
 const clientV = v.optional(v.union(v.literal("web"), v.literal("app")));
 
 // ─── Auth ───
-export const login = query({
-  args: { email: v.string(), password: v.string() },
-  handler: async (ctx, args) => {
-    const company = await ctx.db
-      .query("companies")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
-      .first();
-    if (!company) return null;
-
-    const valid = await verifyPassword(args.password, company.password);
-    if (!valid) return null;
-
-    // Return safe fields only — NEVER return the password
-    const { password: _pw, ...safe } = company;
-    return safe;
-  },
-});
+// (The old public `login` query was removed: it checked passwords with no
+// attempt limit. Use loginCompany.)
 
 export const register = mutation({
   args: {
@@ -61,6 +59,8 @@ export const register = mutation({
     client: clientV,
   },
   handler: async (ctx, { client, ...args }) => {
+    // At most this many new business accounts per hour, site-wide.
+    await rateLimit(ctx, "companyRegister", 10, HOUR);
     // Validate inputs
     requireNonEmpty(args.name, "Company name");
     if (!validateEmail(args.email)) return { error: "Invalid email format" };
@@ -113,6 +113,8 @@ export const registerWithOnboarding = mutation({
     client: clientV,
   },
   handler: async (ctx, { client, ...args }) => {
+    // At most this many new business accounts per hour, site-wide.
+    await rateLimit(ctx, "companyRegister", 10, HOUR);
     // Validate inputs
     requireNonEmpty(args.name, "Company name");
     if (!validateEmail(args.email)) return { error: "Invalid email format" };
@@ -652,17 +654,31 @@ export const getBookings = query({
 // email string directly as companyId instead of verifying credentials.
 // This mutation properly authenticates business users and returns the
 // company ID + name for session persistence.
+//
+// Failures are RETURNED as { error } (not thrown) so the failed attempt is
+// saved and counts towards the lockout; see rateLimit.ts. Old app builds only
+// act on `result._id`, so they just stay on the login screen.
 export const loginCompany = mutation({
   args: { email: v.string(), password: v.string(), client: clientV },
   handler: async (ctx, args) => {
+    const email = args.email.toLowerCase().trim();
+    const lockKey = `company:${email}`;
+    const { locked, attempt } = await failureLock(ctx, lockKey);
+    if (locked) return { error: TOO_MANY_ATTEMPTS };
+
     const company = await ctx.db
       .query("companies")
-      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .first();
-    if (!company) throw new Error("No business account found with this email");
-
-    const valid = await verifyPassword(args.password, company.password);
-    if (!valid) throw new Error("Incorrect password");
+    // Same answer and the same work whether or not the email exists.
+    const valid = company
+      ? await verifyPassword(args.password, company.password)
+      : (await hashPassword(args.password), false);
+    if (!company || !valid) {
+      await recordFailure(ctx, lockKey, attempt);
+      return { error: INVALID_LOGIN };
+    }
+    await clearFailures(ctx, attempt);
 
     // Upgrade legacy plaintext passwords on successful login
     if (!company.password.includes(":")) {
@@ -779,10 +795,29 @@ export const selectPlan = mutation({
 });
 
 // ─── Discount Codes ───
-export const validateDiscountCode = query({
-  args: { code: v.string() },
+// Public check: needs a company session and is rate limited, so codes can't
+// be guessed. A mutation (not a query) so the attempts can be counted.
+export const validateDiscountCode = mutation({
+  args: { code: v.string(), sessionToken: v.string() },
   handler: async (ctx, args) => {
-    const code = args.code.trim().toUpperCase();
+    const company = await requireCompany(ctx, { sessionToken: args.sessionToken }, "companies:validateDiscountCode");
+    await rateLimit(ctx, `discount:${company._id}`, 10, 15 * MINUTE);
+    return await checkDiscountCode(ctx, args.code);
+  },
+});
+
+/** For stripe.createCheckoutSession: same check, same per-company limit. */
+export const validateDiscountCodeFor = internalMutation({
+  args: { companyId: v.id("companies"), code: v.string() },
+  handler: async (ctx, args) => {
+    await rateLimit(ctx, `discount:${args.companyId}`, 10, 15 * MINUTE);
+    return await checkDiscountCode(ctx, args.code);
+  },
+});
+
+async function checkDiscountCode(ctx: QueryCtx, rawCode: string) {
+  {
+    const code = rawCode.trim().toUpperCase();
     const discount = await ctx.db
       .query("discountCodes")
       .withIndex("by_code", (q) => q.eq("code", code))
@@ -799,8 +834,8 @@ export const validateDiscountCode = query({
       period: discount.period,
       durationMonths: discount.durationMonths,
     };
-  },
-});
+  }
+}
 
 export const redeemDiscountCode = internalMutation({
   args: {

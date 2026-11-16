@@ -123,6 +123,13 @@ export default defineSchema({
     lockedUntil: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
+  // Fixed-window counters for rate limits (see rateLimit.ts).
+  rateLimits: defineTable({
+    key: v.string(),
+    count: v.number(),
+    windowStart: v.number(),
+  }).index("by_key", ["key"]),
+
   // Player login sessions. Only the SHA-256 of the token is stored; the raw
   // token lives on the client. See userSession.ts.
   userSessions: defineTable({

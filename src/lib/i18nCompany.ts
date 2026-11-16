@@ -20,6 +20,7 @@ export const companyTranslations: { en: Record<string, string>; el: Record<strin
     // ── Errors ──
     'cx.err.generic': 'Something went wrong. Please try again.',
     'cx.err.login_failed': 'We couldn’t sign you in. Check your email and password.',
+    'cx.err.too_many_attempts': 'Too many attempts. Please wait 15 minutes and try again.',
     'cx.err.no_account': 'There’s no business account with this email.',
     'cx.err.wrong_password': 'Wrong password. Try again or use “Forgot password?”.',
     'cx.err.email_taken': 'This email already has an account. Sign in instead.',
@@ -424,6 +425,7 @@ export const companyTranslations: { en: Record<string, string>; el: Record<strin
     // ── Errors ──
     'cx.err.generic': 'Κάτι πήγε στραβά. Δοκιμάστε ξανά.',
     'cx.err.login_failed': 'Δεν ήταν δυνατή η σύνδεση. Ελέγξτε το email και τον κωδικό σας.',
+    'cx.err.too_many_attempts': 'Πάρα πολλές προσπάθειες. Περιμένετε 15 λεπτά και δοκιμάστε ξανά.',
     'cx.err.no_account': 'Δεν υπάρχει επαγγελματικός λογαριασμός με αυτό το email.',
     'cx.err.wrong_password': 'Λάθος κωδικός. Δοκιμάστε ξανά ή πατήστε «Ξεχάσατε τον κωδικό;».',
     'cx.err.email_taken': 'Αυτό το email έχει ήδη λογαριασμό. Συνδεθείτε.',

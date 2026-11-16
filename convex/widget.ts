@@ -8,6 +8,7 @@
  */
 
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { rateLimit, HOUR } from "./rateLimit";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
@@ -212,6 +213,11 @@ export const createGuestBooking = mutation({
       );
     }
 
+    // Stop one person (or a bot) filling a room's calendar with fake bookings.
+    const guestEmail = args.playerContact.trim().toLowerCase();
+    await rateLimit(ctx, `guestBooking:email:${guestEmail}`, 3, HOUR);
+    await rateLimit(ctx, `guestBooking:room:${args.roomId}`, 20, HOUR);
+
     // Prevent double-booking
     const existing = await ctx.db
       .query("bookings")
@@ -348,6 +354,10 @@ export const createGuestSlotAlert = mutation({
     if (alreadyExists) {
       return { success: true, alreadySubscribed: true };
     }
+
+    if (args.contact.length > 200) throw new Error("Contact is too long");
+    await rateLimit(ctx, `guestAlert:contact:${args.contact.trim().toLowerCase()}`, 10, HOUR);
+    await rateLimit(ctx, `guestAlert:room:${args.roomId}`, 50, HOUR);
 
     await ctx.db.insert("guestSlotAlerts", {
       roomId: args.roomId,

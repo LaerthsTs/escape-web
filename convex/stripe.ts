@@ -70,7 +70,7 @@ export const createCheckoutSession = action({
     // Free period from a discount code, validated here rather than trusted from the client.
     let trialDays: number | undefined;
     if (args.discountCode) {
-      const discount = await ctx.runQuery(api.companies.validateDiscountCode, { code: args.discountCode });
+      const discount = await ctx.runMutation(internal.companies.validateDiscountCodeFor, { companyId, code: args.discountCode });
       if (!discount.valid) throw new Error("This discount code isn't valid.");
       trialDays = (discount.durationMonths || 12) * 30;
     }

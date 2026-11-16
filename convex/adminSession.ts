@@ -3,6 +3,7 @@ import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { hashPassword, verifyPassword } from "./passwordUtils";
+import { failureLock, recordFailure, clearFailures, TOO_MANY_ATTEMPTS } from "./rateLimit";
 
 // Admin sessions: same idea as companySession.ts, but for platform admins.
 // The raw token lives on the client; only its SHA-256 is stored.
@@ -59,11 +60,18 @@ export const createAdmin = internalMutation({
   },
 });
 
-/** Public: email + password -> session token. Same error for every failure. */
+/**
+ * Public: email + password -> session token. Same error for every failure.
+ * Failures are returned as { error } (not thrown) so they are saved and count
+ * towards the lockout (see rateLimit.ts).
+ */
 export const login = mutation({
   args: { email: v.string(), password: v.string() },
   handler: async (ctx, args) => {
     const email = args.email.toLowerCase().trim();
+    const lockKey = `admin:${email}`;
+    const { locked, attempt } = await failureLock(ctx, lockKey);
+    if (locked) return { error: TOO_MANY_ATTEMPTS };
     const admin = await ctx.db
       .query("admins")
       .withIndex("by_email", (q) => q.eq("email", email))
@@ -72,7 +80,11 @@ export const login = mutation({
     const ok = admin
       ? await verifyPassword(args.password, admin.passwordHash)
       : (await hashPassword(args.password), false);
-    if (!admin || !ok) throw new ConvexError("Invalid email or password");
+    if (!admin || !ok) {
+      await recordFailure(ctx, lockKey, attempt);
+      return { error: "Invalid email or password" };
+    }
+    await clearFailures(ctx, attempt);
 
     const token = toHex(crypto.getRandomValues(new Uint8Array(32)));
     const now = Date.now();

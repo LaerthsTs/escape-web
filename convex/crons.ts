@@ -12,4 +12,12 @@ crons.daily(
   {}
 );
 
+// Old rate-limit counters and expired login lockouts.
+crons.daily(
+  "clean up rate limits",
+  { hourUTC: 3, minuteUTC: 0 },
+  internal.rateLimit.cleanup,
+  {}
+);
+
 export default crons;

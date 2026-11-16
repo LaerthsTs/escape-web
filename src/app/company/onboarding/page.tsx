@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from 'convex/react';
 import { useCompanyAction, useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { api } from '../../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
@@ -75,10 +74,8 @@ export default function CompanyOnboardingPage() {
   const [discountChecking, setDiscountChecking] = useState(false);
   const [discountResult, setDiscountResult] = useState<{ valid: boolean; plan?: string; period?: string; durationMonths?: number; error?: string } | null>(null);
 
-  const discountValidation = useQuery(
-    api.companies.validateDiscountCode,
-    discountCode.trim().length >= 3 ? { code: discountCode.trim() } : 'skip'
-  );
+  // Checked when "Apply" is pressed (server-side rate limited, needs the company session).
+  const validateDiscountCode = useCompanyMutation(api.companies.validateDiscountCode);
 
   const serverStatus = companyData?.onboardingStatus;
   const localStatus = company?.onboardingStatus;
@@ -397,13 +394,13 @@ export default function CompanyOnboardingPage() {
                 <button
                   disabled={!discountCode.trim() || discountChecking || loading}
                   onClick={async () => {
-                    if (!discountValidation) return;
-                    if (!discountValidation.valid) {
-                      setDiscountResult(discountValidation as any);
-                      return;
-                    }
                     setDiscountChecking(true);
                     try {
+                      const discountValidation = await validateDiscountCode({ code: discountCode.trim() });
+                      if (!discountValidation.valid) {
+                        setDiscountResult(discountValidation as any);
+                        return;
+                      }
                       // Discount codes are free months of Unlimited; the server works out the trial.
                       const plan = 'unlimited' as const;
                       const period = discountValidation.period as 'monthly' | 'yearly';
@@ -450,14 +447,6 @@ export default function CompanyOnboardingPage() {
                   {t('company.onboarding.discount_applied', {
                     plan: t('company.plan.unlimited'),
                     months: String(discountResult.durationMonths || 12),
-                  })}
-                </p>
-              )}
-              {discountValidation && discountValidation.valid && !discountResult && (
-                <p className="text-xs text-emerald-400/70 mt-2">
-                  {t('company.onboarding.discount_valid_hint', {
-                    plan: t('company.plan.unlimited'),
-                    months: String(discountValidation.durationMonths || 12),
                   })}
                 </p>
               )}
