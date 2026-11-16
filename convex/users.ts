@@ -412,6 +412,8 @@ export const updateLanguage = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx, args.sessionToken);
+    // Only languages we have texts for (also called from the public HTTP /updateLanguage).
+    if (!["en", "el", "nl"].includes(args.language)) throw new ConvexError("Unsupported language");
     await ctx.db.patch(user._id, { language: args.language });
   },
 });

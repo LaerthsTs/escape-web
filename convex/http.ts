@@ -210,7 +210,7 @@ http.route({ path: "/stripe-webhook", method: "POST", handler: stripeWebhook });
 const updateLanguageHandler = httpAction(async (ctx, request) => {
   try {
     const { sessionToken, language } = await request.json();
-    if (!sessionToken || !language) {
+    if (typeof sessionToken !== "string" || typeof language !== "string" || !sessionToken || !language) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
@@ -224,9 +224,10 @@ const updateLanguageHandler = httpAction(async (ctx, request) => {
       status: 200,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
+  } catch {
+    // Don't echo internal error text to the caller.
+    return new Response(JSON.stringify({ error: "Could not update language" }), {
+      status: 400,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }

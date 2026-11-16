@@ -6,6 +6,7 @@ import {
   Puzzle, Lightbulb, Shield, Sparkles, CalendarCheck, TrendingUp,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { jsonLd } from '@/lib/jsonLd';
 import { CityData } from '@/data/cities';
 
 function difficultyLabel(d: number): string {
@@ -72,9 +73,9 @@ export default function CityClient({ city, nearby }: { city: CityData; nearby: C
   return (
     <div className="min-h-screen bg-brand-bg text-white">
       {/* Schema Markup */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(itemListSchema) }} />
 
       {/* Breadcrumb */}
       <nav className="max-w-6xl mx-auto px-4 pt-6 text-sm text-brand-text-secondary flex items-center gap-1.5 flex-wrap">

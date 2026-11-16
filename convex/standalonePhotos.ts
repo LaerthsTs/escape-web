@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany, optionalCompany, ACCESS_DENIED } from "./companySession";
 import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES } from "./uploads";
+import { underCap } from "./rateLimit";
 import { ConvexError } from "convex/values";
 
 // ════════════════════════════════════════════════════════════════
@@ -235,6 +236,9 @@ export const trackView = mutation({
   handler: async (ctx, args) => {
     const photo = await ctx.db.get(args.photoId);
     if (!photo) return;
+    // Public counter: cap it so a script can't inflate it (checklist item 30).
+    // Over the cap the call is quietly ignored.
+    if (!(await underCap(ctx, `photoView:${args.photoId}`, 200))) return;
     await ctx.db.patch(args.photoId, {
       hostedPageViews: (photo.hostedPageViews || 0) + 1,
     });
@@ -247,6 +251,7 @@ export const trackDownload = mutation({
   handler: async (ctx, args) => {
     const photo = await ctx.db.get(args.photoId);
     if (!photo) return;
+    if (!(await underCap(ctx, `photoDownload:${args.photoId}`, 50))) return;
     await ctx.db.patch(args.photoId, {
       downloads: (photo.downloads || 0) + 1,
     });

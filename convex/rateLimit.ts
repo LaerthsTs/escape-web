@@ -45,6 +45,19 @@ export async function rateLimit(
   await ctx.db.patch(row._id, { count: row.count + 1 });
 }
 
+/**
+ * Like rateLimit, but returns false instead of throwing (for counters where
+ * going over the cap should just be ignored). Window is one hour.
+ */
+export async function underCap(ctx: MutationCtx, key: string, maxPerHour: number): Promise<boolean> {
+  try {
+    await rateLimit(ctx, key, maxPerHour, HOUR);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Wrong-password lockout, shared by company and admin login.
 // (Player login has its own copy in users.loginAttempt.)
 const MAX_FAILURES = 5;

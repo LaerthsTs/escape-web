@@ -4,6 +4,7 @@ import { LayoutShell } from '@/components/layout/LayoutShell';
 import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
 import { AuthProvider } from '@/lib/auth';
 import { I18nProvider } from '@/lib/i18n';
+import { jsonLd as safeJsonLd } from '@/lib/jsonLd';
 import { SafeConvex } from '@/components/SafeConvex';
 
 // Force all pages to be dynamically rendered (SSR on-demand)
@@ -111,7 +112,7 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       </head>
       <body className="min-h-screen flex flex-col">
