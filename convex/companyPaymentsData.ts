@@ -21,6 +21,8 @@ import { verifyPassword } from "./passwordUtils";
 import { assertSlotStillBookable } from "./slotRules";
 import { sessionTokenV, requireCompany } from "./companySession";
 import { assertRoomOpen } from "./companyRules";
+import { failureLock, recordFailure, clearFailures } from "./rateLimit";
+import type { MutationCtx } from "./_generated/server";
 
 export const DEFAULT_DEPOSIT_PERCENT = 20;
 export const MAX_BOOKING_FEE = 20; // euros
@@ -79,13 +81,31 @@ export function chargeFor(total: number, terms: "full" | "deposit_20", depositPe
   return { totalCents, partCents, feeCents, dueCents: partCents + feeCents };
 }
 
-async function requireCompanyPassword(ctx: any, companyId: Id<"companies">, password: string) {
+/**
+ * Re-check of the company password before payment changes. Wrong tries count
+ * towards the same lockout as the business login (5 tries, 15 minutes), so
+ * this can't be used to guess the password. Returns a result instead of
+ * throwing: a throw would roll back the counted failure.
+ */
+async function checkCompanyPassword(
+  ctx: MutationCtx,
+  companyId: Id<"companies">,
+  password: string
+): Promise<"ok" | "wrong" | "locked"> {
   const company = await ctx.db.get(companyId);
-  if (!company) throw new ConvexError("Company not found");
-  const ok = await verifyPassword(password, company.password);
-  if (!ok) throw new ConvexError("Incorrect password");
-  return company as Doc<"companies">;
+  if (!company) return "wrong";
+  const lockKey = `company:${company.email.toLowerCase()}`;
+  const { locked, attempt } = await failureLock(ctx, lockKey);
+  if (locked) return "locked";
+  if (!(await verifyPassword(password, company.password))) {
+    await recordFailure(ctx, lockKey, attempt);
+    return "wrong";
+  }
+  await clearFailures(ctx, attempt);
+  return "ok";
 }
+
+const PASSWORD_ERRORS = { wrong: "Incorrect password", locked: "TOO_MANY_ATTEMPTS" } as const;
 
 // ─── Company portal ───
 
@@ -120,7 +140,8 @@ export const updateSettings = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "companyPaymentsData:updateSettings");
-    await requireCompanyPassword(ctx, args.companyId, args.password);
+    const pw = await checkCompanyPassword(ctx, args.companyId, args.password);
+    if (pw !== "ok") return { error: PASSWORD_ERRORS[pw] };
     const pct = clampDepositPercent(args.depositPercent);
     if (pct === undefined) throw new ConvexError("Enter a deposit between 1% and 99%");
     const fee = Math.round(args.bookingFeeAmount * 100) / 100;
@@ -132,17 +153,15 @@ export const updateSettings = mutation({
       bookingFeeEnabled: args.bookingFeeEnabled && fee > 0,
       bookingFeeAmount: fee,
     });
+    return { ok: true as const };
   },
 });
 
 // Used by the Node actions before touching keys.
-export const checkPassword = internalQuery({
+/** For the Node actions (connect/disconnect): same counted check as above. */
+export const checkPassword = internalMutation({
   args: { companyId: v.id("companies"), password: v.string() },
-  handler: async (ctx, args) => {
-    const company = await ctx.db.get(args.companyId);
-    if (!company) return false;
-    return await verifyPassword(args.password, company.password);
-  },
+  handler: async (ctx, args) => await checkCompanyPassword(ctx, args.companyId, args.password),
 });
 
 export const getCredentialRow = internalQuery({

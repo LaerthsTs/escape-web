@@ -80,8 +80,10 @@ async function requirePassword(
     fn,
   });
   const password = args.password;
-  const ok = await ctx.runQuery(internal.companyPaymentsData.checkPassword, { companyId, password });
-  if (!ok) throw new ConvexError("Incorrect password");
+  // Counted towards the business-login lockout (see companyPaymentsData.checkCompanyPassword).
+  const result = await ctx.runMutation(internal.companyPaymentsData.checkPassword, { companyId, password });
+  if (result === "locked") throw new ConvexError("TOO_MANY_ATTEMPTS");
+  if (result !== "ok") throw new ConvexError("Incorrect password");
 }
 
 // ─── Stripe (company's own account) ───

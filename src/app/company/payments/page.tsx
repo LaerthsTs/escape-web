@@ -154,13 +154,18 @@ export default function CompanyPaymentsPage() {
     e.preventDefault();
     setSavingSettings(true);
     try {
-      await updateSettings({
+      const result = await updateSettings({
         companyId,
         password: settingsPw,
         depositPercent: Number(deposit),
         bookingFeeEnabled: feeOn,
         bookingFeeAmount: feeOn ? Number(fee || 0) : 0,
       });
+      // Wrong password / locked out come back as { error } (counted on the server).
+      if (result && 'error' in result) {
+        toast({ kind: 'error', message: friendlyError(result.error, t) });
+        return;
+      }
       toast({ kind: 'success', message: t('cx.pay.settings_saved') });
       setSettingsPw('');
     } catch (err) {
