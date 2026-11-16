@@ -51,6 +51,8 @@ export const getByEmail = internalQuery({
     const { password: _pw, ...safeUser } = user;
     return {
       ...safeUser,
+      // Lets the app ask for the password (or the word DELETE) before deleting.
+      hasPassword: !!user.password,
       avatar,
       badges,
       played,
@@ -600,10 +602,26 @@ export const updateLocation = mutation({
    This permanently removes the user and all associated data.
    ═══════════════════════════════════════════════════════════ */
 export const deleteAccount = mutation({
-  args: { sessionToken: v.string() },
+  args: {
+    sessionToken: v.string(),
+    // Confirmation, so a stolen session alone can't wipe the account:
+    // the password, or the word DELETE for Apple accounts that have none.
+    password: v.optional(v.string()),
+    confirm: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx, args.sessionToken);
     const userId = user._id;
+
+    if (user.password) {
+      // Counted (returned, not thrown, so the try is saved): 10 per hour.
+      await rateLimit(ctx, `deleteAccount:${userId}`, 10, HOUR);
+      if (!args.password || !(await verifyPassword(args.password, user.password))) {
+        return { error: "WRONG_PASSWORD" };
+      }
+    } else if ((args.confirm ?? "").trim().toUpperCase() !== "DELETE") {
+      return { error: "CONFIRM_REQUIRED" };
+    }
 
     // 0. End every login session of this account
     const sessions = await ctx.db
