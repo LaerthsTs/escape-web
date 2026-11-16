@@ -1,9 +1,18 @@
 import { query, mutation, action, internalQuery, internalMutation } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany, optionalCompany, ACCESS_DENIED } from "./companySession";
 import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES, storageUrl, presetImageUrl } from "./uploads";
 import { underCap } from "./rateLimit";
+
+/** A photo can only be tagged with one of the company's own rooms. */
+async function assertOwnRoom(ctx: MutationCtx, roomId: Id<"rooms"> | undefined, companyId: Id<"companies">) {
+  if (!roomId) return;
+  const room = await ctx.db.get(roomId);
+  if (!room || room.companyId?.toString() !== companyId.toString()) throw new ConvexError("Room not found");
+}
 import { ConvexError } from "convex/values";
 
 // ════════════════════════════════════════════════════════════════
@@ -24,6 +33,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "standalonePhotos:create");
+    await assertOwnRoom(ctx, args.roomId, args.companyId);
     await assertUpload(ctx, args.originalStorageId, "image", MAX_PHOTO_BYTES);
     // Verify company exists
     const company = await ctx.db.get(args.companyId);
@@ -110,6 +120,7 @@ export const updateMeta = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "standalonePhotos:updateMeta");
+    await assertOwnRoom(ctx, args.roomId, args.companyId);
     const photo = await ctx.db.get(args.photoId);
     if (!photo || photo.companyId.toString() !== args.companyId.toString()) {
       throw new Error("Unauthorized");
