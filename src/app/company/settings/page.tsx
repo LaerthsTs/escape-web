@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useCompanyMutation, useCompanyQuery, useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
+import { ChangePasswordForm } from '@/components/auth/PasswordForms';
 import { useSearchParams } from 'next/navigation';
 import { api } from '../../../../convex/_generated/api';
 import Link from 'next/link';
@@ -427,6 +428,13 @@ export default function CompanySettingsPage() {
               </button>
             </div>
           </form>
+
+          {/* Change password (convex/passwordReset.ts) */}
+          {company?.sessionToken && (
+            <div className="mt-6 bg-brand-surface rounded-2xl border border-white/10 p-6">
+              <ChangePasswordForm kind="company" sessionToken={company.sessionToken} />
+            </div>
+          )}
         </div>
       )}
 

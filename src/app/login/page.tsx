@@ -137,7 +137,7 @@ export default function LoginPage() {
                 </span>
               </label>
               <Link
-                href="#"
+                href="/forgot-password"
                 className="text-sm text-brand-red-light hover:text-brand-red-light transition-colors"
               >
                 {t('auth.forgot_password')}

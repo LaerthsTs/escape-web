@@ -11,7 +11,6 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { friendlyError } from '@/lib/errors';
-import { mailto } from '@/lib/plans';
 
 export default function CompanyLoginPage() {
   const { t } = useTranslation();
@@ -150,7 +149,7 @@ export default function CompanyLoginPage() {
 
             <div className="flex justify-end -mt-1">
               <a
-                href={mailto(t('cx.auth.forgot_subject'), t('cx.auth.forgot_body', { email: email || '' }))}
+                href={p('/company/forgot-password')}
                 className="text-xs text-brand-text-secondary hover:text-white hover:underline"
               >
                 {t('cx.auth.forgot')}

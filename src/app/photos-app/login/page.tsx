@@ -8,7 +8,6 @@ import { useCompanyAuth } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { friendlyError } from '@/lib/errors';
-import { mailto } from '@/lib/plans';
 
 export default function PhotosLoginPage() {
   const router = useRouter();
@@ -127,7 +126,7 @@ export default function PhotosLoginPage() {
 
             <div className="flex justify-end -mt-1">
               <a
-                href={mailto(t('cx.auth.forgot_subject'), t('cx.auth.forgot_body', { email: email || '' }))}
+                href="/photos-app/forgot-password"
                 className="text-xs text-brand-text-secondary hover:text-white hover:underline"
               >
                 {t('cx.auth.forgot')}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useAuth } from '@/lib/auth';
+import { ChangePasswordForm } from '@/components/auth/PasswordForms';
 import { ReportsAboutMe, LateCancelsAboutMe } from '@/components/reports/ReportsAboutMe';
 import { useTranslation } from '@/lib/i18n';
 import { AnimateIn, StaggerContainer, StaggerItem } from '@/components/animations/AnimateIn';
@@ -184,6 +185,13 @@ export default function ProfilePage() {
             </StaggerContainer>
           </div>
           </AnimateIn>
+
+          {/* Change password (convex/passwordReset.ts) */}
+          {user?.sessionToken && (
+            <div className="card p-6 mt-6">
+              <ChangePasswordForm kind="player" sessionToken={user.sessionToken} />
+            </div>
+          )}
         </div>
       </section>
 
