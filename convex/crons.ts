@@ -20,4 +20,12 @@ crons.daily(
   {}
 );
 
+// Pay-at-pickup merch orders that were never collected.
+crons.daily(
+  "expire uncollected merch orders",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.merch.expireReservations,
+  {}
+);
+
 export default crons;

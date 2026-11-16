@@ -916,6 +916,8 @@ export default defineSchema({
     paidAt: v.optional(v.number()),
     status: merchOrderStatusV,
     stockReleased: v.optional(v.boolean()),
+    // Pay at pickup: unpaid orders are cancelled after this (see merch.expireReservations).
+    reservedUntil: v.optional(v.number()),
     trackingCode: v.optional(v.string()),
     trackingUrl: v.optional(v.string()),
     sellerNote: v.optional(v.string()),
@@ -931,5 +933,6 @@ export default defineSchema({
     .index("by_orderCode", ["orderCode"])
     .index("by_stripeSessionId", ["stripeSessionId"])
     .index("by_vivaOrderCode", ["vivaOrderCode"])
-    .index("by_booking", ["bookingId"]),
+    .index("by_booking", ["bookingId"])
+    .index("by_status", ["status"]),
 });

@@ -20,6 +20,8 @@ import { sessionTokenV, requireCompany } from "./companySession";
 import { requireAdminSession } from "./adminSession";
 import { requireUser, optionalUser } from "./userSession";
 import { dateAthens } from "./plans";
+import { rateLimit, HOUR } from "./rateLimit";
+import { slotStartMs } from "./reportRules";
 import {
   MAX_ITEMS_PER_ORDER,
   MAX_PRICE_CENTS,
@@ -564,6 +566,29 @@ export const createOrder = internalMutation({
     if (args.payment === "at_pickup" && args.delivery !== "pickup") {
       throw new ConvexError("Pay at pickup is only for orders you collect at the venue");
     }
+
+    // Unpaid "pay at pickup" orders hold stock, so cap how many one person can have open.
+    await rateLimit(ctx, `merchOrder:${user._id}`, 10, HOUR);
+    let reservedUntil: number | undefined;
+    if (args.payment === "at_pickup") {
+      const mine = await ctx.db
+        .query("merchOrders")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      const open = mine.filter((o) => isOpenUnpaidPickup(o)).length;
+      if (open >= MAX_OPEN_PICKUP_ORDERS) {
+        throw new ConvexError(
+          `You already have ${MAX_OPEN_PICKUP_ORDERS} orders waiting for pickup. Collect or cancel one first.`
+        );
+      }
+      // Kept until 2 days after the game it's picked up at, or 14 days.
+      if (bookingId) {
+        const b = (await ctx.db.get(bookingId))!;
+        reservedUntil = slotStartMs(b.date, b.time) + 2 * DAY;
+      } else {
+        reservedUntil = now + RESERVE_DAYS_NO_GAME * DAY;
+      }
+    }
     if (args.payment === "online") {
       const online = seller === "platform" ? platformTakesOnline() : companyTakesOnline(company);
       if (!online) {
@@ -662,6 +687,7 @@ export const createOrder = internalMutation({
             : company!.paymentMode
           : undefined,
       status: args.payment === "online" ? "pending_payment" : "reserved",
+      reservedUntil,
       createdAt: now,
       updatedAt: now,
     });
@@ -930,6 +956,43 @@ export const markOrderPaid = internalMutation({
     await announceOrder(ctx, (await ctx.db.get(o._id))!);
     await awardCollector(ctx, o.userId);
     return { ok: true as const };
+  },
+});
+
+// ─── Pay at pickup: limits and expiry (checklist item 19) ───
+
+const DAY = 24 * HOUR;
+const MAX_OPEN_PICKUP_ORDERS = 3;
+const RESERVE_DAYS_NO_GAME = 14;
+const RESERVE_DAYS_LEGACY = 30; // orders made before reservedUntil existed
+
+function isOpenUnpaidPickup(o: Order): boolean {
+  return o.payment === "at_pickup" && !o.paidAt && (o.status === "reserved" || o.status === "ready");
+}
+
+/** Daily (crons.ts): cancel unpaid pickup orders that were never collected, and free the stock. */
+export const expireReservations = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    for (const status of ["reserved", "ready"] as const) {
+      const orders = await ctx.db
+        .query("merchOrders")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .take(500);
+      for (const o of orders) {
+        if (!isOpenUnpaidPickup(o)) continue;
+        const until = o.reservedUntil ?? o.createdAt + RESERVE_DAYS_LEGACY * DAY;
+        if (until > now) continue;
+        await cancelOrder(ctx, o, "Not collected in time: cancelled automatically.");
+        await notifyBuyer(
+          ctx,
+          o,
+          "Order cancelled",
+          `Your order ${o.orderCode} wasn't collected in time, so it was cancelled.`
+        );
+      }
+    }
   },
 });
 
