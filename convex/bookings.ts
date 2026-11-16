@@ -3,6 +3,7 @@ import { requireUser, optionalUser } from "./userSession";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { assertSlotStillBookable } from "./slotRules";
+import { roomTotal } from "./companyPaymentsData";
 import { slotStartMs } from "./reportRules";
 import { PLAYER_CANCEL_REASONS, cancelReasonV, cleanCancelNote, isLateCancel } from "./cancelRules";
 
@@ -13,7 +14,9 @@ export const create = mutation({
     date: v.string(),
     time: v.string(),
     players: v.number(),
-    total: v.number(),
+    // Ignored: the price is always worked out on the server. Still accepted so
+    // older app builds that send it keep working.
+    total: v.optional(v.number()),
     paymentTerms: v.optional(v.union(
       v.literal("full"),
       v.literal("deposit_20"),
@@ -25,6 +28,18 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // The booking belongs to whoever is logged in, never to a userId from the client.
     const user = await requireUser(ctx, args.sessionToken);
+
+    // The room decides the price and the group size, not the client.
+    const room = await ctx.db.get(args.roomId);
+    if (!room || room.isActive === false) throw new ConvexError("Room is not available");
+    if (
+      !Number.isInteger(args.players) ||
+      args.players < room.playersMin ||
+      args.players > room.playersMax
+    ) {
+      throw new ConvexError(`Number of players must be between ${room.playersMin} and ${room.playersMax}`);
+    }
+    const total = roomTotal(room, args.players);
 
     // Prevent double-booking: check for existing active booking at this slot
     const existing = await ctx.db
@@ -38,8 +53,6 @@ export const create = mutation({
     );
     if (conflict) throw new Error("This time slot is no longer available");
 
-    // Look up room to set companyId for tracking
-    const room = await ctx.db.get(args.roomId);
     // Started times / last-hour cutoff (see slotRules.ts)
     await assertSlotStillBookable(ctx, room, args.date, args.time, existing);
 
@@ -60,12 +73,12 @@ export const create = mutation({
       date: args.date,
       time: args.time,
       players: args.players,
-      total: args.total,
+      total,
       status: isPending ? "pending_payment" : "upcoming",
       bookingCode,
       createdAt: Date.now(),
       source: "unlocked",
-      companyId: room?.companyId,
+      companyId: room.companyId,
       paymentStatus,
       paymentTerms,
       depositPaid,
@@ -74,18 +87,18 @@ export const create = mutation({
     // Only send confirmation emails if payment is not pending
     // (for Stripe bookings, emails are sent after payment is confirmed via webhook)
     if (!isPending) {
-      const company: any = room?.companyId ? await ctx.db.get(room.companyId as any) : null;
+      const company: any = room.companyId ? await ctx.db.get(room.companyId as any) : null;
       if (user) {
         await ctx.scheduler.runAfter(0, internal.email.sendBookingEmails, {
           bookingCode,
           playerName: user.name,
           playerContact: user.email,
           playerPhone: (user as any).phone || "",
-          roomTitle: room?.title || "Escape Room",
+          roomTitle: room.title || "Escape Room",
           date: args.date,
           time: args.time,
           players: args.players,
-          total: args.total,
+          total,
           paymentStatus,
           depositPaid,
           companyName: company?.name ?? "Escape Room",
