@@ -26,6 +26,9 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // A notification can only be created for yourself.
     const user = await requireUser(ctx, args.sessionToken);
+    if (args.title.length > 200 || args.message.length > 1000) {
+      throw new Error("Notification text is too long");
+    }
     return await ctx.db.insert("notifications", {
       userId: user._id,
       type: args.type,

@@ -148,6 +148,11 @@ export const createPost = mutation({
   handler: async (ctx, args) => {
     const user = await requireUser(ctx, args.sessionToken);
     if (args.text.length > 5000) throw new Error("Your post is too long.");
+    if (args.mediaStorageIds.length > 10) throw new Error("A post can have at most 10 photos or videos.");
+    if (args.rating !== undefined && (!Number.isInteger(args.rating) || args.rating < 1 || args.rating > 5)) {
+      throw new Error("Rating must be between 1 and 5.");
+    }
+    if (args.roomId && !(await ctx.db.get(args.roomId))) throw new Error("Room not found");
     // Content filtering (Apple Guideline 1.2 — filter objectionable material)
     const blockedWord = filterContent(args.text);
     if (blockedWord) {
