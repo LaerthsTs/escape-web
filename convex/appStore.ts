@@ -108,6 +108,9 @@ export async function getAppleTransaction(transactionId: string): Promise<AppleT
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.status === 404) continue;
+    // Production answers 401 while the app isn't live on the App Store yet
+    // (TestFlight only), so then try sandbox too. Only both failing is a key problem.
+    if (res.status === 401 && base === PRODUCTION_URL) continue;
     if (res.status === 401) {
       console.error("[appStore] 401 from Apple: check APPSTORE_ISSUER_ID / KEY_ID / PRIVATE_KEY");
       throw new ConvexError("In-app purchases aren't set up correctly on the server. Please try again later.");
@@ -143,10 +146,70 @@ export const selfTest = internalAction({
   args: {},
   handler: async () => {
     const token = await apiToken();
-    const res = await fetch(`${SANDBOX_URL}/inApps/v1/transactions/1000000000000000`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 401) return { ok: false, status: 401, hint: "Apple rejected the token: check ISSUER_ID, KEY_ID and PRIVATE_KEY" };
-    return { ok: true, status: res.status, bundleId: bundleId() };
+    const probe = async (base: string) =>
+      (await fetch(`${base}/inApps/v1/transactions/1000000000000000`, { headers: { Authorization: `Bearer ${token}` } })).status;
+    const sandbox = await probe(SANDBOX_URL);
+    const production = await probe(PRODUCTION_URL);
+    // 404 = token accepted (the test transaction just doesn't exist).
+    // Production may say 401 until the app is live on the App Store.
+    return { ok: sandbox !== 401, sandbox, production, bundleId: bundleId() };
   },
 });
+
+/** Reads the payload of a JWS without checking it. Only for hints we re-check with Apple. */
+export function decodeJwsPayload(jws: string): any {
+  try {
+    return JSON.parse(b64urlToText(String(jws).split(".")[1] ?? ""));
+  } catch {
+    return null;
+  }
+}
+
+export type SubscriptionState = {
+  originalTransactionId: string;
+  transactionId: string;
+  productId: string;
+  expiresDate?: number;
+  revoked: boolean;
+};
+
+/**
+ * Current state of a subscription, straight from Apple (Get All Subscription
+ * Statuses). Used for renewals, expiry and refunds. Null if Apple doesn't know it.
+ */
+export async function getSubscriptionState(originalTransactionId: string): Promise<SubscriptionState | null> {
+  if (!/^[0-9]{1,30}$/.test(originalTransactionId)) return null;
+  const token = await apiToken();
+  for (const base of [PRODUCTION_URL, SANDBOX_URL]) {
+    const res = await fetch(`${base}/inApps/v1/subscriptions/${originalTransactionId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 404) continue;
+    if (res.status === 401 && base === PRODUCTION_URL) continue; // not live yet, see above
+    if (!res.ok) {
+      console.error("[appStore] subscription status failed", res.status);
+      throw new ConvexError("Couldn't reach the App Store");
+    }
+    const json: any = await res.json();
+    if (json.bundleId && json.bundleId !== bundleId()) return null;
+    // Pick the latest transaction of this subscription.
+    let best: SubscriptionState | null = null;
+    for (const group of json.data ?? []) {
+      for (const last of group.lastTransactions ?? []) {
+        const p = decodeJwsPayload(last.signedTransactionInfo);
+        if (!p || String(p.originalTransactionId) !== originalTransactionId) continue;
+        const state: SubscriptionState = {
+          originalTransactionId,
+          transactionId: String(p.transactionId),
+          productId: String(p.productId),
+          expiresDate: typeof p.expiresDate === "number" ? p.expiresDate : undefined,
+          // status 5 = revoked (refunded)
+          revoked: last.status === 5 || typeof p.revocationDate === "number",
+        };
+        if (!best || (state.expiresDate ?? 0) > (best.expiresDate ?? 0)) best = state;
+      }
+    }
+    return best;
+  }
+  return null;
+}

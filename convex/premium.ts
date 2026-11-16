@@ -1,7 +1,8 @@
-import { query, mutation, action, internalMutation } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalAction } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
-import { getAppleTransaction, bundleId } from "./appStore";
+import { getAppleTransaction, getSubscriptionState, bundleId } from "./appStore";
+import { rateLimit, HOUR } from "./rateLimit";
 import { v } from "convex/values";
 import { requireUser, optionalUser } from "./userSession";
 import { filterPublicRooms } from "./companyRules";
@@ -267,5 +268,71 @@ export const getPlanInfo = query({
         { icon: "gift-outline", title: "Yearly Welcome Gift", desc: "A free sticker pack with your first Official order on the yearly plan" },
       ],
     };
+  },
+});
+
+// ─── Renewals, expiry and refunds (App Store Server Notifications) ───
+// Apple calls /appstore-notifications (http.ts) when a subscription renews,
+// expires or is refunded. The notification is only used to know WHICH
+// subscription changed: its state is then read from Apple's API with our
+// key, so a fake notification can't give anyone Premium.
+
+/** Keeps a flood of (possibly fake) notifications from hammering Apple's API. */
+export const notificationRateLimit = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    await rateLimit(ctx, "appstore:notifications", 1000, HOUR);
+  },
+});
+
+export const refreshFromApple = internalAction({
+  args: { originalTransactionId: v.string() },
+  handler: async (ctx, args) => {
+    const state = await getSubscriptionState(args.originalTransactionId);
+    if (!state) return { updated: false };
+    await ctx.runMutation(internal.premium.applyStoreState, {
+      originalTransactionId: state.originalTransactionId,
+      transactionId: state.transactionId,
+      productId: state.productId,
+      expiresAt: state.expiresDate ?? 0,
+      revoked: state.revoked,
+    });
+    return { updated: true };
+  },
+});
+
+export const applyStoreState = internalMutation({
+  args: {
+    originalTransactionId: v.string(),
+    transactionId: v.string(),
+    productId: v.string(),
+    expiresAt: v.number(),
+    revoked: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    // Only subscriptions already linked to an account (via verifyApplePurchase).
+    const rows = await ctx.db
+      .query("premiumSubscriptions")
+      .withIndex("by_originalTransactionId", (q) => q.eq("originalTransactionId", args.originalTransactionId))
+      .collect();
+    const now = Date.now();
+    const active = !args.revoked && args.expiresAt > now;
+    for (const row of rows) {
+      const plan = PRODUCT_PLANS[args.productId] ?? row.plan;
+      await ctx.db.patch(row._id, {
+        isActive: active,
+        endDate: args.revoked ? now : args.expiresAt,
+        transactionId: args.transactionId,
+        productId: args.productId,
+        plan,
+      });
+      const user = await ctx.db.get(row.userId);
+      if (!user) continue;
+      await ctx.db.patch(user._id, {
+        isPremium: active,
+        // Refund: Premium ends now. Otherwise until Apple's expiry date.
+        premiumExpiresAt: args.revoked ? now : args.expiresAt,
+      });
+    }
   },
 });

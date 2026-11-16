@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { verifyStripeSignature } from "./stripeSignature";
+import { decodeJwsPayload, bundleId } from "./appStore";
 
 const http = httpRouter();
 
@@ -247,5 +248,35 @@ const updateLanguageCors = httpAction(async () => {
 
 http.route({ path: "/updateLanguage", method: "POST", handler: updateLanguageHandler });
 http.route({ path: "/updateLanguage", method: "OPTIONS", handler: updateLanguageCors });
+
+// ── App Store Server Notifications V2 (renewals, expiry, refunds) ──
+// URL to set in App Store Connect: https://<deployment>.convex.site/appstore-notifications
+// The payload is only a hint (which subscription changed); premium.refreshFromApple
+// reads the real state from Apple's API, so fake posts can't grant Premium.
+const appStoreNotifications = httpAction(async (ctx, request) => {
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Bad request", { status: 400 });
+  }
+  const payload = decodeJwsPayload(body?.signedPayload ?? "");
+  const data = payload?.data;
+  if (!data || (data.bundleId && data.bundleId !== bundleId())) return new Response("Ignored", { status: 200 });
+  const tx = decodeJwsPayload(data.signedTransactionInfo ?? "");
+  const originalTransactionId = tx?.originalTransactionId ? String(tx.originalTransactionId) : "";
+  if (!/^[0-9]{1,30}$/.test(originalTransactionId)) return new Response("Ignored", { status: 200 });
+  try {
+    await ctx.runMutation(internal.premium.notificationRateLimit, {});
+    await ctx.runAction(internal.premium.refreshFromApple, { originalTransactionId });
+  } catch (e) {
+    console.error("[appstore-notifications]", e);
+    // 500 so Apple retries later.
+    return new Response("Retry later", { status: 500 });
+  }
+  return new Response("OK", { status: 200 });
+});
+
+http.route({ path: "/appstore-notifications", method: "POST", handler: appStoreNotifications });
 
 export default http;
