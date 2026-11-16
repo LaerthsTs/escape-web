@@ -273,7 +273,7 @@ export const listFriends = query({
           friendshipId: f._id,
           _id: friend._id,
           name: friend.name,
-          email: friend.email,
+          // No email: friends only need name and avatar (privacy).
           avatar,
           title: friend.title,
           memberSince: friend.memberSince,
@@ -313,7 +313,6 @@ export const pendingRequests = query({
           friendshipId: f._id,
           _id: requester._id,
           name: requester.name,
-          email: requester.email,
           avatar,
           title: requester.title,
           createdAt: f.createdAt,
