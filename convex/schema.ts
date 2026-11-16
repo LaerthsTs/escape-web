@@ -123,6 +123,18 @@ export default defineSchema({
     lockedUntil: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
+  // One-time email links: confirm a player's email, or a widget booking.
+  // Only the SHA-256 of the token is stored. See emailVerify.ts.
+  emailTokens: defineTable({
+    purpose: v.union(v.literal("verify_user"), v.literal("confirm_booking")),
+    userId: v.optional(v.id("users")),
+    bookingId: v.optional(v.id("bookings")),
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_user", ["userId"]),
+
   // Fixed-window counters for rate limits (see rateLimit.ts).
   rateLimits: defineTable({
     key: v.string(),
@@ -262,6 +274,9 @@ export default defineSchema({
     longitude: v.optional(v.number()),
     city: v.optional(v.string()),
     isAdmin: v.optional(v.boolean()),
+    // false = signed up with email + password and hasn't pressed the link yet.
+    // Missing = older account or Apple sign-in, treated as confirmed.
+    emailVerified: v.optional(v.boolean()),
     // Phone number (required for bookings)
     phone: v.optional(v.string()),
     // Language preference for notifications
@@ -329,6 +344,9 @@ export default defineSchema({
     companyId: v.optional(v.id("companies")),
     source: v.optional(v.union(v.literal("unlocked"), v.literal("external"))),
     externalSource: v.optional(v.string()), // "EscapeAll", "Phone", "Walk-in", "Private Event"
+    // Widget guest booking waiting for the guest to press the email link
+    // (status is "pending_payment" until then; see emailVerify.ts).
+    awaitingEmailConfirm: v.optional(v.boolean()),
     playerName: v.optional(v.string()),
     playerContact: v.optional(v.string()),
     playerPhone: v.optional(v.string()),

@@ -47,6 +47,10 @@ function CheckoutContent() {
   const [promoCode, setPromoCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // "Pay on arrival" needs a confirmed email (convex/emailVerify.ts)
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
+  const resendLink = useMutation(api.emailVerify.resend);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const companyTerms = (room?.termsOfUse || '').trim();
@@ -127,6 +131,12 @@ function CheckoutContent() {
       }
     } catch (err) {
       const msg = cleanError(err);
+      if (msg === 'EMAIL_NOT_VERIFIED') {
+        setNeedsVerify(true);
+        setError(t('checkout.email_not_verified'));
+        setIsLoading(false);
+        return;
+      }
       setError(msg && !/Server Error|Called by client|Request ID/i.test(msg) ? msg : t('checkout.error'));
       setIsLoading(false);
     }
@@ -368,6 +378,28 @@ function CheckoutContent() {
               {error && (
                 <div className="bg-red-900/20 border border-red-800/30 text-red-400 text-sm rounded-xl px-4 py-3 mt-4">
                   {error}
+                  {needsVerify && user?.sessionToken && (
+                    <div className="mt-2">
+                      {linkSent ? (
+                        <span className="text-emerald-400">{t('checkout.link_sent')}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="underline font-semibold text-white"
+                          onClick={async () => {
+                            try {
+                              await resendLink({ sessionToken: user.sessionToken });
+                              setLinkSent(true);
+                            } catch {
+                              setError(t('checkout.error'));
+                            }
+                          }}
+                        >
+                          {t('checkout.resend_link')}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

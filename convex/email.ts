@@ -530,6 +530,69 @@ ${TABLE(`
 });
 
 // ══════════════════════════════════════════════════════════════
+// CONFIRM-YOUR-EMAIL LINK (new player accounts, widget bookings)
+// See emailVerify.ts. The url is built on the server, never from input.
+// ══════════════════════════════════════════════════════════════
+export const sendConfirmLink = internalAction({
+  args: {
+    kind: v.union(v.literal("account"), v.literal("booking")),
+    to: v.string(),
+    name: v.string(),
+    url: v.string(),
+    lang: v.optional(v.string()),
+    roomTitle: v.optional(v.string()),
+    date: v.optional(v.string()),
+    time: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    const resend = getResend();
+    if (!resend) return;
+    const el = args.lang === "el";
+    const isBooking = args.kind === "booking";
+
+    const title = isBooking
+      ? (el ? "Επιβεβαιώστε την κράτησή σας" : "Confirm your booking")
+      : (el ? "Επιβεβαιώστε το email σας" : "Confirm your email");
+    const subtitle = isBooking
+      ? (el ? "Η κράτηση κρατιέται για 30 λεπτά" : "We're holding your booking for 30 minutes")
+      : (el ? "Ένα βήμα ακόμα" : "One more step");
+    const intro = isBooking
+      ? (el
+          ? `Πατήστε το κουμπί για να επιβεβαιώσετε την κράτηση <strong>${escHtml(args.roomTitle ?? "")}</strong> στις ${escHtml(args.date ?? "")} ${escHtml(args.time ?? "")}. Αν δεν την επιβεβαιώσετε μέσα σε 30 λεπτά, θα ακυρωθεί.`
+          : `Press the button to confirm your booking for <strong>${escHtml(args.roomTitle ?? "")}</strong> on ${escHtml(args.date ?? "")} at ${escHtml(args.time ?? "")}. If you don't confirm within 30 minutes, it will be cancelled.`)
+      : (el
+          ? "Πατήστε το κουμπί για να επιβεβαιώσετε το email σας. Μετά μπορείτε να κάνετε κρατήσεις με πληρωμή στην άφιξη."
+          : "Press the button to confirm your email. After that you can make bookings that you pay for on arrival.");
+    const button = isBooking
+      ? (el ? "Επιβεβαίωση κράτησης" : "Confirm booking")
+      : (el ? "Επιβεβαίωση email" : "Confirm email");
+    const ignore = el
+      ? "Αν δεν το ζητήσατε εσείς, αγνοήστε αυτό το email."
+      : "If this wasn't you, you can ignore this email.";
+
+    const html = shell(
+      title,
+      subtitle,
+      `<p style="${S.greeting}">${el ? "Γεια σας" : "Hi"} <strong>${escHtml(args.name)}</strong>,</p>
+<p style="${S.bodyText}">${intro}</p>
+<div style="text-align:center;margin:32px 0;">
+  <a href="${escHtml(args.url)}" style="${S.btn}">${button}</a>
+</div>
+<p style="font-size:13px;color:${C.textMuted};text-align:center;margin:0;">${ignore}</p>`,
+      "Unlocked"
+    );
+
+    await resend.emails.send({
+      from: fromAddr(),
+      to: args.to,
+      subject: title,
+      html,
+    }).then(r => console.log("[Email] Confirm link sent:", r))
+      .catch(e => console.error("[Email] Confirm link failed:", e));
+  },
+});
+
+// ══════════════════════════════════════════════════════════════
 // 3. COMPANY WELCOME EMAIL
 // ══════════════════════════════════════════════════════════════
 

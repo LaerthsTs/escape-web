@@ -4,6 +4,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { assertSlotStillBookable } from "./slotRules";
 import { roomTotal } from "./companyPaymentsData";
+import { requireVerifiedEmail } from "./emailVerify";
 import { slotStartMs } from "./reportRules";
 import { PLAYER_CANCEL_REASONS, cancelReasonV, cleanCancelNote, isLateCancel } from "./cancelRules";
 
@@ -28,6 +29,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // The booking belongs to whoever is logged in, never to a userId from the client.
     const user = await requireUser(ctx, args.sessionToken);
+    // No card payment here, so the email must be confirmed (see emailVerify.ts).
+    requireVerifiedEmail(user);
 
     // The room decides the price and the group size, not the client.
     const room = await ctx.db.get(args.roomId);

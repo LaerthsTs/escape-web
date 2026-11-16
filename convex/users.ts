@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from "./passwordUtils";
 import { createUserSession, requireUser, optionalUser } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 import { rateLimit, HOUR } from "./rateLimit";
+import { sendUserVerification } from "./emailVerify";
 
 export const getByEmail = internalQuery({
   args: { email: v.string() },
@@ -168,7 +169,12 @@ export const register = mutation({
       escaped: 0,
       awards: 0,
       wishlist: [],
+      // Until they press the link: can sign in, can't book "pay on arrival".
+      emailVerified: false,
     });
+
+    const created = await ctx.db.get(userId);
+    if (created) await sendUserVerification(ctx, created, args.lang);
 
     // Send welcome email
     await ctx.scheduler.runAfter(0, internal.email.sendPlayerWelcome, {
@@ -312,7 +318,11 @@ export const appleLogin = internalMutation({
         .unique();
       if (existingByEmail) {
         // Link Apple ID to existing account
-        await ctx.db.patch(existingByEmail._id, { appleId: args.appleId });
+        // Apple verified this email, so it counts as confirmed too.
+        await ctx.db.patch(existingByEmail._id, {
+          appleId: args.appleId,
+          ...(existingByEmail.emailVerified === false ? { emailVerified: true } : {}),
+        });
         return { userId: existingByEmail._id, sessionToken: await createUserSession(ctx, existingByEmail._id, args.client) };
       }
     }

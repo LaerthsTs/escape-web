@@ -9,6 +9,8 @@
 
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { rateLimit, HOUR } from "./rateLimit";
+import { sendGuestBookingConfirmation } from "./emailVerify";
+import { validateEmail } from "./validation";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { slotClosedReason, assertSlotStillBookable } from "./slotRules";
@@ -199,6 +201,7 @@ export const createGuestBooking = mutation({
     // Validate player name & contact
     if (!args.playerName.trim()) throw new Error("Name is required");
     if (!args.playerContact.trim()) throw new Error("Email is required");
+    if (!validateEmail(args.playerContact.trim())) throw new Error("Please enter a valid email");
     if (!args.playerPhone.trim()) throw new Error("Phone number is required");
 
     // Get room & validate
@@ -258,7 +261,10 @@ export const createGuestBooking = mutation({
       time: args.time,
       players: args.players,
       total,
-      status: "upcoming",
+      // Holds the slot until the guest presses the link in the email; it is
+      // cancelled after 30 minutes otherwise (see emailVerify.ts).
+      status: "pending_payment",
+      awaitingEmailConfirm: true,
       bookingCode,
       createdAt: Date.now(),
       source: "external",
@@ -273,29 +279,25 @@ export const createGuestBooking = mutation({
       depositPaid,
     });
 
-    // Send confirmation emails (async — won't block the response)
-    const company = room.companyId ? await ctx.db.get(room.companyId) : null;
-    await ctx.scheduler.runAfter(0, internal.email.sendBookingEmails, {
-      bookingCode,
-      playerName: args.playerName.trim(),
-      playerContact: args.playerContact.trim(),
-      playerPhone: args.playerPhone.trim(),
-      roomTitle: room.title,
-      date: args.date,
-      time: args.time,
-      players: args.players,
-      total,
-      paymentStatus,
-      depositPaid,
-      notes: args.notes,
-      companyName: company?.name ?? "Escape Room",
-      companyPhone: company?.phone ?? "",
-      companyEmail: company?.email ?? "",
-    });
+    // Ask the guest to confirm by email. The usual booking emails (guest and
+    // company) go out after they press the link: see sendGuestBookingEmails.
+    await sendGuestBookingConfirmation(
+      ctx,
+      {
+        _id: id,
+        playerName: args.playerName.trim(),
+        playerContact: guestEmail,
+        date: args.date,
+        time: args.time,
+      },
+      room.title
+    );
 
     return {
       id,
       bookingCode,
+      // New: the booking only counts once the guest confirms by email.
+      needsEmailConfirm: true,
       total,
       paymentStatus,
       depositPaid,
@@ -304,6 +306,34 @@ export const createGuestBooking = mutation({
       time: args.time,
       players: args.players,
     };
+  },
+});
+
+/** Booking emails for a widget booking, after the guest confirmed it. */
+export const sendGuestBookingEmails = internalMutation({
+  args: { bookingId: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const b = await ctx.db.get(args.bookingId);
+    if (!b || b.status !== "upcoming") return;
+    const room = await ctx.db.get(b.roomId);
+    const company = b.companyId ? await ctx.db.get(b.companyId) : null;
+    await ctx.scheduler.runAfter(0, internal.email.sendBookingEmails, {
+      bookingCode: b.bookingCode,
+      playerName: b.playerName ?? "",
+      playerContact: b.playerContact ?? "",
+      playerPhone: b.playerPhone ?? "",
+      roomTitle: room?.title ?? "Escape Room",
+      date: b.date,
+      time: b.time,
+      players: b.players,
+      total: b.total,
+      paymentStatus: b.paymentStatus ?? "unpaid",
+      depositPaid: b.depositPaid,
+      notes: b.notes,
+      companyName: company?.name ?? "Escape Room",
+      companyPhone: company?.phone ?? "",
+      companyEmail: company?.email ?? "",
+    });
   },
 });
 

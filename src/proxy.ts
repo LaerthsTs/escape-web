@@ -7,6 +7,8 @@ function isGateExempt(pathname: string) {
   return (
     pathname === '/coming-soon' ||
     pathname === '/api/preview-access' ||
+    // Widget guests confirm bookings from email links (no preview cookie)
+    pathname === '/verify-email' ||
     pathname === '/robots.txt' ||
     pathname.startsWith('/icon') ||
     pathname.startsWith('/apple-icon') ||
