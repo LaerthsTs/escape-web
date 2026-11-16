@@ -26,6 +26,8 @@ import {
   MINUTE,
 } from "./rateLimit";
 
+import { UPLOADS_PER_HOUR_COMPANY } from "./uploads";
+
 // One message for wrong email and wrong password (don't reveal which emails exist).
 const INVALID_LOGIN = "Incorrect email or password";
 import {
@@ -400,9 +402,22 @@ export const getRooms = query({
   },
 });
 
+// Company (sessionToken) or admin shop (adminToken). Calls with neither are
+// old app builds: allowed until COMPANY_AUTH_ENFORCE, with a site-wide cap.
 export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { sessionToken: sessionTokenV, adminToken: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    if (args.adminToken) {
+      await requireAdminSession(ctx, args.adminToken);
+    } else {
+      const company = await optionalCompany(ctx, args.sessionToken, "companies:generateUploadUrl");
+      await rateLimit(
+        ctx,
+        company ? `upload:company:${company._id}` : "upload:legacy",
+        UPLOADS_PER_HOUR_COMPANY,
+        HOUR
+      );
+    }
     return await ctx.storage.generateUploadUrl();
   },
 });

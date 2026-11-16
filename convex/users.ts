@@ -8,6 +8,7 @@ import { createUserSession, requireUser, optionalUser } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 import { rateLimit, HOUR } from "./rateLimit";
 import { sendUserVerification } from "./emailVerify";
+import { assertUpload, MAX_IMAGE_BYTES, UPLOADS_PER_HOUR_USER } from "./uploads";
 
 export const getByEmail = internalQuery({
   args: { email: v.string() },
@@ -390,6 +391,7 @@ export const updateProfile = mutation({
 
     // Store the storageId persistently — URL is resolved at query time
     if (args.avatarStorageId) {
+      await assertUpload(ctx, args.avatarStorageId, "image", MAX_IMAGE_BYTES);
       updates.avatarStorageId = args.avatarStorageId;
       // Also set avatar to empty so the storageId path is used
       updates.avatar = "";
@@ -419,7 +421,8 @@ export const updateLanguage = mutation({
 export const generateUploadUrl = mutation({
   args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    await requireUser(ctx, args.sessionToken);
+    const user = await requireUser(ctx, args.sessionToken);
+    await rateLimit(ctx, `upload:user:${user._id}`, UPLOADS_PER_HOUR_USER, HOUR);
     return await ctx.storage.generateUploadUrl();
   },
 });

@@ -4,6 +4,7 @@ import { api, internal } from "./_generated/api";
 import { nt } from "./notificationTexts";
 import { optionalUser } from "./userSession";
 import { sessionTokenV, requireCompany, optionalCompany, requireBookingOf } from "./companySession";
+import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES } from "./uploads";
 
 // ════════════════════════════════════════════════
 // Company Photo Presets
@@ -44,6 +45,8 @@ export const savePreset = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "bookingPhotos:savePreset");
+    await assertOptionalImage(ctx, args.logoStorageId);
+    await assertOptionalImage(ctx, args.overlayStorageId);
     const existing = await ctx.db
       .query("companyPhotoPresets")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -89,6 +92,7 @@ export const addPhoto = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "bookingPhotos:addPhoto");
+    await assertUpload(ctx, args.storageId, "image", MAX_PHOTO_BYTES);
     // Verify the booking belongs to this company
     const booking = await ctx.db.get(args.bookingId);
     if (!booking || booking.companyId?.toString() !== args.companyId.toString()) {
@@ -306,6 +310,7 @@ export const markPhotoProcessed = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "bookingPhotos:markPhotoProcessed");
+    await assertUpload(ctx, args.processedStorageId, "image", MAX_PHOTO_BYTES);
     const photo = await ctx.db.get(args.photoId);
     if (!photo || photo.companyId !== args.companyId) {
       throw new Error("Not authorized");

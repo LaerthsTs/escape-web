@@ -79,7 +79,7 @@ export default function NewRoomPage() {
   const { company } = useCompanyAuth();
   const p = useCompanyPath();
   const createRoom = useCompanyMutation(api.companies.createRoom);
-  const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
+  const generateUploadUrl = useCompanyMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
   const savePreset = useCompanyMutation(api.bookingPhotos.savePreset);
   const photoPreset = useQuery(
@@ -465,7 +465,7 @@ export default function NewRoomPage() {
                 // Upload to Convex storage
                 setImageUploading(true);
                 try {
-                  const uploadUrl = await generateUploadUrl();
+                  const uploadUrl = await generateUploadUrl({});
                   const result = await fetch(uploadUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': webFile.type },
@@ -915,7 +915,7 @@ export default function NewRoomPage() {
                         reader.readAsDataURL(file);
                         setOverlayUploading(true);
                         try {
-                          const uploadUrl = await generateUploadUrl();
+                          const uploadUrl = await generateUploadUrl({});
                           const result = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
                           const { storageId } = await result.json();
                           const url = await getUrlMutation({ storageId });
@@ -978,7 +978,7 @@ export default function NewRoomPage() {
                         reader.readAsDataURL(file);
                         setPresetLogoUploading(true);
                         try {
-                          const uploadUrl = await generateUploadUrl();
+                          const uploadUrl = await generateUploadUrl({});
                           const result = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
                           const { storageId } = await result.json();
                           const url = await getUrlMutation({ storageId });

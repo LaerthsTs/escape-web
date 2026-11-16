@@ -2,6 +2,7 @@ import { query, mutation, action, internalQuery, internalMutation } from "./_gen
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany, optionalCompany, ACCESS_DENIED } from "./companySession";
+import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES } from "./uploads";
 import { ConvexError } from "convex/values";
 
 // ════════════════════════════════════════════════════════════════
@@ -22,6 +23,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "standalonePhotos:create");
+    await assertUpload(ctx, args.originalStorageId, "image", MAX_PHOTO_BYTES);
     // Verify company exists
     const company = await ctx.db.get(args.companyId);
     if (!company) throw new Error("Company not found");
@@ -68,6 +70,7 @@ export const saveProcessed = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "standalonePhotos:saveProcessed");
+    await assertUpload(ctx, args.processedStorageId, "image", MAX_PHOTO_BYTES);
     const photo = await ctx.db.get(args.photoId);
     if (!photo || photo.companyId.toString() !== args.companyId.toString()) {
       throw new Error("Unauthorized");
@@ -570,6 +573,8 @@ export const saveRoomPreset = mutation({
   },
   handler: async (ctx, args) => {
     await requireCompany(ctx, args, "standalonePhotos:saveRoomPreset");
+    await assertOptionalImage(ctx, args.logoStorageId);
+    await assertOptionalImage(ctx, args.overlayStorageId);
     const room = await ctx.db.get(args.roomId);
     if (!room || room.companyId?.toString() !== args.companyId.toString()) {
       throw new Error("Unauthorized");

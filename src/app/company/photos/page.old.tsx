@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { useCompanyAuth } from '@/lib/companyAuth';
+import { useCompanyAuth, useCompanyMutation } from '@/lib/companyAuth';
 import { useTranslation } from '@/lib/i18n';
 import {
   Camera,
@@ -199,7 +199,7 @@ export default function CompanyPhotosPage() {
     companyId ? { companyId: companyId as any } : 'skip'
   );
 
-  const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
+  const generateUploadUrl = useCompanyMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
   const addPhoto = useMutation(api.bookingPhotos.addPhoto);
   const deletePhoto = useMutation(api.bookingPhotos.deletePhoto);
@@ -243,7 +243,7 @@ export default function CompanyPhotosPage() {
         }
 
         // Upload to Convex storage
-        const uploadUrl = await generateUploadUrl();
+        const uploadUrl = await generateUploadUrl({});
         const result = await fetch(uploadUrl, {
           method: 'POST',
           headers: { 'Content-Type': uploadFile.type },
@@ -294,7 +294,7 @@ export default function CompanyPhotosPage() {
         const branded = await applyBranding(photo.originalUrl, photoPreset || null, bookingContext);
 
         // 2. Upload processed image to Convex storage
-        const uploadUrl = await generateUploadUrl();
+        const uploadUrl = await generateUploadUrl({});
         const result = await fetch(uploadUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'image/jpeg' },

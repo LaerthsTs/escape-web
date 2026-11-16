@@ -804,7 +804,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
   const photoPreset = roomPreset || companyPreset;
 
   // ── Mutations ──
-  const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
+  const generateUploadUrl = useCompanyMutation(api.companies.generateUploadUrl);
   const getUrlMutation = useMutation(api.companies.getUrlMutation);
   const createPhoto = useCompanyMutation(api.standalonePhotos.create);
   const saveProcessed = useCompanyMutation(api.standalonePhotos.saveProcessed);
@@ -916,7 +916,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
 
       // Upload to Convex storage
-      const uploadUrl = await generateUploadUrl();
+      const uploadUrl = await generateUploadUrl({});
       const result = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': uploadFile.type },
@@ -978,7 +978,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
       }
 
       // Upload processed image
-      const uploadUrl = await generateUploadUrl();
+      const uploadUrl = await generateUploadUrl({});
       const result = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'image/jpeg' },
@@ -1104,7 +1104,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
     setUploadingLogo(true);
     try {
       const file = files[0];
-      const uploadUrl = await generateUploadUrl();
+      const uploadUrl = await generateUploadUrl({});
       const res = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': file.type },
@@ -1129,7 +1129,7 @@ export default function PhotosTool({ roomId, roomTitle }: { roomId: string; room
     setUploadingOverlay(true);
     try {
       const file = files[0];
-      const uploadUrl = await generateUploadUrl();
+      const uploadUrl = await generateUploadUrl({});
       const res = await fetch(uploadUrl, {
         method: 'POST',
         headers: { 'Content-Type': file.type },

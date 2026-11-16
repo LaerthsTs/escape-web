@@ -48,7 +48,7 @@ export default function CompanyMerchPage() {
   const deleteProduct = useCompanyMutation(api.merch.deleteProduct);
   const updateOrder = useCompanyMutation(api.merch.companyUpdateOrder);
   const saveSettings = useCompanyMutation(api.merch.saveCompanyMerchSettings);
-  const generateUploadUrl = useMutation(api.companies.generateUploadUrl);
+  const generateUploadUrl = useCompanyMutation(api.companies.generateUploadUrl);
   const getUrl = useMutation(api.companies.getUrlMutation);
 
   const [editing, setEditing] = useState<EditableProduct | null | 'new'>(null);
@@ -72,7 +72,7 @@ export default function CompanyMerchPage() {
   }, [settings, loaded]);
 
   const upload = async (file: File) => {
-    const uploadUrl = await generateUploadUrl();
+    const uploadUrl = await generateUploadUrl({});
     const res = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
     const { storageId } = await res.json();
     const url = await getUrl({ storageId });

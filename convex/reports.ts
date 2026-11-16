@@ -5,6 +5,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { requireAdminSession } from "./adminSession";
 import { requireUser, optionalUser } from "./userSession";
+import { rateLimit, HOUR } from "./rateLimit";
+import { UPLOADS_PER_HOUR_USER } from "./uploads";
 import { sessionTokenV, requireCompany, requireBookingOf } from "./companySession";
 import {
   COMPANY_REPORT_WINDOW_MS,
@@ -113,7 +115,8 @@ export const myRoomReports = query({
 export const generateRoomReportUploadUrl = mutation({
   args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    await requireUser(ctx, args.sessionToken);
+    const user = await requireUser(ctx, args.sessionToken);
+    await rateLimit(ctx, `upload:user:${user._id}`, UPLOADS_PER_HOUR_USER, HOUR);
     return await ctx.storage.generateUploadUrl();
   },
 });

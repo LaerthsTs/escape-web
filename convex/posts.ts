@@ -2,6 +2,8 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { filterContent } from "./moderation";
 import { requireUser, optionalUser } from "./userSession";
+import { rateLimit, HOUR } from "./rateLimit";
+import { assertUpload, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, UPLOADS_PER_HOUR_USER } from "./uploads";
 
 /* ── Feed Queries ── */
 
@@ -153,6 +155,10 @@ export const createPost = mutation({
       throw new Error("Rating must be between 1 and 5.");
     }
     if (args.roomId && !(await ctx.db.get(args.roomId))) throw new Error("Room not found");
+    for (const m of args.mediaStorageIds) {
+      if (m.type === "image") await assertUpload(ctx, m.storageId, "image", MAX_IMAGE_BYTES);
+      else await assertUpload(ctx, m.storageId, "video", MAX_VIDEO_BYTES);
+    }
     // Content filtering (Apple Guideline 1.2 — filter objectionable material)
     const blockedWord = filterContent(args.text);
     if (blockedWord) {
@@ -273,7 +279,8 @@ export const deletePost = mutation({
 export const generateUploadUrl = mutation({
   args: { sessionToken: v.string() },
   handler: async (ctx, args) => {
-    await requireUser(ctx, args.sessionToken);
+    const user = await requireUser(ctx, args.sessionToken);
+    await rateLimit(ctx, `upload:user:${user._id}`, UPLOADS_PER_HOUR_USER, HOUR);
     return await ctx.storage.generateUploadUrl();
   },
 });

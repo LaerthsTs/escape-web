@@ -30,7 +30,7 @@ export function AdminShop({ sessionToken }: { sessionToken: string }) {
   const [err, setErr] = useState('');
 
   const upload = async (file: File) => {
-    const uploadUrl = await generateUploadUrl();
+    const uploadUrl = await generateUploadUrl({ adminToken: sessionToken });
     const res = await fetch(uploadUrl, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
     const { storageId } = await res.json();
     const url = await getUrl({ storageId });
