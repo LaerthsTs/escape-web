@@ -9,6 +9,7 @@ import { api } from '../../../../convex/_generated/api';
 import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { friendlyError } from '@/lib/errors';
+import { CompanySignupCodeStep } from '@/components/auth/SignupCodeStep';
 import { useCompanyAuth } from '@/lib/companyAuth';
 
 function passwordProblem(pw: string): string | null {
@@ -20,8 +21,10 @@ function passwordProblem(pw: string): string | null {
 
 export default function PhotosRegisterPage() {
   const router = useRouter();
-  const registerMutation = useMutation(api.companies.register);
-  const { t } = useTranslation();
+  const registerMutation = useMutation(api.companies.startRegister);
+  // Step 2: the 6-digit code we emailed (convex/signupCodes.ts)
+  const [codeStep, setCodeStep] = useState(false);
+  const { t, language } = useTranslation();
   const { login } = useCompanyAuth();
 
   const [name, setName] = useState('');
@@ -57,7 +60,8 @@ export default function PhotosRegisterPage() {
         address: city,
         city,
         description: '',
-        password,
+        password: password,
+        lang: language,
       });
 
       if (result && typeof result === 'object' && 'error' in result) {
@@ -65,16 +69,22 @@ export default function PhotosRegisterPage() {
         return;
       }
 
-      try {
-        await login(email, password);
-        router.replace('/');
-      } catch {
-        router.push('/login?registered=true');
-      }
+      // Code emailed: the account is created after the right code.
+      setCodeStep(true);
     } catch (err: any) {
       setError(friendlyError(err, t, 'company.register.error_failed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // After the right code: sign in and continue
+  const finishSignup = async () => {
+    try {
+      await login(email.trim().toLowerCase(), password);
+      router.replace('/');
+    } catch {
+      router.push('/login?registered=true');
     }
   };
 
@@ -111,6 +121,9 @@ export default function PhotosRegisterPage() {
             </div>
           )}
 
+{codeStep ? (
+  <CompanySignupCodeStep email={email} onConfirmed={finishSignup} onBack={() => setCodeStep(false)} />
+) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm text-brand-text-secondary mb-1.5">{t('company.register.company_name')}</label>
@@ -229,6 +242,7 @@ export default function PhotosRegisterPage() {
               )}
             </button>
           </form>
+)}
         </div>
 
         <p className="text-center text-sm text-brand-text-secondary mt-6">

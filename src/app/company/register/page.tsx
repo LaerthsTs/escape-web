@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useCompanyAuth, useCompanyPath } from '@/lib/companyAuth';
 import { friendlyError } from '@/lib/errors';
+import { CompanySignupCodeStep } from '@/components/auth/SignupCodeStep';
 
 function passwordProblem(pw: string): string | null {
   if (pw.length < 8) return 'cx.pw.too_short';
@@ -20,10 +21,12 @@ function passwordProblem(pw: string): string | null {
 }
 
 export default function CompanyRegisterPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const p = useCompanyPath();
-  const registerMutation = useMutation(api.companies.register);
+  const registerMutation = useMutation(api.companies.startRegister);
+  // Step 2: the 6-digit code we emailed (convex/signupCodes.ts)
+  const [codeStep, setCodeStep] = useState(false);
   const { login } = useCompanyAuth();
 
   const [form, setForm] = useState({
@@ -70,6 +73,7 @@ export default function CompanyRegisterPage() {
         vatNumber: form.vatNumber || undefined,
         description: form.description,
         password: form.password,
+        lang: language,
       });
 
       if (result && typeof result === 'object' && 'error' in result) {
@@ -77,17 +81,22 @@ export default function CompanyRegisterPage() {
         return;
       }
 
-      // Registration successful: sign in straight away and continue to the next step
-      try {
-        await login(form.email, form.password);
-        router.replace(p('/company/onboarding'));
-      } catch {
-        router.push(p('/company/login?registered=true'));
-      }
+      // Code emailed: the account is created after the right code.
+      setCodeStep(true);
     } catch (err: any) {
       setError(friendlyError(err, t, 'company.register.error_failed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // After the right code: sign in and continue
+  const finishSignup = async () => {
+    try {
+      await login(form.email.trim().toLowerCase(), form.password);
+      router.replace(p('/company/onboarding'));
+    } catch {
+      router.push(p('/company/login?registered=true'));
     }
   };
 
@@ -128,6 +137,9 @@ export default function CompanyRegisterPage() {
             </div>
           )}
 
+{codeStep ? (
+  <CompanySignupCodeStep email={form.email} onConfirmed={finishSignup} onBack={() => setCodeStep(false)} />
+) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Company Name */}
             <div>
@@ -304,6 +316,7 @@ export default function CompanyRegisterPage() {
               )}
             </button>
           </form>
+)}
 
           <p className="text-center text-sm text-brand-text-secondary mt-6">
             {t('company.register.has_account')}{' '}
