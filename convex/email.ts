@@ -593,6 +593,60 @@ export const sendConfirmLink = internalAction({
 });
 
 // ══════════════════════════════════════════════════════════════
+// SIGN-UP CODE (6 digits). See signupCodes.ts.
+// ══════════════════════════════════════════════════════════════
+export const sendSignupCode = internalAction({
+  args: {
+    to: v.string(),
+    code: v.string(),
+    lang: v.optional(v.string()),
+    kind: v.union(v.literal("player"), v.literal("company")),
+  },
+  handler: async (_ctx, args) => {
+    const resend = getResend();
+    if (!resend) {
+      // Dev without RESEND_API_KEY: the code shows in the Convex logs instead.
+      console.log(`[Email] Sign-up code for ${args.to}: ${args.code}`);
+      return;
+    }
+    const el = args.lang === "el";
+    const title = el ? "Ο κωδικός επιβεβαίωσης" : "Your confirmation code";
+    const subtitle = el ? "Ισχύει για 15 λεπτά" : "Valid for 15 minutes";
+    const intro =
+      args.kind === "company"
+        ? el
+          ? "Γράψτε αυτόν τον κωδικό για να ολοκληρώσετε την εγγραφή της επιχείρησής σας στο Unlocked."
+          : "Enter this code to finish registering your business on Unlocked."
+        : el
+          ? "Γράψε αυτόν τον κωδικό για να ολοκληρώσεις την εγγραφή σου στο Unlocked."
+          : "Enter this code to finish signing up for Unlocked.";
+    const ignore = el
+      ? "Αν δεν το ζητήσατε εσείς, αγνοήστε αυτό το email. Μην δώσετε τον κωδικό σε κανέναν."
+      : "If this wasn't you, ignore this email. Never share this code with anyone.";
+
+    const html = shell(
+      title,
+      subtitle,
+      `<p style="${S.bodyText}">${intro}</p>
+<div style="text-align:center;margin:28px 0;">
+  <span style="display:inline-block;font-size:34px;font-weight:800;letter-spacing:10px;font-family:monospace;color:${C.white};background-color:${C.red};padding:14px 24px;border-radius:12px;">${escHtml(args.code)}</span>
+</div>
+<p style="font-size:13px;color:${C.textMuted};text-align:center;margin:0;">${ignore}</p>`,
+      "Unlocked"
+    );
+
+    await resend.emails.send({
+      from: fromAddr(),
+      to: args.to,
+      // Code in the subject too, so it shows in the phone notification.
+      subject: `${args.code} · ${title}`,
+      html,
+    }).then(r => console.log("[Email] Sign-up code sent:", r))
+      .catch(e => console.error("[Email] Sign-up code failed:", e));
+  },
+});
+
+// ══════════════════════════════════════════════════════════════
 // 3. COMPANY WELCOME EMAIL
 // ══════════════════════════════════════════════════════════════
 

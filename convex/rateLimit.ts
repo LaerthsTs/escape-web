@@ -108,6 +108,9 @@ export const cleanup = internalMutation({
     const cutoff = Date.now() - 24 * HOUR;
     const limits = await ctx.db.query("rateLimits").take(2000);
     for (const r of limits) if (r.windowStart < cutoff) await ctx.db.delete(r._id);
+    // Sign-ups whose code was never entered (see signupCodes.ts).
+    const pending = await ctx.db.query("pendingSignups").take(2000);
+    for (const p of pending) if (p.expiresAt < cutoff) await ctx.db.delete(p._id);
     const attempts = await ctx.db.query("loginAttempts").take(2000);
     for (const a of attempts) {
       if (a.windowStart < cutoff && (!a.lockedUntil || a.lockedUntil < Date.now())) {

@@ -9,6 +9,8 @@ import { createUserSession, requireUser, optionalUser } from "./userSession";
 import { validateEmail, validatePassword, requireNonEmpty } from "./validation";
 import { rateLimit, HOUR } from "./rateLimit";
 import { sendUserVerification } from "./emailVerify";
+import { startPendingSignup, takePendingSignup, requireLegacySignupAllowed } from "./signupCodes";
+import type { MutationCtx } from "./_generated/server";
 import { assertUpload, MAX_IMAGE_BYTES, UPLOADS_PER_HOUR_USER } from "./uploads";
 
 export const getByEmail = internalQuery({
@@ -121,6 +123,123 @@ export const getById = query({
   },
 });
 
+// ─── Player sign-up with a 6-digit email code (see signupCodes.ts) ───
+
+/** Checks the sign-up form. Throws the same error codes the clients already show. */
+async function checkPlayerSignup(
+  ctx: MutationCtx,
+  args: { name: string; email: string; password: string }
+): Promise<{ name: string; email: string }> {
+  const name = args.name.trim().slice(0, 80);
+  if (!name) throw new ConvexError("NAME_REQUIRED");
+  const email = args.email.trim().toLowerCase();
+  if (!validateEmail(email)) throw new ConvexError("INVALID_EMAIL");
+  const pwError = validatePassword(args.password);
+  if (pwError) {
+    if (pwError.includes("8 characters")) throw new ConvexError("PASSWORD_LENGTH");
+    if (pwError.includes("uppercase")) throw new ConvexError("PASSWORD_UPPERCASE");
+    if (pwError.includes("number")) throw new ConvexError("PASSWORD_NUMBER");
+    throw new ConvexError("PASSWORD_INVALID");
+  }
+  if (await emailTaken(ctx, email)) throw new ConvexError("EMAIL_EXISTS");
+  return { name, email };
+}
+
+async function emailTaken(ctx: MutationCtx, email: string): Promise<boolean> {
+  const existing = await ctx.db
+    .query("users")
+    .withIndex("by_email", (q) => q.eq("email", email))
+    .unique();
+  return !!existing;
+}
+
+async function createPlayer(
+  ctx: MutationCtx,
+  p: { name: string; email: string; hashedPw: string; lang?: string; client?: string; emailVerified: boolean }
+): Promise<{ userId: Id<"users">; sessionToken: string }> {
+  // Site-wide cap on new player accounts (no IP in mutations; see rateLimit.ts).
+  await rateLimit(ctx, "playerRegister", 60, HOUR);
+
+  const now = new Date();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const memberSince = `Member since ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+  const userId = await ctx.db.insert("users", {
+    name: p.name,
+    email: p.email,
+    password: p.hashedPw,
+    avatar: "",
+    title: "Escape Rookie",
+    memberSince,
+    played: 0,
+    escaped: 0,
+    awards: 0,
+    wishlist: [],
+    emailVerified: p.emailVerified,
+    language: p.lang === "el" || p.lang === "nl" || p.lang === "en" ? p.lang : undefined,
+  });
+
+  if (!p.emailVerified) {
+    const created = await ctx.db.get(userId);
+    if (created) await sendUserVerification(ctx, created, p.lang);
+  }
+
+  await ctx.scheduler.runAfter(0, internal.email.sendPlayerWelcome, {
+    playerName: p.name,
+    playerEmail: p.email,
+    lang: p.lang || "en",
+  });
+
+  return { userId, sessionToken: await createUserSession(ctx, userId, p.client) };
+}
+
+/** Step 1: check the form and email a 6-digit code. No account yet. */
+export const startRegister = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    password: v.string(),
+    lang: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { name, email } = await checkPlayerSignup(ctx, args);
+    await startPendingSignup(ctx, "player", email, { name, hashedPw: await hashPassword(args.password) }, args.lang);
+    return { ok: true };
+  },
+});
+
+/**
+ * Step 2: the right code creates the account (email already confirmed) and
+ * logs in. A wrong code returns { error } so the try is counted.
+ */
+export const confirmRegister = mutation({
+  args: {
+    email: v.string(),
+    code: v.string(),
+    client: v.optional(v.string()), // "web" | "app"
+  },
+  handler: async (ctx, args): Promise<{ userId: Id<"users">; sessionToken: string } | { error: string }> => {
+    const email = args.email.trim().toLowerCase();
+    const r = await takePendingSignup(ctx, "player", email, args.code);
+    if (!r.ok) return { error: r.error };
+    // Someone may have taken the email in the meantime (e.g. Apple sign-in).
+    if (await emailTaken(ctx, email)) return { error: "EMAIL_EXISTS" };
+    const data = r.row.data as { name: string; hashedPw: string };
+    return await createPlayer(ctx, {
+      name: data.name,
+      email,
+      hashedPw: data.hashedPw,
+      lang: r.row.lang,
+      client: args.client,
+      emailVerified: true,
+    });
+  },
+});
+
+/**
+ * Old sign-up without a code. Kept only for app builds from before the code
+ * step, and off unless ALLOW_LEGACY_SIGNUP=1 (otherwise anyone could skip the code).
+ */
 export const register = mutation({
   args: {
     name: v.string(),
@@ -130,62 +249,17 @@ export const register = mutation({
     client: v.optional(v.string()), // "web" | "app"
   },
   handler: async (ctx, args) => {
-    // Validate inputs
-    const trimmedName = args.name.trim();
-    if (!trimmedName) throw new ConvexError("NAME_REQUIRED");
-    if (!validateEmail(args.email)) throw new ConvexError("INVALID_EMAIL");
-    const pwError = validatePassword(args.password);
-    if (pwError) {
-      if (pwError.includes("8 characters")) throw new ConvexError("PASSWORD_LENGTH");
-      if (pwError.includes("uppercase")) throw new ConvexError("PASSWORD_UPPERCASE");
-      if (pwError.includes("number")) throw new ConvexError("PASSWORD_NUMBER");
-      throw new ConvexError("PASSWORD_INVALID");
-    }
-
-    // Check if email already exists
-    const existing = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
-      .unique();
-    if (existing) {
-      throw new ConvexError("EMAIL_EXISTS");
-    }
-
-    // Site-wide cap on new player accounts (no IP in mutations; see rateLimit.ts).
-    await rateLimit(ctx, "playerRegister", 60, HOUR);
-
-    const now = new Date();
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const memberSince = `Member since ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-
-    const hashedPw = await hashPassword(args.password);
-
-    const userId = await ctx.db.insert("users", {
-      name: trimmedName,
-      email: args.email.toLowerCase(),
-      password: hashedPw,
-      avatar: "",
-      title: "Escape Rookie",
-      memberSince,
-      played: 0,
-      escaped: 0,
-      awards: 0,
-      wishlist: [],
-      // Until they press the link: can sign in, can't book "pay on arrival".
+    requireLegacySignupAllowed();
+    const { name, email } = await checkPlayerSignup(ctx, args);
+    return await createPlayer(ctx, {
+      name,
+      email,
+      hashedPw: await hashPassword(args.password),
+      lang: args.lang,
+      client: args.client,
+      // Still has to press the email link before "pay on arrival" bookings.
       emailVerified: false,
     });
-
-    const created = await ctx.db.get(userId);
-    if (created) await sendUserVerification(ctx, created, args.lang);
-
-    // Send welcome email
-    await ctx.scheduler.runAfter(0, internal.email.sendPlayerWelcome, {
-      playerName: trimmedName,
-      playerEmail: args.email.toLowerCase(),
-      lang: args.lang || "en",
-    });
-
-    return { userId, sessionToken: await createUserSession(ctx, userId, args.client) };
   },
 });
 

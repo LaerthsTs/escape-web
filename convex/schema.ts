@@ -135,6 +135,19 @@ export default defineSchema({
     .index("by_tokenHash", ["tokenHash"])
     .index("by_user", ["userId"]),
 
+  // Sign-ups waiting for the 6-digit email code (see signupCodes.ts). `data`
+  // is the checked form with the password already hashed.
+  pendingSignups: defineTable({
+    kind: v.union(v.literal("player"), v.literal("company")),
+    email: v.string(),
+    data: v.any(),
+    lang: v.optional(v.string()),
+    codeHash: v.string(),
+    expiresAt: v.number(),
+    attempts: v.number(),
+    createdAt: v.number(),
+  }).index("by_kind_email", ["kind", "email"]),
+
   // Precomputed public data (leaderboard, homepage stats), refreshed by a
   // cron so public queries don't load whole tables. See publicCache.ts.
   publicCache: defineTable({

@@ -15,7 +15,9 @@ import { nt } from "./notificationTexts";
 import { clampDepositPercent } from "./companyPaymentsData";
 import { normalizePlan } from "./plans";
 import { requireAdminSession } from "./adminSession";
-import type { QueryCtx } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { startPendingSignup, takePendingSignup, requireLegacySignupAllowed } from "./signupCodes";
 import {
   rateLimit,
   failureLock,
@@ -48,115 +50,146 @@ const clientV = v.optional(v.union(v.literal("web"), v.literal("app")));
 // (The old public `login` query was removed: it checked passwords with no
 // attempt limit. Use loginCompany.)
 
-export const register = mutation({
-  args: {
-    name: v.string(),
-    email: v.string(),
-    phone: v.string(),
-    address: v.string(),
-    city: v.string(),
-    vatNumber: v.optional(v.string()),
-    description: v.string(),
-    password: v.string(),
-    client: clientV,
-  },
-  handler: async (ctx, { client, ...args }) => {
-    // At most this many new business accounts per hour, site-wide.
-    await rateLimit(ctx, "companyRegister", 10, HOUR);
-    // Validate inputs
-    requireNonEmpty(args.name, "Company name");
-    if (!validateEmail(args.email)) return { error: "Invalid email format" };
-    const pwError = validatePassword(args.password);
-    if (pwError) return { error: pwError };
-    requireNonEmpty(args.phone, "Phone");
-    requireNonEmpty(args.address, "Address");
-    requireNonEmpty(args.city, "City");
+// ─── Company sign-up with a 6-digit email code (see signupCodes.ts) ───
 
-    const existing = await ctx.db
-      .query("companies")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
-      .first();
-    if (existing) return { error: "Email already registered" };
+const companySignupArgs = {
+  name: v.string(),
+  email: v.string(),
+  phone: v.string(),
+  address: v.string(),
+  city: v.string(),
+  vatNumber: v.optional(v.string()),
+  description: v.string(),
+  password: v.string(),
+};
 
-    const hashedPw = await hashPassword(args.password);
+type CompanySignupInput = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  vatNumber?: string;
+  description: string;
+  password: string;
+};
 
-    const id = await ctx.db.insert("companies", {
-      ...args,
-      password: hashedPw,
-      logo: "",
-      verified: false,
-      createdAt: Date.now(),
-      onboardingStatus: "pending_terms",
-    });
+type CompanyFields = Omit<CompanySignupInput, "password">;
 
-    // Send welcome email
-    await ctx.scheduler.runAfter(0, internal.email.sendCompanyWelcome, {
-      companyName: args.name,
-      companyEmail: args.email,
-    });
+/**
+ * Checks the form. Problems the user can fix come back as { error } (what
+ * the clients already show); missing fields throw, as before.
+ */
+async function checkCompanySignup(
+  ctx: MutationCtx,
+  args: CompanySignupInput
+): Promise<{ fields: CompanyFields } | { error: string }> {
+  requireNonEmpty(args.name, "Company name");
+  // Always lower-case: loginCompany looks the email up in lower case.
+  const email = args.email.trim().toLowerCase();
+  if (!validateEmail(email)) return { error: "Invalid email format" };
+  const pwError = validatePassword(args.password);
+  if (pwError) return { error: pwError };
+  requireNonEmpty(args.phone, "Phone");
+  requireNonEmpty(args.address, "Address");
+  requireNonEmpty(args.city, "City");
+  if (await companyEmailTaken(ctx, email)) return { error: "Email already registered" };
+  return {
+    fields: {
+      name: args.name.trim().slice(0, 120),
+      email,
+      phone: args.phone.trim().slice(0, 40),
+      address: args.address.trim().slice(0, 200),
+      city: args.city.trim().slice(0, 100),
+      vatNumber: args.vatNumber?.trim().slice(0, 40) || undefined,
+      description: args.description.trim().slice(0, 2000),
+    },
+  };
+}
 
-    return { id, sessionToken: await createCompanySession(ctx, id, client) };
+async function companyEmailTaken(ctx: MutationCtx, email: string): Promise<boolean> {
+  const existing = await ctx.db
+    .query("companies")
+    .withIndex("by_email", (q) => q.eq("email", email))
+    .first();
+  return !!existing;
+}
+
+async function createCompany(
+  ctx: MutationCtx,
+  fields: CompanyFields,
+  hashedPw: string,
+  client: "web" | "app" | undefined
+): Promise<{ id: Id<"companies">; sessionToken: string }> {
+  // At most this many new business accounts per hour, site-wide.
+  await rateLimit(ctx, "companyRegister", 10, HOUR);
+  const id = await ctx.db.insert("companies", {
+    ...fields,
+    password: hashedPw,
+    logo: "",
+    verified: false,
+    createdAt: Date.now(),
+    onboardingStatus: "pending_terms",
+  });
+  await ctx.scheduler.runAfter(0, internal.email.sendCompanyWelcome, {
+    companyName: fields.name,
+    companyEmail: fields.email,
+  });
+  return { id, sessionToken: await createCompanySession(ctx, id, client) };
+}
+
+/** Step 1: check the form and email a 6-digit code. No account yet. */
+export const startRegister = mutation({
+  args: { ...companySignupArgs, lang: v.optional(v.string()) },
+  handler: async (ctx, { lang, ...args }) => {
+    const checked = await checkCompanySignup(ctx, args);
+    if ("error" in checked) return checked;
+    await startPendingSignup(
+      ctx,
+      "company",
+      checked.fields.email,
+      { fields: checked.fields, hashedPw: await hashPassword(args.password) },
+      lang
+    );
+    return { ok: true as const };
   },
 });
 
-// ─── Full Registration with Onboarding (matches app flow) ───
-export const registerWithOnboarding = mutation({
-  args: {
-    name: v.string(),
-    email: v.string(),
-    phone: v.string(),
-    address: v.string(),
-    city: v.string(),
-    vatNumber: v.optional(v.string()),
-    description: v.string(),
-    password: v.string(),
-    // Ignored: every new company starts on pay-as-you-go; Unlimited needs a paid checkout.
-    plan: v.optional(v.string()),
-    client: clientV,
+/** Step 2: the right code creates the company account and logs in. */
+export const confirmRegister = mutation({
+  args: { email: v.string(), code: v.string(), client: clientV },
+  handler: async (ctx, args): Promise<{ id: Id<"companies">; sessionToken: string } | { error: string }> => {
+    const email = args.email.trim().toLowerCase();
+    const r = await takePendingSignup(ctx, "company", email, args.code);
+    if (!r.ok) return { error: r.error };
+    if (await companyEmailTaken(ctx, email)) return { error: "Email already registered" };
+    const data = r.row.data as { fields: CompanyFields; hashedPw: string };
+    return await createCompany(ctx, { ...data.fields, email }, data.hashedPw, args.client);
   },
+});
+
+/**
+ * Old sign-ups without a code (kept for app builds from before the code step).
+ * Off unless ALLOW_LEGACY_SIGNUP=1, otherwise anyone could skip the code.
+ */
+export const register = mutation({
+  args: { ...companySignupArgs, client: clientV },
   handler: async (ctx, { client, ...args }) => {
-    // At most this many new business accounts per hour, site-wide.
-    await rateLimit(ctx, "companyRegister", 10, HOUR);
-    // Validate inputs
-    requireNonEmpty(args.name, "Company name");
-    if (!validateEmail(args.email)) return { error: "Invalid email format" };
-    const pwError = validatePassword(args.password);
-    if (pwError) return { error: pwError };
-    requireNonEmpty(args.phone, "Phone");
-    requireNonEmpty(args.address, "Address");
-    requireNonEmpty(args.city, "City");
+    requireLegacySignupAllowed();
+    const checked = await checkCompanySignup(ctx, args);
+    if ("error" in checked) return checked;
+    return await createCompany(ctx, checked.fields, await hashPassword(args.password), client);
+  },
+});
 
-    const existing = await ctx.db
-      .query("companies")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
-      .first();
-    if (existing) return { error: "Email already registered" };
-
-    const hashedPw = await hashPassword(args.password);
-
-    const { plan: _requestedPlan, ...rest } = args;
-    const plan = "payg";
-    const id = await ctx.db.insert("companies", {
-      ...rest,
-      password: hashedPw,
-      logo: "",
-      verified: false,
-      createdAt: Date.now(),
-      onboardingStatus: "pending_review",
-      termsAcceptedAt: Date.now(),
-      platformPlan: plan,
-      platformSubscribedAt: Date.now(),
-      paygSince: Date.now(),
-    });
-
-    // Send welcome email with plan info
-    await ctx.scheduler.runAfter(0, internal.email.sendCompanyWelcome, {
-      companyName: args.name,
-      companyEmail: args.email,
-      plan,
-    });
-
-    return { id, sessionToken: await createCompanySession(ctx, id, client) };
+/** Old app flow; same rules as `register` (every new company starts on pay-as-you-go). */
+export const registerWithOnboarding = mutation({
+  args: { ...companySignupArgs, plan: v.optional(v.string()), client: clientV },
+  handler: async (ctx, { client, plan: _plan, ...args }) => {
+    requireLegacySignupAllowed();
+    const checked = await checkCompanySignup(ctx, args);
+    if ("error" in checked) return checked;
+    return await createCompany(ctx, checked.fields, await hashPassword(args.password), client);
   },
 });
 
