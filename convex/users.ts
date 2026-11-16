@@ -466,11 +466,15 @@ export const updateLocation = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx, args.sessionToken);
+    if (Math.abs(args.latitude) > 90 || Math.abs(args.longitude) > 180) throw new Error("Invalid location");
 
+    // Only an approximate position is kept (2 decimals ≈ 1 km), enough for
+    // "rooms near you" (checklist item 24).
+    const round = (n: number) => Math.round(n * 100) / 100;
     await ctx.db.patch(user._id, {
-      latitude: args.latitude,
-      longitude: args.longitude,
-      city: args.city,
+      latitude: round(args.latitude),
+      longitude: round(args.longitude),
+      city: args.city?.slice(0, 100),
     });
     return user._id;
   },
