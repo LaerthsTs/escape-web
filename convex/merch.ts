@@ -72,6 +72,29 @@ async function isYearlyPremium(ctx: Ctx, user: Doc<"users">): Promise<boolean> {
   return subs.some((s) => s.isActive && s.plan === "yearly" && s.endDate > now);
 }
 
+// The yearly welcome gift is a physical item, so it waits until the yearly
+// subscription has been active this long (past the usual refund window), and
+// never comes from a free test (sandbox) purchase unless sandbox is allowed.
+const GIFT_AFTER_DAYS = 14;
+
+async function welcomeGiftEligible(ctx: Ctx, user: Doc<"users">): Promise<boolean> {
+  if (user.merchWelcomeGiftOrderId || !isPremiumUser(user)) return false;
+  const subs = await ctx.db
+    .query("premiumSubscriptions")
+    .withIndex("by_user", (q) => q.eq("userId", user._id))
+    .collect();
+  const now = Date.now();
+  const sandboxOk = process.env.APPSTORE_ALLOW_SANDBOX === "1";
+  return subs.some(
+    (s) =>
+      s.isActive &&
+      s.plan === "yearly" &&
+      s.endDate > now &&
+      now - s.startDate >= GIFT_AFTER_DAYS * 24 * 60 * 60 * 1000 &&
+      (s.environment !== "Sandbox" || sandboxOk)
+  );
+}
+
 function companyIsLive(c: Doc<"companies"> | null): c is Doc<"companies"> {
   return !!c && (c.onboardingStatus === undefined || c.onboardingStatus === "approved");
 }
@@ -244,7 +267,7 @@ async function perksFor(ctx: Ctx, viewer: Viewer) {
   return {
     isPremium: viewer.isPremium,
     yearly,
-    welcomeGiftAvailable: yearly && !viewer.user?.merchWelcomeGiftOrderId,
+    welcomeGiftAvailable: viewer.user ? await welcomeGiftEligible(ctx, viewer.user) : false,
     ...premiumPerks,
   };
 }
@@ -640,7 +663,7 @@ export const createOrder = internalMutation({
 
     // Yearly Premium welcome gift, once, with the first Official order.
     let welcomeGift = false;
-    if (seller === "platform" && !user.merchWelcomeGiftOrderId && (await isYearlyPremium(ctx, user))) {
+    if (seller === "platform" && (await welcomeGiftEligible(ctx, user))) {
       welcomeGift = true;
       items.push({
         title: WELCOME_GIFT.title,

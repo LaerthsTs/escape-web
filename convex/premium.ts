@@ -58,6 +58,12 @@ export const verifyApplePurchase = action({
     if (!plan) throw new ConvexError("This is not an UNLOCKED Premium purchase.");
     if (tx.revocationDate) throw new ConvexError("This purchase was refunded or revoked.");
     if (!tx.expiresDate || tx.expiresDate <= Date.now()) throw new ConvexError("This subscription has expired.");
+    // Sandbox purchases (TestFlight, App Review) cost nothing. Accept them only
+    // where APPSTORE_ALLOW_SANDBOX=1: test backends, and production only while
+    // Apple is reviewing the app.
+    if (tx.environment !== "Production" && process.env.APPSTORE_ALLOW_SANDBOX !== "1") {
+      throw new ConvexError("Test purchases can't be used here.");
+    }
     await ctx.runMutation(internal.premium.grantFromStore, {
       userId,
       plan,
@@ -66,6 +72,7 @@ export const verifyApplePurchase = action({
       transactionId: tx.transactionId,
       originalTransactionId: tx.originalTransactionId,
       expiresAt: tx.expiresDate,
+      environment: tx.environment,
     });
     return { success: true, plan, expiresAt: tx.expiresDate };
   },
@@ -80,6 +87,7 @@ export const grantFromStore = internalMutation({
     transactionId: v.string(),
     originalTransactionId: v.string(),
     expiresAt: v.number(),
+    environment: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -114,6 +122,7 @@ export const grantFromStore = internalMutation({
         productId: args.productId,
         transactionId: args.transactionId,
         originalTransactionId: args.originalTransactionId,
+        environment: args.environment,
       });
       await ctx.db.insert("notifications", {
         userId: args.userId,

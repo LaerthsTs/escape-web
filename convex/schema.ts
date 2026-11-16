@@ -433,6 +433,7 @@ export default defineSchema({
     productId: v.optional(v.string()),         // App Store / Play Store product ID
     transactionId: v.optional(v.string()),     // Store transaction ID
     originalTransactionId: v.optional(v.string()), // For subscription renewals
+    environment: v.optional(v.string()),       // App Store: "Production" | "Sandbox"
     purchaseToken: v.optional(v.string()),     // Android purchase token
   })
     .index("by_user", ["userId"])
