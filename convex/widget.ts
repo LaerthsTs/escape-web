@@ -229,6 +229,8 @@ export const createGuestBooking = mutation({
     const guestEmail = args.playerContact.trim().toLowerCase();
     await rateLimit(ctx, `guestBooking:email:${guestEmail}`, 3, HOUR);
     await rateLimit(ctx, `guestBooking:room:${args.roomId}`, 20, HOUR);
+    // Site-wide cap: each guest booking emails a confirm link to the address given.
+    await rateLimit(ctx, "emails:guestBooking", 300, HOUR);
 
     // Prevent double-booking
     const existing = await ctx.db
@@ -402,6 +404,7 @@ export const createGuestSlotAlert = mutation({
     if (args.contact.length > 200) throw new Error("Contact is too long");
     await rateLimit(ctx, `guestAlert:contact:${args.contact.trim().toLowerCase()}`, 10, HOUR);
     await rateLimit(ctx, `guestAlert:room:${args.roomId}`, 50, HOUR);
+    await rateLimit(ctx, "emails:guestAlert", 500, HOUR); // site-wide cap
 
     await ctx.db.insert("guestSlotAlerts", {
       roomId: args.roomId,

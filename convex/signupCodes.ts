@@ -47,6 +47,9 @@ async function findPending(ctx: MutationCtx, kind: SignupKind, email: string) {
 
 async function sendCode(ctx: MutationCtx, kind: SignupKind, email: string, lang: string | undefined) {
   await rateLimit(ctx, `signupCode:${kind}:${email}`, SENDS_PER_HOUR, HOUR);
+  // Site-wide cap too: otherwise the form could mail thousands of different
+  // addresses an hour from our domain (spam reputation, Resend quota).
+  await rateLimit(ctx, "emails:signupCode", 500, HOUR);
   const code = newCode();
   await ctx.scheduler.runAfter(0, internal.email.sendSignupCode, { to: email, code, lang, kind });
   return { codeHash: await hashCode(code, email), expiresAt: Date.now() + CODE_TTL_MS };

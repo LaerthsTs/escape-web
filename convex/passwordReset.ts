@@ -102,6 +102,7 @@ export const start = mutation({
     if (!email || email.length > 200) return { ok: true };
     // Limits who can be emailed, and how often, before we even look.
     await rateLimit(ctx, `resetCode:${args.kind}:${email}`, 5, HOUR);
+    await rateLimit(ctx, "emails:resetCode", 300, HOUR); // site-wide cap
     const account = await findAccount(ctx, args.kind, email);
     if (!account) return { ok: true };
 
