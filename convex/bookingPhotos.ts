@@ -4,7 +4,7 @@ import { api, internal } from "./_generated/api";
 import { nt } from "./notificationTexts";
 import { optionalUser } from "./userSession";
 import { sessionTokenV, requireCompany, optionalCompany, requireBookingOf } from "./companySession";
-import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES } from "./uploads";
+import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES, storageUrl, presetImageUrl, isOwnStorageUrl } from "./uploads";
 
 // ════════════════════════════════════════════════
 // Company Photo Presets
@@ -54,14 +54,15 @@ export const savePreset = mutation({
 
     const data = {
       companyId: args.companyId,
-      logoUrl: args.logoUrl,
+      // Worked out from the upload, never a link from the client.
+      logoUrl: await presetImageUrl(ctx, args.logoStorageId, args.logoUrl),
       logoStorageId: args.logoStorageId,
       logoPosition: args.logoPosition,
       logoScale: args.logoScale,
       brandColor: args.brandColor,
       watermarkOpacity: args.watermarkOpacity,
       textTemplate: args.textTemplate,
-      overlayUrl: args.overlayUrl,
+      overlayUrl: await presetImageUrl(ctx, args.overlayStorageId, args.overlayUrl),
       overlayStorageId: args.overlayStorageId,
       useOverlay: args.useOverlay,
       updatedAt: Date.now(),
@@ -103,7 +104,8 @@ export const addPhoto = mutation({
       bookingId: args.bookingId,
       companyId: args.companyId,
       originalStorageId: args.storageId,
-      originalUrl: args.url,
+      // From the upload itself; the `url` argument is ignored (old clients send it).
+      originalUrl: await storageUrl(ctx, args.storageId),
       status: "pending",
       order: args.order,
       uploadedAt: Date.now(),
@@ -246,6 +248,8 @@ export const processPhoto = internalAction({
 
       // 4. Fetch the original image
       const originalUrl = photo.originalUrl;
+      // Only ever fetch our own stored files (no requests to other servers).
+      if (!isOwnStorageUrl(originalUrl)) throw new Error("Photo is not an uploaded file");
       const imageResponse = await fetch(originalUrl);
       if (!imageResponse.ok) throw new Error("Failed to fetch original image");
       const imageBuffer = await imageResponse.arrayBuffer();
@@ -318,7 +322,7 @@ export const markPhotoProcessed = mutation({
     await ctx.db.patch(args.photoId, {
       status: "ready",
       processedStorageId: args.processedStorageId,
-      processedUrl: args.processedUrl,
+      processedUrl: await storageUrl(ctx, args.processedStorageId),
       processedAt: Date.now(),
     });
   },

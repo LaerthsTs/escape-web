@@ -34,6 +34,46 @@ export async function assertUpload(
   }
 }
 
+/**
+ * True for a file URL of our own Convex storage. Used wherever a URL is
+ * saved and later shown as a link or fetched by the server.
+ */
+export function isOwnStorageUrl(u: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(u);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) return false;
+  if (!parsed.pathname.startsWith("/api/storage/")) return false;
+  const own = process.env.CONVEX_CLOUD_URL; // set by Convex for every deployment
+  if (own) return parsed.origin === new URL(own).origin;
+  return parsed.hostname.endsWith(".convex.cloud");
+}
+
+/** The URL of a stored file, worked out on the server (never taken from the client). */
+export async function storageUrl(ctx: QueryCtx | MutationCtx, storageId: Id<"_storage">): Promise<string> {
+  const url = await ctx.storage.getUrl(storageId);
+  if (!url) throw new ConvexError("Upload not found");
+  return url;
+}
+
+/**
+ * Logo/overlay of a photo preset: from its storageId when given, otherwise
+ * the URL must be one of our own stored files (or empty to clear it).
+ */
+export async function presetImageUrl(
+  ctx: MutationCtx,
+  storageId: Id<"_storage"> | undefined,
+  url: string | undefined
+): Promise<string | undefined> {
+  if (storageId) return await storageUrl(ctx, storageId);
+  if (!url) return url;
+  if (!isOwnStorageUrl(url)) throw new ConvexError("Images must be uploaded files");
+  return url;
+}
+
 export async function assertOptionalImage(
   ctx: QueryCtx | MutationCtx,
   storageId: Id<"_storage"> | undefined,

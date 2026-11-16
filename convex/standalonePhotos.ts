@@ -2,7 +2,7 @@ import { query, mutation, action, internalQuery, internalMutation } from "./_gen
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { sessionTokenV, requireCompany, optionalCompany, ACCESS_DENIED } from "./companySession";
-import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES } from "./uploads";
+import { assertUpload, assertOptionalImage, MAX_PHOTO_BYTES, storageUrl, presetImageUrl } from "./uploads";
 import { underCap } from "./rateLimit";
 import { ConvexError } from "convex/values";
 
@@ -33,7 +33,8 @@ export const create = mutation({
       companyId: args.companyId,
       roomId: args.roomId,
       originalStorageId: args.originalStorageId,
-      originalUrl: args.originalUrl,
+      // From the upload itself; the `originalUrl` argument is ignored.
+      originalUrl: await storageUrl(ctx, args.originalStorageId),
       teamName: args.teamName,
       escaped: args.escaped,
       escapeTime: args.escapeTime,
@@ -84,7 +85,7 @@ export const saveProcessed = mutation({
 
     await ctx.db.patch(args.photoId, {
       processedStorageId: args.processedStorageId,
-      processedUrl: args.processedUrl,
+      processedUrl: await storageUrl(ctx, args.processedStorageId),
       filter: args.filter,
       adjustments: args.adjustments,
       hasWatermark: args.hasWatermark,
@@ -593,14 +594,14 @@ export const saveRoomPreset = mutation({
     const data = {
       roomId: args.roomId,
       companyId: args.companyId,
-      logoUrl: args.logoUrl,
+      logoUrl: await presetImageUrl(ctx, args.logoStorageId, args.logoUrl),
       logoStorageId: args.logoStorageId,
       logoPosition: args.logoPosition,
       logoScale: args.logoScale,
       brandColor: args.brandColor,
       watermarkOpacity: args.watermarkOpacity,
       textTemplate: args.textTemplate,
-      overlayUrl: args.overlayUrl,
+      overlayUrl: await presetImageUrl(ctx, args.overlayStorageId, args.overlayUrl),
       overlayStorageId: args.overlayStorageId,
       useOverlay: args.useOverlay,
       defaultFilter: args.defaultFilter,

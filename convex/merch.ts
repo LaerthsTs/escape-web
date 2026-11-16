@@ -22,6 +22,7 @@ import { requireUser, optionalUser } from "./userSession";
 import { dateAthens } from "./plans";
 import { rateLimit, HOUR } from "./rateLimit";
 import { slotStartMs } from "./reportRules";
+import { isOwnStorageUrl } from "./uploads";
 import {
   MAX_ITEMS_PER_ORDER,
   MAX_PRICE_CENTS,
@@ -1046,31 +1047,14 @@ type ProductInput = {
   sortOrder?: number;
 };
 
-/**
- * Merch photos must be files uploaded to our own Convex storage (checklist
- * item 22), not links to other sites.
- */
-function isConvexStorageUrl(u: string): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(u);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== "https:" || parsed.username || parsed.password) return false;
-  if (!parsed.pathname.startsWith("/api/storage/")) return false;
-  const own = process.env.CONVEX_CLOUD_URL; // set by Convex for every deployment
-  if (own) return parsed.origin === new URL(own).origin;
-  return parsed.hostname.endsWith(".convex.cloud");
-}
-
 function cleanProduct(input: ProductInput, seller: "platform" | "company") {
   const title = input.title.trim().slice(0, 80);
   if (!title) throw new ConvexError("Give the item a name");
   const description = input.description.trim().slice(0, 2000);
   const images = input.images.map((u) => u.trim()).filter(Boolean);
   if (images.length > 6) throw new ConvexError("Up to 6 photos per item");
-  if (images.some((u) => !isConvexStorageUrl(u))) throw new ConvexError("Photos must be uploaded images");
+  // Only files uploaded to our own Convex storage (checklist item 22).
+  if (images.some((u) => !isOwnStorageUrl(u))) throw new ConvexError("Photos must be uploaded images");
   if (!Number.isInteger(input.priceCents) || input.priceCents < 50 || input.priceCents > MAX_PRICE_CENTS) {
     throw new ConvexError("The price must be between €0.50 and €1000");
   }
