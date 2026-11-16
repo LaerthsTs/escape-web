@@ -45,11 +45,15 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // The image optimizer (/_next/image) only fetches from our own Convex
+  // storage. With "**" it would fetch and resize images from any site
+  // (checklist item 22). next/image isn't used today; add hosts here if it is.
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: '*.convex.cloud',
+        pathname: '/api/storage/**',
       },
     ],
   },
