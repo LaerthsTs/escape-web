@@ -1,4 +1,7 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, action, internalMutation } from "./_generated/server";
+import { ConvexError } from "convex/values";
+import { internal } from "./_generated/api";
+import { getAppleTransaction, bundleId } from "./appStore";
 import { v } from "convex/values";
 import { requireUser, optionalUser } from "./userSession";
 import { filterPublicRooms } from "./companyRules";
@@ -31,130 +34,126 @@ export const getStatus = query({
 // ─── Subscribe via In-App Purchase ───
 // Called after a successful native IAP transaction.
 // Validates the receipt data and activates premium.
-export const subscribeWithIAP = mutation({
-  args: {
-    sessionToken: v.string(),
-    plan: v.union(v.literal("monthly"), v.literal("yearly")),
-    productId: v.string(),
-    transactionId: v.string(),
-    transactionReceipt: v.string(),
-    platform: v.union(v.literal("ios"), v.literal("android")),
-    purchaseToken: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireUser(ctx, args.sessionToken);
+// ─── In-app purchases (checklist item 9) ───
+// The app sends the StoreKit transactionId; we ask Apple about it
+// (appStore.ts) and give Premium only for a real, active purchase of one of
+// our products, until the expiry date Apple reports. One purchase can only
+// unlock one UNLOCKED account.
 
-    // Check for duplicate transaction
-    const existingSubs = await ctx.db
-      .query("premiumSubscriptions")
-      .withIndex("by_transactionId", (q) => q.eq("transactionId", args.transactionId))
-      .collect();
-    if (existingSubs.length > 0) {
-      // Already processed — return success without double-activating
-      return { success: true, alreadyProcessed: true };
-    }
+const PRODUCT_PLANS: Record<string, "monthly" | "yearly"> = {
+  "com.unlocked.escapeapp.pro.monthly": "monthly",
+  "com.unlocked.escapeapp.pro.yearly": "yearly",
+};
 
-    const now = Date.now();
-    const price = PREMIUM_PRICES[args.plan];
-    const durationMs =
-      args.plan === "monthly"
-        ? 30 * 24 * 60 * 60 * 1000
-        : 365 * 24 * 60 * 60 * 1000;
-    const endDate = now + durationMs;
-
-    // Create premium subscription record with IAP data
-    await ctx.db.insert("premiumSubscriptions", {
-      userId: user._id,
-      plan: args.plan,
-      price,
-      startDate: now,
-      endDate,
-      isActive: true,
-      platform: args.platform,
-      productId: args.productId,
-      transactionId: args.transactionId,
-      purchaseToken: args.purchaseToken,
+/** Buy or restore on iOS. Returns the plan and the expiry Apple reports. */
+export const verifyApplePurchase = action({
+  args: { sessionToken: v.string(), transactionId: v.string() },
+  handler: async (ctx, args): Promise<{ success: true; plan: "monthly" | "yearly"; expiresAt: number }> => {
+    const { userId } = await ctx.runQuery(internal.userSession.verify, { sessionToken: args.sessionToken });
+    const tx = await getAppleTransaction(args.transactionId.trim());
+    if (!tx) throw new ConvexError("We couldn't find this purchase at the App Store.");
+    if (tx.bundleId !== bundleId()) throw new ConvexError("This purchase is not for UNLOCKED.");
+    const plan = PRODUCT_PLANS[tx.productId];
+    if (!plan) throw new ConvexError("This is not an UNLOCKED Premium purchase.");
+    if (tx.revocationDate) throw new ConvexError("This purchase was refunded or revoked.");
+    if (!tx.expiresDate || tx.expiresDate <= Date.now()) throw new ConvexError("This subscription has expired.");
+    await ctx.runMutation(internal.premium.grantFromStore, {
+      userId,
+      plan,
+      platform: "ios",
+      productId: tx.productId,
+      transactionId: tx.transactionId,
+      originalTransactionId: tx.originalTransactionId,
+      expiresAt: tx.expiresDate,
     });
-
-    // Update user premium status
-    await ctx.db.patch(user._id, {
-      isPremium: true,
-      premiumSince: user.premiumSince ?? now,
-      premiumExpiresAt: endDate,
-    });
-
-    // Create notification
-    await ctx.db.insert("notifications", {
-      userId: user._id,
-      type: "system",
-      title: "Welcome to UNLOCKED Premium! 🎉",
-      message: `You now have early access to new rooms 3 days before everyone else. Your ${args.plan} plan is active.`,
-      read: false,
-      createdAt: now,
-    });
-
-    return { success: true, expiresAt: endDate };
+    return { success: true, plan, expiresAt: tx.expiresDate };
   },
 });
 
-// ─── Restore purchases ───
-// Called when a user taps "Restore Purchases" — re-validates and reactivates.
-export const restoreWithIAP = mutation({
+export const grantFromStore = internalMutation({
   args: {
-    sessionToken: v.string(),
+    userId: v.id("users"),
+    plan: v.union(v.literal("monthly"), v.literal("yearly")),
+    platform: v.union(v.literal("ios"), v.literal("android")),
     productId: v.string(),
     transactionId: v.string(),
-    platform: v.union(v.literal("ios"), v.literal("android")),
-    purchaseToken: v.optional(v.string()),
+    originalTransactionId: v.string(),
+    expiresAt: v.number(),
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx, args.sessionToken);
-
-    // Determine plan from product ID
-    const plan = args.productId.includes("yearly") ? "yearly" : "monthly";
-    const price = PREMIUM_PRICES[plan];
-    const durationMs =
-      plan === "monthly"
-        ? 30 * 24 * 60 * 60 * 1000
-        : 365 * 24 * 60 * 60 * 1000;
-
-    // Check if this transaction was already recorded
-    const existingSubs = await ctx.db
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new ConvexError("Please sign in again");
+    // One store subscription = one UNLOCKED account.
+    const sameSub = await ctx.db
       .query("premiumSubscriptions")
-      .withIndex("by_transactionId", (q) => q.eq("transactionId", args.transactionId))
+      .withIndex("by_originalTransactionId", (q) => q.eq("originalTransactionId", args.originalTransactionId))
       .collect();
-
+    if (sameSub.some((s) => s.userId !== args.userId)) {
+      throw new ConvexError("This purchase is already used by another UNLOCKED account.");
+    }
     const now = Date.now();
-    const endDate = now + durationMs;
-
-    if (existingSubs.length === 0) {
-      // Record the restored subscription
+    const mine = sameSub.find((s) => s.userId === args.userId);
+    if (mine) {
+      await ctx.db.patch(mine._id, {
+        isActive: true,
+        endDate: args.expiresAt,
+        plan: args.plan,
+        productId: args.productId,
+        transactionId: args.transactionId,
+      });
+    } else {
       await ctx.db.insert("premiumSubscriptions", {
-        userId: user._id,
-        plan,
-        price,
+        userId: args.userId,
+        plan: args.plan,
+        price: PREMIUM_PRICES[args.plan],
         startDate: now,
-        endDate,
+        endDate: args.expiresAt,
         isActive: true,
         platform: args.platform,
         productId: args.productId,
         transactionId: args.transactionId,
-        purchaseToken: args.purchaseToken,
+        originalTransactionId: args.originalTransactionId,
       });
-    } else {
-      // Reactivate existing record
-      const sub = existingSubs[0];
-      await ctx.db.patch(sub._id, { isActive: true, endDate });
+      await ctx.db.insert("notifications", {
+        userId: args.userId,
+        type: "system",
+        title: "Welcome to UNLOCKED Premium! 🎉",
+        message: `You now have early access to new rooms 3 days before everyone else. Your ${args.plan} plan is active.`,
+        read: false,
+        createdAt: now,
+      });
     }
-
-    // Re-activate user premium
-    await ctx.db.patch(user._id, {
+    await ctx.db.patch(args.userId, {
       isPremium: true,
       premiumSince: user.premiumSince ?? now,
-      premiumExpiresAt: endDate,
+      premiumExpiresAt: args.expiresAt,
     });
+  },
+});
 
-    return { success: true, plan, expiresAt: endDate };
+/**
+ * Old app builds: these trusted whatever the app sent, so anyone could get
+ * Premium for free. Closed; the app now calls verifyApplePurchase.
+ */
+const iapArgs = {
+  sessionToken: v.string(),
+  plan: v.optional(v.union(v.literal("monthly"), v.literal("yearly"))),
+  productId: v.string(),
+  transactionId: v.string(),
+  transactionReceipt: v.optional(v.string()),
+  platform: v.union(v.literal("ios"), v.literal("android")),
+  purchaseToken: v.optional(v.string()),
+};
+export const subscribeWithIAP = mutation({
+  args: iapArgs,
+  handler: async () => {
+    throw new ConvexError("Please update the UNLOCKED app to buy Premium.");
+  },
+});
+export const restoreWithIAP = mutation({
+  args: iapArgs,
+  handler: async () => {
+    throw new ConvexError("Please update the UNLOCKED app to restore Premium.");
   },
 });
 

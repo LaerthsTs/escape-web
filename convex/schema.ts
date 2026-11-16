@@ -436,7 +436,8 @@ export default defineSchema({
     purchaseToken: v.optional(v.string()),     // Android purchase token
   })
     .index("by_user", ["userId"])
-    .index("by_transactionId", ["transactionId"]),
+    .index("by_transactionId", ["transactionId"])
+    .index("by_originalTransactionId", ["originalTransactionId"]),
 
   // ─── Social Posts ───
   posts: defineTable({
